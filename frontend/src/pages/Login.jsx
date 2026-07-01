@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginStart, loginSuccess, loginFailure } from '../redux/authSlice';
@@ -14,6 +14,15 @@ const Login = () => {
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const [validationError, setValidationError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('remember_username');
+    if (saved) {
+      setUsernameOrEmail(saved);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,6 +42,12 @@ const Login = () => {
       });
 
       dispatch(loginSuccess(res.data));
+
+      if (rememberMe) {
+        localStorage.setItem('remember_username', usernameOrEmail);
+      } else {
+        localStorage.removeItem('remember_username');
+      }
 
       // Fetch user's saved theme from database
       const themePref = res.data.user.profile?.theme_preference || 'light';
@@ -90,14 +105,9 @@ const Login = () => {
           </div>
 
           <div>
-            <div className="flex justify-between items-center mb-1.5">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">
-                Password
-              </label>
-              <Link to="/forgot-password" className="text-xs font-semibold text-primary hover:underline">
-                Forgot password?
-              </Link>
-            </div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+              Password
+            </label>
             <div className="relative">
               <input
                 type="password"
@@ -108,6 +118,21 @@ const Login = () => {
               />
               <FiLock className="absolute left-3.5 top-3.5 text-gray-400" />
             </div>
+          </div>
+
+          <div className="flex items-center justify-between text-xs my-3">
+            <label className="flex items-center gap-2 cursor-pointer text-gray-500 hover:text-text select-none">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="rounded border-border text-primary focus:ring-primary h-4 w-4 bg-bg transition"
+              />
+              <span className="font-semibold">Remember Me</span>
+            </label>
+            <Link to="/forgot-password" className="font-bold text-primary hover:underline">
+              Forgot password?
+            </Link>
           </div>
 
           <button
