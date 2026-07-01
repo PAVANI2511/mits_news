@@ -105,7 +105,7 @@ const UserManagement = () => {
                           {u.email}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap font-semibold text-primary">
-                          {u.department ? `${u.department.split(' ')[0]} • ${u.year}` : 'N/A'}
+                          {u.department ? `${u.department} • ${u.year}` : 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {u.is_blocked ? (
