@@ -106,6 +106,13 @@ class AdminUserBlockView(views.APIView):
         user = get_object_or_404(User, pk=user_id)
         if user.is_staff or user.is_superuser:
             return Response({"error": "Cannot delete admin users."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Clean up MongoDB collections for this user
+        users_col.delete_one({"_id": str(user_id)})
+        posts_col.delete_many({"user_id": str(user_id)})
+        comments_col.delete_many({"user_id": str(user_id)})
+        reports_col.delete_many({"user_id": str(user_id)})
+        
         user.delete()
         return Response({"message": "User deleted successfully."}, status=status.HTTP_200_OK)
 

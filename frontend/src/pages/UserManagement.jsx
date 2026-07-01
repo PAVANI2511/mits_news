@@ -8,6 +8,7 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
     loadUsers();
@@ -40,17 +41,18 @@ const UserManagement = () => {
     }
   };
 
-  const handleDeleteUser = async (id) => {
-    if (window.confirm("Are you sure you want to permanently delete this student account? This action is irreversible.")) {
-      setError('');
-      setSuccess('');
-      try {
-        const res = await adminAPI.deleteUser(id);
-        setUsers(prev => prev.filter(u => u.id !== String(id)));
-        setSuccess(res.data.message);
-      } catch (err) {
-        setError("Failed to delete user account.");
-      }
+  const confirmDeleteUser = async () => {
+    if (!deleteTarget) return;
+    const { id } = deleteTarget;
+    setDeleteTarget(null);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await adminAPI.deleteUser(id);
+      setUsers(prev => prev.filter(u => u.id !== String(id)));
+      setSuccess(res.data?.message || "User deleted successfully.");
+    } catch (err) {
+      setError(err.response?.data?.error || err.response?.data?.detail || "Failed to delete user account.");
     }
   };
 
@@ -131,7 +133,7 @@ const UserManagement = () => {
                           </button>
 
                           <button
-                            onClick={() => handleDeleteUser(u.id)}
+                            onClick={() => setDeleteTarget(u)}
                             className="p-2 bg-gray-50 hover:bg-red-500 hover:text-white text-gray-500 rounded-xl transition inline-flex"
                           >
                             <FiTrash2 />
@@ -150,6 +152,33 @@ const UserManagement = () => {
             )}
           </div>
         </div>
+
+        {deleteTarget && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-card border border-border p-6 rounded-2xl max-w-sm w-full mx-4 shadow-xl space-y-4">
+              <div className="text-center space-y-2">
+                <h3 className="text-lg font-extrabold text-text">Delete Account?</h3>
+                <p className="text-xs text-gray-500">
+                  Are you sure you want to permanently delete student account <span className="font-bold text-red-500">@{deleteTarget.username}</span>? This action is irreversible.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteTarget(null)}
+                  className="flex-1 py-2.5 bg-bg border border-border rounded-xl text-xs font-bold text-gray-500 hover:bg-border/40 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteUser}
+                  className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-red-600/20 transition"
+                >
+                  Confirm Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </AdminLayout>
   );
 };
