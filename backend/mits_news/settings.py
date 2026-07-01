@@ -124,3 +124,6 @@ SIMPLE_JWT = {
     'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+# Email Backend for Development (Outputs to console log)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

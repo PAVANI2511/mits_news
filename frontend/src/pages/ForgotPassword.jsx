@@ -10,6 +10,7 @@ const ForgotPassword = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [otp, setOtp] = useState('');
 
   const handleSendLink = async (e) => {
     e.preventDefault();
@@ -22,7 +23,7 @@ const ForgotPassword = () => {
     setIsLoading(true);
     try {
       await authAPI.forgotPassword(email);
-      setMessage("A password recovery request has been processed. You can now define your new password directly below.");
+      setMessage("A verification code (OTP) has been sent to your college email address. Enter it below to define your new password.");
       setIsResetMode(true);
     } catch (err) {
       setError(err.response?.data?.error || "Failed to process recovery request.");
@@ -33,18 +34,19 @@ const ForgotPassword = () => {
 
   const handleReset = async (e) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError("Email and Password are required.");
+    if (!email || !otp || !password) {
+      setError("Email, OTP code, and New Password are required.");
       return;
     }
     setError('');
     setMessage('');
     setIsLoading(true);
     try {
-      await authAPI.resetPassword(email, password);
+      await authAPI.resetPassword(email, otp, password);
       setMessage("Password has been reset successfully! You can now log in.");
       setIsResetMode(false);
       setEmail('');
+      setOtp('');
       setPassword('');
     } catch (err) {
       setError(err.response?.data?.error || "Failed to reset password.");
@@ -111,6 +113,22 @@ const ForgotPassword = () => {
                   value={email}
                   disabled
                   className="w-full pl-10 pr-4 py-3 rounded-2xl bg-bg/50 border border-border text-gray-400 text-sm focus:outline-none"
+                />
+                <FiMail className="absolute left-3.5 top-3.5 text-gray-400" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                Verification Code (OTP) *
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Enter 6-digit code"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all"
                 />
                 <FiMail className="absolute left-3.5 top-3.5 text-gray-400" />
               </div>

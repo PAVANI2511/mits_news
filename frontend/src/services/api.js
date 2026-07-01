@@ -42,7 +42,7 @@ export const authAPI = {
   register: (data) => api.post('/auth/register/', data),
   login: (credentials) => api.post('/auth/login/', credentials),
   forgotPassword: (email) => api.post('/auth/forgot-password/', { email }),
-  resetPassword: (email, password) => api.post('/auth/reset-password/', { email, password }),
+  resetPassword: (email, otp, password) => api.post('/auth/reset-password/', { email, otp, password }),
   getProfile: (username) => api.get(`/auth/profile/${username}/`),
   updateProfile: (data) => api.put('/auth/profile/update/', data, {
     headers: { 'Content-Type': 'multipart/form-data' }

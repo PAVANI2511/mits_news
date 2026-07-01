@@ -142,8 +142,40 @@ class ForgotPasswordView(views.APIView):
         if not user:
             return Response({"error": "User with this email does not exist."}, status=status.HTTP_404_NOT_FOUND)
         
-        # In a real app we send an email with reset link. We stub it here.
-        return Response({"message": "Password reset link sent to your college email."}, status=status.HTTP_200_OK)
+        import random
+        from django.utils import timezone
+        from datetime import datetime, timedelta
+        from django.core.mail import send_mail
+        from db_connection import users_col
+        
+        # Generate 6-digit OTP
+        otp = "".join([str(random.randint(0, 9)) for _ in range(6)])
+        expiry = timezone.now() + timedelta(minutes=10)
+        
+        # Store OTP in MongoDB
+        users_col.update_one(
+            {"_id": str(user.id)},
+            {"$set": {
+                "reset_otp": {
+                    "code": otp,
+                    "expiry": expiry.isoformat()
+                }
+            }}
+        )
+        
+        # Send Email
+        try:
+            send_mail(
+                subject="MITS Newspaper - Password Reset Code",
+                message=f"Hello,\n\nYour password reset verification code is: {otp}\n\nThis code will expire in 10 minutes.",
+                from_email="no-reply@mits.ac.in",
+                recipient_list=[email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            print(f"SMTP Error: {e}. Outputting OTP to log console: {otp}")
+            
+        return Response({"message": "Verification OTP sent to your college email address."}, status=status.HTTP_200_OK)
 
 
 class ResetPasswordView(views.APIView):
@@ -151,13 +183,41 @@ class ResetPasswordView(views.APIView):
 
     def post(self, request):
         email = request.data.get('email', '')
+        otp = request.data.get('otp', '')
         new_password = request.data.get('password', '')
-        if not email or not new_password:
-            return Response({"error": "Email and new password are required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not email or not otp or not new_password:
+            return Response({"error": "Email, verification OTP, and new password are required."}, status=status.HTTP_400_BAD_REQUEST)
         
         user = User.objects.filter(email=email).first()
         if not user:
             return Response({"error": "User with this email does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        
+        from db_connection import users_col
+        from django.utils import timezone
+        from datetime import datetime
+        
+        doc = users_col.find_one({"_id": str(user.id)})
+        reset_otp = doc.get("reset_otp") if doc else None
+        
+        if not reset_otp:
+            return Response({"error": "No password reset request found. Please request a new verification code."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        stored_code = reset_otp.get("code")
+        stored_expiry = reset_otp.get("expiry")
+        
+        if stored_code != str(otp).strip():
+            return Response({"error": "Invalid verification code."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        expiry_dt = datetime.fromisoformat(stored_expiry)
+        if timezone.is_naive(expiry_dt):
+            expiry_dt = timezone.make_aware(expiry_dt)
+            
+        if timezone.now() > expiry_dt:
+            return Response({"error": "Verification code has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Clean up OTP and reset password
+        users_col.update_one({"_id": str(user.id)}, {"$unset": {"reset_otp": ""}})
         
         user.set_password(new_password)
         user.save()
