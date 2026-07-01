@@ -1,0 +1,8 @@
+django>=5.0
+djangorestframework
+djangorestframework-simplejwt
+pymongo
+django-cors-headers
+pillow
+python-dotenv
+mongomock

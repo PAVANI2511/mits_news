@@ -1,0 +1,299 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import MainLayout from '../layouts/MainLayout';
+import Sidebar from '../components/Sidebar';
+import { postsAPI } from '../services/api';
+import { 
+  FiFileText, FiImage, FiVideo, FiMusic, 
+  FiMapPin, FiPaperclip, FiSend, FiX 
+} from 'react-icons/fi';
+
+const CreatePost = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  if (!isAuthenticated) {
+    window.location.href = '/login';
+    return null;
+  }
+
+  const [formData, setFormData] = useState({
+    caption: '',
+    text: '',
+    hashtags: '',
+    location: '',
+    music_url: '',
+  });
+
+  const [files, setFiles] = useState({
+    image: null,
+    video: null,
+    audio: null,
+    poster: null,
+    pdf: null,
+  });
+
+  const [previews, setPreviews] = useState({
+    image: '',
+    poster: '',
+  });
+
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState('');
+
+  const handleChange = (e) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    const type = e.target.name; // image, video, etc.
+    if (!file) return;
+
+    // Set file state
+    setFiles(prev => ({ ...prev, [type]: file }));
+
+    // Handle image/poster previews
+    if (type === 'image' || type === 'poster') {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviews(prev => ({ ...prev, [type]: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeFile = (type) => {
+    setFiles(prev => ({ ...prev, [type]: null }));
+    if (type === 'image' || type === 'poster') {
+      setPreviews(prev => ({ ...prev, [type]: '' }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (!formData.caption.trim() || !formData.text.trim()) {
+      setError("Headline/Caption and Article details are required.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const submitData = new FormData();
+      submitData.append('caption', formData.caption);
+      submitData.append('text', formData.text);
+      submitData.append('hashtags', formData.hashtags);
+      submitData.append('location', formData.location);
+      submitData.append('music_url', formData.music_url);
+
+      if (files.image) submitData.append('image', files.image);
+      if (files.video) submitData.append('video', files.video);
+      if (files.audio) submitData.append('audio', files.audio);
+      if (files.poster) submitData.append('poster', files.poster);
+      if (files.pdf) submitData.append('pdf', files.pdf);
+
+      await postsAPI.create(submitData);
+      setSuccess("Your campus article was successfully published!");
+      setTimeout(() => navigate('/feed'), 1500);
+    } catch (err) {
+      setError(err.response?.data?.detail || "An error occurred while publishing the post.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <MainLayout sidebar={<Sidebar />}>
+      <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+        <div className="border-b border-border pb-4 mb-6">
+          <h2 className="text-xl font-extrabold text-text">Publish to Newspaper</h2>
+          <p className="text-xs text-gray-500 mt-1">Publish an article or share campus media with other students</p>
+        </div>
+
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-2.5 rounded-xl">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 text-xs px-4 py-2.5 rounded-xl">
+            {success}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+              Caption *
+            </label>
+            <input
+              type="text"
+              name="caption"
+              placeholder="Give your article a catchy headline..."
+              value={formData.caption}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+              Article Text Content *
+            </label>
+            <textarea
+              name="text"
+              rows="5"
+              placeholder="Write the details of your article here..."
+              value={formData.text}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                Hashtags
+              </label>
+              <input
+                type="text"
+                name="hashtags"
+                placeholder="#cse #campusnews #event"
+                value={formData.hashtags}
+                onChange={handleChange}
+                className="w-full px-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                Location
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  name="location"
+                  placeholder="Block-A Seminar Hall"
+                  value={formData.location}
+                  onChange={handleChange}
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all"
+                />
+                <FiMapPin className="absolute left-3.5 top-3.5 text-gray-400" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+              <FiMusic /> Background Music URL
+            </label>
+            <input
+              type="text"
+              name="music_url"
+              placeholder="Link to background audio file (e.g. mp3)..."
+              value={formData.music_url}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all"
+            />
+          </div>
+
+          {/* Attaching Files Panel */}
+          <div className="border border-dashed border-border rounded-2xl p-4 bg-bg/20 space-y-4">
+            <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Attach Campus Media</span>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {/* Image Input */}
+              <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
+                <FiImage className="text-xl text-gray-400 mb-1" />
+                <span className="text-[10px] font-semibold text-text">Image</span>
+                <input type="file" name="image" accept="image/*" onChange={handleFileChange} className="hidden" />
+              </label>
+
+              {/* Video Input */}
+              <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
+                <FiVideo className="text-xl text-gray-400 mb-1" />
+                <span className="text-[10px] font-semibold text-text">Video</span>
+                <input type="file" name="video" accept="video/*" onChange={handleFileChange} className="hidden" />
+              </label>
+
+              {/* Audio Input */}
+              <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
+                <FiMusic className="text-xl text-gray-400 mb-1" />
+                <span className="text-[10px] font-semibold text-text">Audio</span>
+                <input type="file" name="audio" accept="audio/*" onChange={handleFileChange} className="hidden" />
+              </label>
+
+              {/* Poster Input */}
+              <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
+                <FiImage className="text-xl text-gray-400 mb-1" />
+                <span className="text-[10px] font-semibold text-text">Poster</span>
+                <input type="file" name="poster" accept="image/*" onChange={handleFileChange} className="hidden" />
+              </label>
+
+              {/* PDF Input */}
+              <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
+                <FiFileText className="text-xl text-gray-400 mb-1" />
+                <span className="text-[10px] font-semibold text-text">PDF Doc</span>
+                <input type="file" name="pdf" accept="application/pdf" onChange={handleFileChange} className="hidden" />
+              </label>
+            </div>
+
+            {/* List Attached files */}
+            <div className="space-y-2">
+              {Object.keys(files).map((type) => {
+                const file = files[type];
+                if (!file) return null;
+                return (
+                  <div key={type} className="flex items-center justify-between bg-card px-3 py-2 rounded-xl border border-border">
+                    <span className="text-xs text-text flex items-center gap-1.5 capitalize font-semibold">
+                      <FiPaperclip className="text-gray-400" /> {type}: {file.name}
+                    </span>
+                    <button type="button" onClick={() => removeFile(type)} className="text-gray-400 hover:text-red-500">
+                      <FiX />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Render Image Previews */}
+            <div className="flex gap-4">
+              {previews.image && (
+                <div className="relative h-20 w-20 rounded-lg overflow-hidden border border-border">
+                  <img src={previews.image} alt="Upload preview" className="h-full w-full object-cover" />
+                  <button type="button" onClick={() => removeFile('image')} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs">
+                    <FiX />
+                  </button>
+                </div>
+              )}
+              {previews.poster && (
+                <div className="relative h-20 w-20 rounded-lg overflow-hidden border border-border">
+                  <img src={previews.poster} alt="Poster preview" className="h-full w-full object-cover" />
+                  <button type="button" onClick={() => removeFile('poster')} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs">
+                    <FiX />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 bg-primary text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-primary/95 shadow-lg shadow-primary/25 hover:shadow-primary/35 disabled:opacity-50 transition-all"
+          >
+            <FiSend /> {loading ? 'Publishing Article...' : 'Publish Campus News'}
+          </button>
+        </form>
+      </div>
+    </MainLayout>
+  );
+};
+
+export default CreatePost;
