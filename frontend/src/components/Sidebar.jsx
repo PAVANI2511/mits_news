@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { authAPI } from '../services/api';
+import { authAPI, postsAPI, getMediaUrl } from '../services/api';
 import { FiTrendingUp, FiUserPlus, FiBookOpen } from 'react-icons/fi';
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const [suggestions, setSuggestions] = useState([]);
+
+  const [trends, setTrends] = useState([]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -19,14 +21,14 @@ const Sidebar = () => {
         })
         .catch((err) => console.error("Error loading suggestions:", err));
     }
-  }, [isAuthenticated, user]);
 
-  const trends = [
-    { tag: 'MITS2026', count: 124 },
-    { tag: 'CSE_Hackathon', count: 98 },
-    { tag: 'CollegeFest', count: 72 },
-    { tag: 'ExamVibes', count: 45 }
-  ];
+    // Fetch live trending hashtags
+    postsAPI.getTrends()
+      .then((res) => {
+        setTrends(res.data);
+      })
+      .catch((err) => console.error("Error loading trends:", err));
+  }, [isAuthenticated, user]);
 
   return (
     <div className="space-y-6">
@@ -37,13 +39,13 @@ const Sidebar = () => {
             className="h-16 w-full rounded-lg bg-cover bg-center"
             style={{ 
               backgroundImage: user.profile?.cover_photo 
-                ? `url(${user.profile.cover_photo})`
+                ? `url(${getMediaUrl(user.profile.cover_photo)})`
                 : 'linear-gradient(to right, var(--color-primary), var(--color-secondary))' 
             }}
           />
           <div className="-mt-8 flex justify-center">
             <img
-              src={user.profile?.profile_pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'}
+              src={getMediaUrl(user.profile?.profile_pic) || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'}
               alt={user.username}
               className="h-16 w-16 rounded-full border-4 border-card object-cover bg-card shadow"
             />
@@ -108,7 +110,7 @@ const Sidebar = () => {
                   onClick={() => navigate(`/profile/${sug.username}`)}
                 >
                   <img
-                    src={sug.profile_pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'}
+                    src={getMediaUrl(sug.profile_pic) || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'}
                     alt={sug.username}
                     className="h-8 w-8 rounded-full object-cover"
                   />
@@ -130,26 +132,28 @@ const Sidebar = () => {
       )}
 
       {/* Trending Hashtags */}
-      <div className="bg-card rounded-2xl border border-border p-4 shadow-sm">
-        <h3 className="font-bold text-sm text-text mb-3 flex items-center gap-1.5">
-          <FiTrendingUp className="text-primary" /> College Trends
-        </h3>
-        <div className="space-y-3">
-          {trends.map((item) => (
-            <div 
-              key={item.tag} 
-              className="flex justify-between items-center cursor-pointer hover:bg-bg/50 p-1.5 rounded-lg transition"
-              onClick={() => navigate(`/search?hashtag=${item.tag}`)}
-            >
-              <div>
-                <div className="text-xs font-bold text-text">#{item.tag}</div>
-                <div className="text-[10px] text-gray-500">{item.count} posts</div>
+      {trends.length > 0 && (
+        <div className="bg-card rounded-2xl border border-border p-4 shadow-sm">
+          <h3 className="font-bold text-sm text-text mb-3 flex items-center gap-1.5">
+            <FiTrendingUp className="text-primary" /> College Trends
+          </h3>
+          <div className="space-y-3">
+            {trends.map((item) => (
+              <div 
+                key={item.tag} 
+                className="flex justify-between items-center cursor-pointer hover:bg-bg/50 p-1.5 rounded-lg transition"
+                onClick={() => navigate(`/search?hashtag=${item.tag}`)}
+              >
+                <div>
+                  <div className="text-xs font-bold text-text">#{item.tag}</div>
+                  <div className="text-[10px] text-gray-500">{item.count} posts</div>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">Trending</span>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">Trending</span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

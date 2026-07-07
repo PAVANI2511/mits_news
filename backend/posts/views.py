@@ -11,6 +11,38 @@ from .serializers import PostSerializer
 from notifications.models import Notification
 from db_connection import posts_col, likes_col, saved_posts_col, followers_col
 
+import threading
+from django.core.mail import send_mail
+
+def send_new_post_notifications(post, author):
+    # Query all users who have opted in for email notifications
+    # Excluding empty emails and the author themselves
+    recipients = list(User.objects.filter(
+        profile__email_notifications_enabled=True
+    ).exclude(
+        email=''
+    ).exclude(
+        id=author.id
+    ).values_list('email', flat=True))
+    
+    if not recipients:
+        return
+        
+    subject = "New Article Published on MITS Newspaper"
+    message = f"Hello,\n\nA new article has been published by @{author.username} on MITS Newspaper!\n\nHeadline: {post.caption}\n\nRead the article here: http://localhost:5173/feed"
+    
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email="no-reply@mits.ac.in",
+            recipient_list=recipients,
+            fail_silently=False,
+        )
+    except Exception as e:
+        print(f"Error sending new post email notifications: {e}")
+
+
 class PostCreateView(generics.CreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
@@ -24,6 +56,10 @@ class PostCreateView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         post = serializer.save(user=request.user)
+        
+        # Dispatch notification emails asynchronously in a background thread
+        threading.Thread(target=send_new_post_notifications, args=(post, request.user)).start()
+
         # Fetch fresh synced post from MongoDB
         post_doc = posts_col.find_one({"_id": str(post.id)})
         if post_doc:
@@ -113,10 +149,12 @@ class HomeFeedView(views.APIView):
         # Build mongo query
         mongo_query = {"is_blocked": False}
         if query:
+            import re
+            escaped_query = re.escape(query)
             mongo_query["$or"] = [
-                {"caption": {"$regex": query, "$options": "i"}},
-                {"text": {"$regex": query, "$options": "i"}},
-                {"location": {"$regex": query, "$options": "i"}}
+                {"caption": re.compile(escaped_query, re.IGNORECASE)},
+                {"text": re.compile(escaped_query, re.IGNORECASE)},
+                {"location": re.compile(escaped_query, re.IGNORECASE)}
             ]
         if hashtag:
             mongo_query["hashtags"] = hashtag.strip("#")
@@ -281,3 +319,19 @@ class MediaDownloadView(views.APIView):
 
         # Return download url or redirect
         return Response({"download_url": media_url}, status=status.HTTP_200_OK)
+
+
+class TrendingHashtagsView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        pipeline = [
+            {"$match": {"is_blocked": False}},
+            {"$unwind": "$hashtags"},
+            {"$group": {"_id": "$hashtags", "count": {"$sum": 1}}},
+            {"$sort": {"count": -1}},
+            {"$limit": 10}
+        ]
+        results = list(posts_col.aggregate(pipeline))
+        trends = [{"tag": r["_id"], "count": r["count"]} for r in results]
+        return Response(trends, status=status.HTTP_200_OK)

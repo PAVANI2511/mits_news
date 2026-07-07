@@ -16,6 +16,7 @@ class Post(models.Model):
     audio = models.FileField(upload_to='posts/audio/', blank=True, null=True)
     poster = models.FileField(upload_to='posts/posters/', blank=True, null=True)
     pdf = models.FileField(upload_to='posts/pdfs/', blank=True, null=True)
+    external_url = models.URLField(max_length=500, blank=True, default='')
 
     def __str__(self):
         return f"Post by {self.user.username} at {self.created_at}"
@@ -46,7 +47,8 @@ class Post(models.Model):
                 "video": self.video.url if self.video else '',
                 "audio": self.audio.url if self.audio else '',
                 "poster": self.poster.url if self.poster else '',
-                "pdf": self.pdf.url if self.pdf else ''
+                "pdf": self.pdf.url if self.pdf else '',
+                "external_url": self.external_url
             }},
             upsert=True
         )

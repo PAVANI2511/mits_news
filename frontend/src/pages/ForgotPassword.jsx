@@ -11,6 +11,7 @@ const ForgotPassword = () => {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [otp, setOtp] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSendLink = async (e) => {
     e.preventDefault();
@@ -22,8 +23,8 @@ const ForgotPassword = () => {
     setMessage('');
     setIsLoading(true);
     try {
-      await authAPI.forgotPassword(email);
-      setMessage("A verification code (OTP) has been sent to your college email address. Enter it below to define your new password.");
+      const response = await authAPI.forgotPassword(email);
+      setMessage(response.data?.message || "A verification code (OTP) has been sent to your college email address. Enter it below to define your new password.");
       setIsResetMode(true);
     } catch (err) {
       setError(err.response?.data?.error || "Failed to process recovery request.");
@@ -34,20 +35,25 @@ const ForgotPassword = () => {
 
   const handleReset = async (e) => {
     e.preventDefault();
-    if (!email || !otp || !password) {
-      setError("Email, OTP code, and New Password are required.");
+    if (!email || !otp || !password || !confirmPassword) {
+      setError("Email, OTP code, New Password, and Confirm Password are required.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
     setError('');
     setMessage('');
     setIsLoading(true);
     try {
-      await authAPI.resetPassword(email, otp, password);
-      setMessage("Password has been reset successfully! You can now log in.");
+      const response = await authAPI.resetPassword(email, otp, password);
+      setMessage(response.data?.message || "Password has been reset successfully! You can now log in.");
       setIsResetMode(false);
       setEmail('');
       setOtp('');
       setPassword('');
+      setConfirmPassword('');
     } catch (err) {
       setError(err.response?.data?.error || "Failed to reset password.");
     } finally {
@@ -144,6 +150,22 @@ const ForgotPassword = () => {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all"
+                />
+                <FiLock className="absolute left-3.5 top-3.5 text-gray-400" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                Confirm New Password
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all"
                 />
                 <FiLock className="absolute left-3.5 top-3.5 text-gray-400" />

@@ -1,4 +1,4 @@
-from rest_framework import status, generics, permissions, views
+from rest_framework import status, generics, permissions, views, serializers
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.contrib.auth.models import User
@@ -12,6 +12,12 @@ from notifications.models import Notification
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
+        username = attrs.get('username', '')
+        if '@' in username:
+            user = User.objects.filter(email=username).first()
+            if user:
+                attrs['username'] = user.username
+                
         data = super().validate(attrs)
         if self.user.profile.is_blocked:
             raise serializers.ValidationError("Your account has been blocked by the admin.")
@@ -164,16 +170,27 @@ class ForgotPasswordView(views.APIView):
         )
         
         # Send Email
+        from django.conf import settings
+        is_console = getattr(settings, 'EMAIL_BACKEND', '') == 'django.core.mail.backends.console.EmailBackend'
         try:
             send_mail(
                 subject="MITS Newspaper - Password Reset Code",
                 message=f"Hello,\n\nYour password reset verification code is: {otp}\n\nThis code will expire in 10 minutes.",
-                from_email="no-reply@mits.ac.in",
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@mits.ac.in'),
                 recipient_list=[email],
                 fail_silently=False,
             )
         except Exception as e:
             print(f"SMTP Error: {e}. Outputting OTP to log console: {otp}")
+            return Response(
+                {"error": f"Failed to send email due to SMTP error: {str(e)}. (OTP for testing is: {otp})"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            
+        if is_console:
+            return Response({
+                "message": f"Development mode: Verification OTP has been printed to the server terminal console. (OTP is: {otp})"
+            }, status=status.HTTP_200_OK)
             
         return Response({"message": "Verification OTP sent to your college email address."}, status=status.HTTP_200_OK)
 
@@ -235,17 +252,19 @@ class SearchUsersView(views.APIView):
         # Connect to MongoDB for searching users
         from db_connection import users_col
         
+        import re
         mongo_query = {}
         if query:
+            escaped_query = re.escape(query)
             mongo_query["$or"] = [
-                {"username": {"$regex": query, "$options": "i"}},
-                {"name": {"$regex": query, "$options": "i"}},
-                {"email": {"$regex": query, "$options": "i"}}
+                {"username": re.compile(escaped_query, re.IGNORECASE)},
+                {"name": re.compile(escaped_query, re.IGNORECASE)},
+                {"email": re.compile(escaped_query, re.IGNORECASE)}
             ]
         if dept:
-            mongo_query["department"] = {"$regex": dept, "$options": "i"}
+            mongo_query["department"] = re.compile(re.escape(dept), re.IGNORECASE)
         if year:
-            mongo_query["year"] = {"$regex": year, "$options": "i"}
+            mongo_query["year"] = re.compile(re.escape(year), re.IGNORECASE)
 
         # Hide blocked profiles unless requester is admin
         if not (request.user.is_authenticated and request.user.is_staff):

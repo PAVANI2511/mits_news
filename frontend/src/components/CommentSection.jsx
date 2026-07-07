@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { commentsAPI } from '../services/api';
+import { commentsAPI, getMediaUrl } from '../services/api';
 import { FiCornerDownRight, FiTrash2, FiSend } from 'react-icons/fi';
 
 const CommentSection = ({ postId, onCommentAdded, onCommentDeleted }) => {
@@ -124,7 +124,7 @@ const CommentSection = ({ postId, onCommentAdded, onCommentDeleted }) => {
                 <div className="flex items-start justify-between gap-2.5">
                   <div className="flex items-start gap-2.5">
                     <img
-                      src={comment.profile_pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'}
+                      src={getMediaUrl(comment.profile_pic) || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'}
                       alt={comment.username}
                       className="h-7 w-7 rounded-full object-cover border border-border"
                     />

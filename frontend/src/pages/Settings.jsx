@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSearchParams } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import Sidebar from '../components/Sidebar';
 import { authAPI, themesAPI } from '../services/api';
@@ -19,6 +20,7 @@ const Settings = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { currentTheme, presets } = useSelector((state) => state.theme);
+  const isAdmin = user?.is_staff || user?.is_superuser;
 
   const [name, setName] = useState(user?.profile?.name || '');
   const [bio, setBio] = useState(user?.profile?.bio || '');
@@ -39,13 +41,28 @@ const Settings = () => {
     border_color: '#e5e7eb',
   });
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeSettingsTab, setActiveSettingsTab] = useState('profile'); // profile, theme
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'theme') {
+      setActiveSettingsTab('theme');
+    } else {
+      setActiveSettingsTab('profile');
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tabName) => {
+    setSearchParams({ tab: tabName });
+  };
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [customBranch, setCustomBranch] = useState('');
   const [customDept, setCustomDept] = useState('');
   const [selectedPresetAvatar, setSelectedPresetAvatar] = useState('');
+  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(user?.profile?.email_notifications_enabled ?? true);
 
   const departmentGroups = {
     'B.Tech Programs': [
@@ -116,6 +133,7 @@ const Settings = () => {
         submitData.append('profile_pic', file);
       }
       if (coverPhoto) submitData.append('cover_photo', coverPhoto);
+      submitData.append('email_notifications_enabled', emailNotificationsEnabled);
 
       const res = await authAPI.updateProfile(submitData);
       dispatch(updateProfile(res.data));
@@ -170,7 +188,7 @@ const Settings = () => {
       <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm transition-colors duration-300">
         <div className="flex border-b border-border">
           <button
-            onClick={() => setActiveSettingsTab('profile')}
+            onClick={() => handleTabChange('profile')}
             className={`flex-1 py-4 text-center text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition ${
               activeSettingsTab === 'profile' 
                 ? 'border-primary text-primary' 
@@ -180,7 +198,7 @@ const Settings = () => {
             <FiUser /> Edit Profile
           </button>
           <button
-            onClick={() => setActiveSettingsTab('theme')}
+            onClick={() => handleTabChange('theme')}
             className={`flex-1 py-4 text-center text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition ${
               activeSettingsTab === 'theme' 
                 ? 'border-primary text-primary' 
@@ -208,7 +226,7 @@ const Settings = () => {
           {activeSettingsTab === 'profile' && (
             <form onSubmit={handleProfileSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+                <div className={isAdmin ? "sm:col-span-2" : ""}>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                     Display Name
                   </label>
@@ -220,70 +238,74 @@ const Settings = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Department
-                  </label>
-                  <select
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none"
-                  >
-                    <option value="">Select Department</option>
-                    {Object.keys(departmentGroups).map(groupName => (
-                      <optgroup key={groupName} label={groupName}>
-                        {departmentGroups[groupName].map(d => (
-                          <option key={d} value={d}>{d}</option>
+                {!isAdmin && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                        Department
+                      </label>
+                      <select
+                        value={department}
+                        onChange={(e) => setDepartment(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none"
+                      >
+                        <option value="">Select Department</option>
+                        {Object.keys(departmentGroups).map(groupName => (
+                          <optgroup key={groupName} label={groupName}>
+                            {departmentGroups[groupName].map(d => (
+                              <option key={d} value={d}>{d}</option>
                         ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </div>
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
 
-                {department === 'Other' && (
-                  <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {department === 'Other' && (
+                      <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                            Custom Course / Branch *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. B.Tech"
+                            value={customBranch}
+                            onChange={(e) => setCustomBranch(e.target.value)}
+                            className="w-full px-4 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                            Custom Department Name *
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. CSE"
+                            value={customDept}
+                            onChange={(e) => setCustomDept(e.target.value)}
+                            className="w-full px-4 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                        Custom Course / Branch *
+                        Year of Study
                       </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. B.Tech"
-                        value={customBranch}
-                        onChange={(e) => setCustomBranch(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                      />
+                      <select
+                        value={year}
+                        onChange={(e) => setYear(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none"
+                      >
+                        <option value="">Select Year</option>
+                        {years.map(y => (
+                          <option key={y} value={y}>{y}</option>
+                        ))}
+                      </select>
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                        Custom Department Name *
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. CSE"
-                        value={customDept}
-                        onChange={(e) => setCustomDept(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
-                  </div>
+                  </>
                 )}
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Year of Study
-                  </label>
-                  <select
-                    value={year}
-                    onChange={(e) => setYear(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none"
-                  >
-                    <option value="">Select Year</option>
-                    {years.map(y => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
-                </div>
               </div>
 
               <div>
@@ -349,6 +371,23 @@ const Settings = () => {
                     className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary file:cursor-pointer hover:file:bg-primary/20"
                   />
                 </div>
+              </div>
+
+              {/* Email Notifications Subscription Toggle */}
+              <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-bg/50 border border-border/80">
+                <input
+                  type="checkbox"
+                  id="email_notifications_enabled"
+                  checked={emailNotificationsEnabled}
+                  onChange={(e) => setEmailNotificationsEnabled(e.target.checked)}
+                  className="h-4.5 w-4.5 rounded-lg text-primary focus:ring-primary border-border bg-bg cursor-pointer"
+                />
+                <label 
+                  htmlFor="email_notifications_enabled" 
+                  className="text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer select-none"
+                >
+                  Receive email alerts when new articles are published
+                </label>
               </div>
 
               <button

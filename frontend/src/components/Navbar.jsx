@@ -136,7 +136,7 @@ const Navbar = () => {
                     <button
                       onClick={() => {
                         setThemeDropdownOpen(false);
-                        navigate('/settings');
+                        navigate('/settings?tab=theme');
                       }}
                       className="w-full text-left px-4 py-2 text-sm hover:bg-bg text-primary font-medium flex items-center justify-between border-t border-border transition"
                     >

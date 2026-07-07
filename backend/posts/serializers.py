@@ -12,6 +12,6 @@ class PostSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'caption', 'text', 'hashtags', 
             'location', 'music_url', 'created_at', 'is_blocked', 
-            'image', 'video', 'audio', 'poster', 'pdf'
+            'image', 'video', 'audio', 'poster', 'pdf', 'external_url'
         ]
         read_only_fields = ['is_blocked', 'created_at']

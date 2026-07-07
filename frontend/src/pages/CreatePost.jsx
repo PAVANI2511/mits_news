@@ -23,25 +23,24 @@ const CreatePost = () => {
     text: '',
     hashtags: '',
     location: '',
-    music_url: '',
+    external_url: '',
   });
 
   const [files, setFiles] = useState({
     image: null,
     video: null,
     audio: null,
-    poster: null,
     pdf: null,
   });
 
   const [previews, setPreviews] = useState({
     image: '',
-    poster: '',
   });
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -56,7 +55,7 @@ const CreatePost = () => {
     setFiles(prev => ({ ...prev, [type]: file }));
 
     // Handle image/poster previews
-    if (type === 'image' || type === 'poster') {
+    if (type === 'image') {
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviews(prev => ({ ...prev, [type]: reader.result }));
@@ -67,18 +66,20 @@ const CreatePost = () => {
 
   const removeFile = (type) => {
     setFiles(prev => ({ ...prev, [type]: null }));
-    if (type === 'image' || type === 'poster') {
+    if (type === 'image') {
       setPreviews(prev => ({ ...prev, [type]: '' }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitted(true);
     setError('');
     setSuccess('');
 
     if (!formData.caption.trim() || !formData.text.trim()) {
       setError("Headline/Caption and Article details are required.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -89,19 +90,19 @@ const CreatePost = () => {
       submitData.append('text', formData.text);
       submitData.append('hashtags', formData.hashtags);
       submitData.append('location', formData.location);
-      submitData.append('music_url', formData.music_url);
+      submitData.append('external_url', formData.external_url);
 
       if (files.image) submitData.append('image', files.image);
       if (files.video) submitData.append('video', files.video);
       if (files.audio) submitData.append('audio', files.audio);
-      if (files.poster) submitData.append('poster', files.poster);
       if (files.pdf) submitData.append('pdf', files.pdf);
 
       await postsAPI.create(submitData);
       setSuccess("Your campus article was successfully published!");
       setTimeout(() => navigate('/feed'), 1500);
     } catch (err) {
-      setError(err.response?.data?.detail || "An error occurred while publishing the post.");
+      setError(err.response?.data?.detail || err.response?.data?.error || "An error occurred while publishing the post.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
@@ -138,6 +139,27 @@ const CreatePost = () => {
               placeholder="Give your article a catchy headline..."
               value={formData.caption}
               onChange={handleChange}
+              className={`w-full px-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 text-sm transition-all ${
+                isSubmitted && !formData.caption.trim()
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-border focus:ring-primary'
+              }`}
+            />
+            {isSubmitted && !formData.caption.trim() && (
+              <p className="text-red-500 text-xs mt-1 font-medium">Caption is required.</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+              Reference / Action Link URL (Optional)
+            </label>
+            <input
+              type="url"
+              name="external_url"
+              placeholder="e.g. https://mits.ac.in/registration-form"
+              value={formData.external_url}
+              onChange={handleChange}
               className="w-full px-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all"
             />
           </div>
@@ -152,8 +174,15 @@ const CreatePost = () => {
               placeholder="Write the details of your article here..."
               value={formData.text}
               onChange={handleChange}
-              className="w-full px-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all"
+              className={`w-full px-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 text-sm transition-all ${
+                isSubmitted && !formData.text.trim()
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-border focus:ring-primary'
+              }`}
             />
+            {isSubmitted && !formData.text.trim() && (
+              <p className="text-red-500 text-xs mt-1 font-medium">Article details are required.</p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -189,29 +218,17 @@ const CreatePost = () => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-              <FiMusic /> Background Music URL
-            </label>
-            <input
-              type="text"
-              name="music_url"
-              placeholder="Link to background audio file (e.g. mp3)..."
-              value={formData.music_url}
-              onChange={handleChange}
-              className="w-full px-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all"
-            />
-          </div>
+
 
           {/* Attaching Files Panel */}
           <div className="border border-dashed border-border rounded-2xl p-4 bg-bg/20 space-y-4">
             <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Attach Campus Media</span>
             
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {/* Image Input */}
               <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
                 <FiImage className="text-xl text-gray-400 mb-1" />
-                <span className="text-[10px] font-semibold text-text">Image</span>
+                <span className="text-[10px] font-semibold text-text">Image / Poster</span>
                 <input type="file" name="image" accept="image/*" onChange={handleFileChange} className="hidden" />
               </label>
 
@@ -226,14 +243,7 @@ const CreatePost = () => {
               <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
                 <FiMusic className="text-xl text-gray-400 mb-1" />
                 <span className="text-[10px] font-semibold text-text">Audio</span>
-                <input type="file" name="audio" accept="audio/*" onChange={handleFileChange} className="hidden" />
-              </label>
-
-              {/* Poster Input */}
-              <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
-                <FiImage className="text-xl text-gray-400 mb-1" />
-                <span className="text-[10px] font-semibold text-text">Poster</span>
-                <input type="file" name="poster" accept="image/*" onChange={handleFileChange} className="hidden" />
+                <input type="file" name="audio" accept="audio/*, .mp3, .wav, .m4a, .ogg, .mpeg, .mpfg" onChange={handleFileChange} className="hidden" />
               </label>
 
               {/* PDF Input */}
@@ -268,14 +278,6 @@ const CreatePost = () => {
                 <div className="relative h-20 w-20 rounded-lg overflow-hidden border border-border">
                   <img src={previews.image} alt="Upload preview" className="h-full w-full object-cover" />
                   <button type="button" onClick={() => removeFile('image')} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs">
-                    <FiX />
-                  </button>
-                </div>
-              )}
-              {previews.poster && (
-                <div className="relative h-20 w-20 rounded-lg overflow-hidden border border-border">
-                  <img src={previews.poster} alt="Poster preview" className="h-full w-full object-cover" />
-                  <button type="button" onClick={() => removeFile('poster')} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs">
                     <FiX />
                   </button>
                 </div>

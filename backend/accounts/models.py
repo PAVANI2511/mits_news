@@ -8,10 +8,11 @@ class StudentProfile(models.Model):
     department = models.CharField(max_length=100, blank=True, default='')
     year = models.CharField(max_length=50, blank=True, default='')
     bio = models.TextField(blank=True, default='')
-    profile_pic = models.ImageField(upload_to='profiles/', blank=True, null=True)
+    profile_pic = models.FileField(upload_to='profiles/', blank=True, null=True)
     cover_photo = models.ImageField(upload_to='covers/', blank=True, null=True)
     theme_preference = models.CharField(max_length=50, default='light')
     is_blocked = models.BooleanField(default=False)
+    email_notifications_enabled = models.BooleanField(default=True)
     followers_count = models.IntegerField(default=0)
     following_count = models.IntegerField(default=0)
 
@@ -38,6 +39,7 @@ class StudentProfile(models.Model):
                 "cover_photo": cover_photo_url,
                 "theme_preference": self.theme_preference,
                 "is_blocked": self.is_blocked,
+                "email_notifications_enabled": self.email_notifications_enabled,
                 "is_admin": self.user.is_staff or self.user.is_superuser,
                 "followers_count": self.followers_count,
                 "following_count": self.following_count

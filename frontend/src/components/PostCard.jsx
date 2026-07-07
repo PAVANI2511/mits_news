@@ -3,7 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { 
   FiHeart, FiMessageSquare, FiBookmark, FiDownload, 
-  FiShare2, FiMapPin, FiMusic, FiFileText, FiUserCheck, FiUserPlus 
+  FiShare2, FiMapPin, FiMusic, FiFileText, FiUserCheck, FiUserPlus,
+  FiLink, FiExternalLink
 } from 'react-icons/fi';
 import { postsAPI, authAPI } from '../services/api';
 import CommentSection from './CommentSection';
@@ -11,6 +12,12 @@ import CommentSection from './CommentSection';
 const PostCard = ({ post, onPostDeleted }) => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useSelector((state) => state.auth);
+
+  const getMediaUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    return `${window.location.protocol}//${window.location.hostname}:8000${path}`;
+  };
 
   const [liked, setLiked] = useState(post.is_liked || false);
   const [likesCount, setLikesCount] = useState(post.likes_count || 0);
@@ -97,7 +104,7 @@ const PostCard = ({ post, onPostDeleted }) => {
 
     try {
       // Direct file downloading stream or anchor opening
-      const fullUrl = mediaUrl.startsWith('http') ? mediaUrl : `http://127.0.0.1:8000${mediaUrl}`;
+      const fullUrl = getMediaUrl(mediaUrl);
       const response = await fetch(fullUrl);
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
@@ -140,7 +147,7 @@ const PostCard = ({ post, onPostDeleted }) => {
         <div className="flex items-center gap-3">
           <Link to={`/profile/${post.username}`}>
             <img
-              src={post.profile_pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'}
+              src={getMediaUrl(post.profile_pic) || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'}
               alt={post.username}
               className="h-10 w-10 rounded-full object-cover border border-border"
             />
@@ -227,7 +234,7 @@ const PostCard = ({ post, onPostDeleted }) => {
       {post.image && (
         <div className="border-t border-b border-border bg-bg/20 flex justify-center max-h-[500px] overflow-hidden">
           <img
-            src={post.image.startsWith('http') ? post.image : `http://127.0.0.1:8000${post.image}`}
+            src={getMediaUrl(post.image)}
             alt="Post content"
             className="w-full object-contain max-h-[500px]"
           />
@@ -237,38 +244,20 @@ const PostCard = ({ post, onPostDeleted }) => {
       {post.video && (
         <div className="border-t border-b border-border bg-black flex justify-center max-h-[500px]">
           <video
-            src={post.video.startsWith('http') ? post.video : `http://127.0.0.1:8000${post.video}`}
+            src={getMediaUrl(post.video)}
             controls
             className="w-full max-h-[500px]"
           />
         </div>
       )}
 
-      {/* Audio attachment */}
-      {post.audio && (
-        <div className="px-4 py-3 border-t border-b border-border bg-bg/30">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-primary/10 rounded-full text-primary">
-              <FiMusic className="text-xl" />
-            </div>
-            <div className="flex-1">
-              <div className="text-xs font-semibold text-text">Audio Article</div>
-              <audio
-                src={post.audio.startsWith('http') ? post.audio : `http://127.0.0.1:8000${post.audio}`}
-                controls
-                className="w-full mt-1.5 h-8 bg-transparent"
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Poster Attachment */}
       {post.poster && (
         <div className="border-t border-b border-border bg-bg/20 p-4 flex flex-col items-center">
           <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Attached College Poster</div>
           <img
-            src={post.poster.startsWith('http') ? post.poster : `http://127.0.0.1:8000${post.poster}`}
+            src={getMediaUrl(post.poster)}
             alt="College Poster"
             className="rounded-lg max-h-[350px] shadow border border-border object-contain"
           />
@@ -296,21 +285,44 @@ const PostCard = ({ post, onPostDeleted }) => {
         </div>
       )}
 
-      {/* Background Music Banner */}
-      {post.music_url && (
+      {/* Background Music Banner (Playing uploaded Audio file) */}
+      {post.audio && (
         <div className="px-4 py-2 bg-gradient-to-r from-primary/5 to-secondary/5 border-b border-border flex items-center justify-between text-xs text-primary font-medium">
           <span className="flex items-center gap-1.5">
             <FiMusic className="animate-spin text-sm" style={{ animationDuration: '6s' }} />
-            Background Music: <span className="italic">{post.music_url}</span>
+            Background Music: <span className="italic">Playing attached audio track</span>
           </span>
           <audio
-            src={post.music_url.startsWith('http') ? post.music_url : `http://127.0.0.1:8000${post.music_url}`}
+            src={getMediaUrl(post.audio)}
             autoPlay
             loop
             muted
             controls
             className="h-6 w-32 scale-90"
           />
+        </div>
+      )}
+
+      {/* External Action Link URL */}
+      {post.external_url && (
+        <div className="px-4 py-3.5 border-t border-b border-border bg-gradient-to-r from-primary/5 to-secondary/5 flex items-center justify-between">
+          <div className="flex items-center gap-3 truncate">
+            <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
+              <FiLink className="text-xl" />
+            </div>
+            <div className="truncate">
+              <div className="text-xs font-bold text-text truncate">Reference / Action Link</div>
+              <div className="text-[10px] text-gray-500 truncate">{post.external_url}</div>
+            </div>
+          </div>
+          <a
+            href={post.external_url.startsWith('http') ? post.external_url : `https://${post.external_url}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/95 flex items-center gap-1.5 shadow-sm transition"
+          >
+            <FiExternalLink /> Visit Link
+          </a>
         </div>
       )}
 

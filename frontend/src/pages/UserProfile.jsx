@@ -5,7 +5,7 @@ import MainLayout from '../layouts/MainLayout';
 import Sidebar from '../components/Sidebar';
 import PostCard from '../components/PostCard';
 import { ProfileSkeleton } from '../components/LoadingSkeleton';
-import { authAPI, postsAPI } from '../services/api';
+import { authAPI, postsAPI, getMediaUrl } from '../services/api';
 import { FiBook, FiBookmark, FiMapPin, FiAward, FiSettings } from 'react-icons/fi';
 
 const UserProfile = () => {
@@ -95,7 +95,7 @@ const UserProfile = () => {
               className="h-44 w-full bg-cover bg-center"
               style={{ 
                 backgroundImage: profile.cover_photo 
-                  ? `url(${profile.cover_photo.startsWith('http') ? profile.cover_photo : `http://127.0.0.1:8000${profile.cover_photo}`})`
+                  ? `url(${getMediaUrl(profile.cover_photo)})`
                   : 'linear-gradient(to right, var(--color-primary), var(--color-secondary))' 
               }}
             />
@@ -103,7 +103,7 @@ const UserProfile = () => {
             <div className="px-6 pb-6 pt-0">
               <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end -mt-16 sm:space-x-6">
                 <img
-                  src={profile.profile_pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'}
+                  src={getMediaUrl(profile.profile_pic) || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'}
                   alt={profile.username}
                   className="h-28 w-28 rounded-full border-4 border-card object-cover bg-card shadow-md"
                 />

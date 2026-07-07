@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../redux/authSlice';
+import { getMediaUrl } from '../services/api';
 import { 
   FiPieChart, FiUsers, FiFileText, FiAlertOctagon, 
   FiVolume2, FiArrowLeft, FiLogOut, FiActivity 
@@ -87,7 +88,7 @@ const AdminLayout = ({ children }) => {
               <div className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">System Administrator</div>
             </div>
             <img
-              src={user?.profile?.profile_pic || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'}
+              src={getMediaUrl(user?.profile?.profile_pic) || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'}
               alt="Admin avatar"
               className="h-9 w-9 rounded-full border border-border object-cover bg-card shadow-sm"
             />
