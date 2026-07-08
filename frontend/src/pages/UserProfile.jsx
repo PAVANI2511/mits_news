@@ -134,11 +134,24 @@ const UserProfile = () => {
               {/* Bio Details */}
               <div className="mt-4 space-y-1.5 text-center sm:text-left">
                 <h2 className="text-xl font-extrabold text-text">{profile.name}</h2>
-                <div className="text-xs text-gray-500 font-medium">@{profile.username} • {profile.email}</div>
+                <div className="text-xs text-gray-500 font-medium">@{profile.username} • {profile.email} {profile.mobile_number && `• Mobile: ${profile.mobile_number}`}</div>
                 
-                <div className="flex flex-wrap justify-center sm:justify-start gap-1.5 text-xs text-primary font-semibold">
-                  {profile.department && <span>{profile.department}</span>}
-                  {profile.year && <span>• {profile.year}</span>}
+                <div className="flex flex-wrap justify-center sm:justify-start gap-1.5 text-xs text-primary font-semibold items-center">
+                  <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] uppercase font-bold tracking-wider">
+                    {profile.role_type || 'student'}
+                  </span>
+                  {profile.department && <span>• {profile.department}</span>}
+                  {profile.role_type === 'teacher' ? (
+                    <>
+                      {profile.designation && <span>• {profile.designation}</span>}
+                      {profile.teacher_role && <span>• {profile.teacher_role}</span>}
+                    </>
+                  ) : (
+                    <>
+                      {profile.year && <span>• {profile.year}</span>}
+                      {profile.roll_number && <span>• Roll No: {profile.roll_number}</span>}
+                    </>
+                  )}
                 </div>
 
                 {profile.bio && (

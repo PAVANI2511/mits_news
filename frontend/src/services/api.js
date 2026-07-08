@@ -48,6 +48,7 @@ export const authAPI = {
   register: (data) => api.post('/auth/register/', data),
   login: (credentials) => api.post('/auth/login/', credentials),
   forgotPassword: (email) => api.post('/auth/forgot-password/', { email }),
+  verifyOtp: (email, otp) => api.post('/auth/verify-otp/', { email, otp }),
   resetPassword: (email, otp, password) => api.post('/auth/reset-password/', { email, otp, password }),
   getProfile: (username) => api.get(`/auth/profile/${username}/`),
   updateProfile: (data) => api.put('/auth/profile/update/', data, {
@@ -56,6 +57,7 @@ export const authAPI = {
   follow: (username) => api.post(`/auth/follow/${username}/`),
   unfollow: (username) => api.post(`/auth/unfollow/${username}/`),
   searchUsers: (params) => api.get('/auth/search/', { params }),
+  deleteAccount: () => api.post('/auth/delete/'),
 };
 
 export const postsAPI = {

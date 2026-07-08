@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import MainLayout from '../layouts/MainLayout';
@@ -12,11 +12,6 @@ import {
 const CreatePost = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useSelector((state) => state.auth);
-
-  if (!isAuthenticated) {
-    window.location.href = '/login';
-    return null;
-  }
 
   const [formData, setFormData] = useState({
     caption: '',
@@ -41,6 +36,16 @@ const CreatePost = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      window.location.href = '/login';
+    }
+  }, [isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -226,31 +231,35 @@ const CreatePost = () => {
             
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {/* Image Input */}
-              <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
+              <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                 <FiImage className="text-xl text-gray-400 mb-1" />
                 <span className="text-[10px] font-semibold text-text">Image / Poster</span>
-                <input type="file" name="image" accept="image/*" onChange={handleFileChange} className="hidden" />
+                <span className="text-[8px] text-gray-400 mt-0.5">(PNG, JPG, JPEG, GIF, WEBP)</span>
+                <input type="file" name="image" accept="image/*, .png, .jpg, .jpeg, .gif, .webp" onChange={handleFileChange} className="hidden" />
               </label>
 
               {/* Video Input */}
-              <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
+              <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                 <FiVideo className="text-xl text-gray-400 mb-1" />
                 <span className="text-[10px] font-semibold text-text">Video</span>
-                <input type="file" name="video" accept="video/*" onChange={handleFileChange} className="hidden" />
+                <span className="text-[8px] text-gray-400 mt-0.5">(MP4, WEBM, OGG)</span>
+                <input type="file" name="video" accept="video/*, .mp4, .webm, .ogg" onChange={handleFileChange} className="hidden" />
               </label>
 
               {/* Audio Input */}
-              <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
+              <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                 <FiMusic className="text-xl text-gray-400 mb-1" />
                 <span className="text-[10px] font-semibold text-text">Audio</span>
-                <input type="file" name="audio" accept="audio/*, .mp3, .wav, .m4a, .ogg, .mpeg, .mpfg" onChange={handleFileChange} className="hidden" />
+                <span className="text-[8px] text-gray-400 mt-0.5">(MP3, WAV, M4A, OGG)</span>
+                <input type="file" name="audio" accept="audio/*, .mp3, .wav, .m4a, .ogg" onChange={handleFileChange} className="hidden" />
               </label>
 
               {/* PDF Input */}
-              <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
+              <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                 <FiFileText className="text-xl text-gray-400 mb-1" />
                 <span className="text-[10px] font-semibold text-text">PDF Doc</span>
-                <input type="file" name="pdf" accept="application/pdf" onChange={handleFileChange} className="hidden" />
+                <span className="text-[8px] text-gray-400 mt-0.5">(PDF Only)</span>
+                <input type="file" name="pdf" accept="application/pdf, .pdf" onChange={handleFileChange} className="hidden" />
               </label>
             </div>
 

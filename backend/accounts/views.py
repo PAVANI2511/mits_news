@@ -140,11 +140,11 @@ class ForgotPasswordView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        email = request.data.get('email', '')
+        email = request.data.get('email', '').strip().lower()
         if not email:
             return Response({"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
         
-        user = User.objects.filter(email=email).first()
+        user = User.objects.filter(email__iexact=email).first()
         if not user:
             return Response({"error": "User with this email does not exist."}, status=status.HTTP_404_NOT_FOUND)
         
@@ -156,7 +156,7 @@ class ForgotPasswordView(views.APIView):
         
         # Generate 6-digit OTP
         otp = "".join([str(random.randint(0, 9)) for _ in range(6)])
-        expiry = timezone.now() + timedelta(minutes=10)
+        expiry = timezone.now() + timedelta(minutes=5)
         
         # Store OTP in MongoDB
         users_col.update_one(
@@ -181,15 +181,20 @@ class ForgotPasswordView(views.APIView):
                 fail_silently=False,
             )
         except Exception as e:
+            print(f"\n==================================================")
             print(f"SMTP Error: {e}. Outputting OTP to log console: {otp}")
+            print(f"==================================================\n")
             return Response(
-                {"error": f"Failed to send email due to SMTP error: {str(e)}. (OTP for testing is: {otp})"},
+                {"error": f"Failed to send email due to SMTP error: {str(e)}."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
             
         if is_console:
+            print(f"\n==================================================")
+            print(f"DEVELOPMENT RESET OTP FOR {email}: {otp}")
+            print(f"==================================================\n")
             return Response({
-                "message": f"Development mode: Verification OTP has been printed to the server terminal console. (OTP is: {otp})"
+                "message": "Development mode: Verification OTP has been printed to the server terminal console."
             }, status=status.HTTP_200_OK)
             
         return Response({"message": "Verification OTP sent to your college email address."}, status=status.HTTP_200_OK)
@@ -199,14 +204,14 @@ class ResetPasswordView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        email = request.data.get('email', '')
+        email = request.data.get('email', '').strip().lower()
         otp = request.data.get('otp', '')
         new_password = request.data.get('password', '')
         
         if not email or not otp or not new_password:
             return Response({"error": "Email, verification OTP, and new password are required."}, status=status.HTTP_400_BAD_REQUEST)
         
-        user = User.objects.filter(email=email).first()
+        user = User.objects.filter(email__iexact=email).first()
         if not user:
             return Response({"error": "User with this email does not exist."}, status=status.HTTP_404_NOT_FOUND)
         
@@ -233,6 +238,19 @@ class ResetPasswordView(views.APIView):
         if timezone.now() > expiry_dt:
             return Response({"error": "Verification code has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
             
+        # Validate new password complexity constraints (min 8 chars, containing upper, lowercase, numbers, spl characters)
+        import re
+        if len(new_password) < 8:
+            return Response({"error": "Password must be at least 8 characters long."}, status=status.HTTP_400_BAD_REQUEST)
+        if not re.search(r'[A-Z]', new_password):
+            return Response({"error": "Password must contain at least one uppercase letter."}, status=status.HTTP_400_BAD_REQUEST)
+        if not re.search(r'[a-z]', new_password):
+            return Response({"error": "Password must contain at least one lowercase letter."}, status=status.HTTP_400_BAD_REQUEST)
+        if not re.search(r'[0-9]', new_password):
+            return Response({"error": "Password must contain at least one number."}, status=status.HTTP_400_BAD_REQUEST)
+        if not re.search(r'[^a-zA-Z0-9]', new_password):
+            return Response({"error": "Password must contain at least one special character."}, status=status.HTTP_400_BAD_REQUEST)
+
         # Clean up OTP and reset password
         users_col.update_one({"_id": str(user.id)}, {"$unset": {"reset_otp": ""}})
         
@@ -278,3 +296,76 @@ class SearchUsersView(views.APIView):
             results.append(doc)
 
         return Response(results, status=status.HTTP_200_OK)
+
+
+class DeleteAccountView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        user_id_str = str(user.id)
+        
+        from db_connection import posts_col, comments_col, users_col
+        
+        # 1. Delete user posts from MongoDB
+        posts_col.delete_many({"user_id": user_id_str})
+        
+        # 2. Delete user comments from MongoDB
+        comments_col.delete_many({"user_id": user_id_str})
+        
+        # 3. Delete user replies and sync their parent comments in MongoDB
+        from comments.models import Reply
+        user_replies = Reply.objects.filter(user=user)
+        parent_comments = set(r.comment for r in user_replies)
+        user_replies.delete()
+        for comment in parent_comments:
+            comment.sync_to_mongo()
+            
+        # 4. Delete user profile from MongoDB
+        users_col.delete_one({"_id": user_id_str})
+        
+        # 5. Delete the User model itself (cascades database relations automatically)
+        user.delete()
+        
+        return Response({"message": "Your account and all associated content have been permanently deleted."}, status=status.HTTP_200_OK)
+
+
+class VerifyOTPView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email', '').strip().lower()
+        otp = request.data.get('otp', '')
+        
+        if not email or not otp:
+            return Response({"error": "Email and verification OTP are required."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        user = User.objects.filter(email__iexact=email).first()
+        if not user:
+            return Response({"error": "User with this email does not exist."}, status=status.HTTP_404_NOT_FOUND)
+            
+        from db_connection import users_col
+        from django.utils import timezone
+        from datetime import datetime
+        
+        doc = users_col.find_one({"_id": str(user.id)})
+        reset_otp = doc.get("reset_otp") if doc else None
+        
+        if not reset_otp:
+            return Response({"error": "No password reset request found. Please request a new verification code."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        stored_code = reset_otp.get("code")
+        stored_expiry = reset_otp.get("expiry")
+        
+        if stored_code != str(otp).strip():
+            return Response({"error": "Invalid verification code."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        expiry_dt = datetime.fromisoformat(stored_expiry)
+        if timezone.is_naive(expiry_dt):
+            expiry_dt = timezone.make_aware(expiry_dt)
+            
+        if timezone.now() > expiry_dt:
+            return Response({"error": "Verification code has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        return Response({"message": "Verification code verified successfully."}, status=status.HTTP_200_OK)
+# reload views password validation changes

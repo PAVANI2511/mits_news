@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import Sidebar from '../components/Sidebar';
 import { authAPI, themesAPI } from '../services/api';
-import { updateProfile, setThemePreference } from '../redux/authSlice';
+import { updateProfile, setThemePreference, logout } from '../redux/authSlice';
 import { changeTheme, setCustomTheme } from '../redux/themeSlice';
-import { FiUser, FiSettings, FiCheck, FiPlus, FiGrid } from 'react-icons/fi';
+import { FiUser, FiSettings, FiCheck, FiPlus, FiGrid, FiPhone } from 'react-icons/fi';
 
 const avatarPresets = [
   { name: 'Default Silhouette', url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>' },
@@ -18,14 +18,22 @@ const avatarPresets = [
 
 const Settings = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const { currentTheme, presets } = useSelector((state) => state.theme);
   const isAdmin = user?.is_staff || user?.is_superuser;
 
   const [name, setName] = useState(user?.profile?.name || '');
   const [bio, setBio] = useState(user?.profile?.bio || '');
+  const [roleType, setRoleType] = useState(user?.profile?.role_type || 'student');
   const [department, setDepartment] = useState(user?.profile?.department || '');
   const [year, setYear] = useState(user?.profile?.year || '');
+  const [rollNumber, setRollNumber] = useState(user?.profile?.roll_number || '');
+  const [designation, setDesignation] = useState(user?.profile?.designation || '');
+  const isPresetRole = ['HOD', 'Teacher', 'AO', 'Attender'].includes(user?.profile?.teacher_role);
+  const [teacherRole, setTeacherRole] = useState(user?.profile?.teacher_role ? (isPresetRole ? user.profile.teacher_role : 'Others') : '');
+  const [customTeacherRole, setCustomTeacherRole] = useState(user?.profile?.teacher_role ? (isPresetRole ? '' : user.profile.teacher_role) : '');
+  const [mobileNumber, setMobileNumber] = useState(user?.profile?.mobile_number || '');
   
   const [profilePic, setProfilePic] = useState(null);
   const [coverPhoto, setCoverPhoto] = useState(null);
@@ -107,6 +115,17 @@ const Settings = () => {
     setSuccess('');
     setLoading(true);
 
+    if (!mobileNumber) {
+      setError("Mobile number is required.");
+      setLoading(false);
+      return;
+    }
+    if (!/^\d{10}$/.test(mobileNumber)) {
+      setError("Mobile number must be exactly 10 digits.");
+      setLoading(false);
+      return;
+    }
+
     let departmentValue = department;
     if (departmentValue === 'Other') {
       if (!customBranch.trim() || !customDept.trim()) {
@@ -117,12 +136,27 @@ const Settings = () => {
       departmentValue = `${customBranch.trim()} - ${customDept.trim()}`;
     }
 
+    let teacherRoleValue = teacherRole;
+    if (roleType === 'teacher' && teacherRoleValue === 'Others') {
+      if (!customTeacherRole.trim()) {
+        setError("Please specify your custom role name.");
+        setLoading(false);
+        return;
+      }
+      teacherRoleValue = customTeacherRole.trim();
+    }
+
     try {
       const submitData = new FormData();
       submitData.append('name', name);
       submitData.append('bio', bio);
+      submitData.append('role_type', roleType);
       submitData.append('department', departmentValue);
-      submitData.append('year', year);
+      submitData.append('year', roleType === 'student' ? year : '');
+      submitData.append('roll_number', roleType === 'student' ? rollNumber : '');
+      submitData.append('designation', roleType === 'teacher' ? designation : '');
+      submitData.append('teacher_role', roleType === 'teacher' ? teacherRoleValue : '');
+      submitData.append('mobile_number', mobileNumber);
 
       if (profilePic) {
         submitData.append('profile_pic', profilePic);
@@ -140,6 +174,27 @@ const Settings = () => {
       setSuccess("Profile updated successfully!");
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to update profile settings.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmDelete = window.confirm("All the content you shared will be deleted (including your posts, articles, comments, and replies). Do you really want to permanently delete your account?");
+    if (!confirmDelete) return;
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      await authAPI.deleteAccount();
+      setSuccess("Your account and all associated content have been permanently deleted. Redirecting...");
+      setTimeout(() => {
+        dispatch(logout());
+        navigate('/');
+      }, 2500);
+    } catch (err) {
+      setError(err.response?.data?.error || err.response?.data?.detail || "Failed to delete account. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -224,9 +279,10 @@ const Settings = () => {
 
           {/* Profile form */}
           {activeSettingsTab === 'profile' && (
-            <form onSubmit={handleProfileSubmit} className="space-y-4">
+            <>
+              <form onSubmit={handleProfileSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className={isAdmin ? "sm:col-span-2" : ""}>
+                <div className={isAdmin ? "sm:col-span-2" : "sm:col-span-1"}>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                     Display Name
                   </label>
@@ -238,9 +294,54 @@ const Settings = () => {
                   />
                 </div>
 
+                <div className={isAdmin ? "sm:col-span-2" : "sm:col-span-1"}>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Mobile Number *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      value={mobileNumber}
+                      onChange={(e) => setMobileNumber(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    <FiPhone className="absolute left-3.5 top-3.5 text-gray-400" />
+                  </div>
+                </div>
+
                 {!isAdmin && (
                   <>
-                    <div>
+                    <div className="sm:col-span-2 border-t border-border pt-4 mt-2">
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                        Profile Role
+                      </label>
+                      <div className="flex gap-6">
+                        <label className="flex items-center gap-2 text-sm font-semibold text-text cursor-pointer">
+                          <input
+                            type="radio"
+                            name="role_type"
+                            value="student"
+                            checked={roleType === 'student'}
+                            onChange={(e) => setRoleType(e.target.value)}
+                            className="w-4 h-4 text-primary focus:ring-primary border-border"
+                          />
+                          Student
+                        </label>
+                        <label className="flex items-center gap-2 text-sm font-semibold text-text cursor-pointer">
+                          <input
+                            type="radio"
+                            name="role_type"
+                            value="teacher"
+                            checked={roleType === 'teacher'}
+                            onChange={(e) => setRoleType(e.target.value)}
+                            className="w-4 h-4 text-primary focus:ring-primary border-border"
+                          />
+                          Teacher / Staff
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="sm:col-span-2">
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                         Department
                       </label>
@@ -289,21 +390,83 @@ const Settings = () => {
                       </div>
                     )}
 
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                        Year of Study
-                      </label>
-                      <select
-                        value={year}
-                        onChange={(e) => setYear(e.target.value)}
-                        className="w-full px-3 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none"
-                      >
-                        <option value="">Select Year</option>
-                        {years.map(y => (
-                          <option key={y} value={y}>{y}</option>
-                        ))}
-                      </select>
-                    </div>
+                    {roleType === 'student' ? (
+                      <>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                            Year of Study
+                          </label>
+                          <select
+                            value={year}
+                            onChange={(e) => setYear(e.target.value)}
+                            className="w-full px-3 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none"
+                          >
+                            <option value="">Select Year</option>
+                            {years.map(y => (
+                              <option key={y} value={y}>{y}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                            Roll Number
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 21691A0501"
+                            value={rollNumber}
+                            onChange={(e) => setRollNumber(e.target.value)}
+                            className="w-full px-4 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                            Designation
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Associate Professor"
+                            value={designation}
+                            onChange={(e) => setDesignation(e.target.value)}
+                            className="w-full px-4 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                            Role in Department
+                          </label>
+                          <select
+                            value={teacherRole}
+                            onChange={(e) => setTeacherRole(e.target.value)}
+                            className="w-full px-3 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none"
+                          >
+                            <option value="">Select Role</option>
+                            <option value="HOD">HOD</option>
+                            <option value="Teacher">Teacher</option>
+                            <option value="AO">AO</option>
+                            <option value="Attender">Attender</option>
+                            <option value="Others">Others</option>
+                          </select>
+                        </div>
+                        {teacherRole === 'Others' && (
+                          <div className="sm:col-span-2">
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                              Specify Custom Role Name
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Lab Assistant"
+                              value={customTeacherRole}
+                              onChange={(e) => setCustomTeacherRole(e.target.value)}
+                              className="w-full px-4 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -398,6 +561,27 @@ const Settings = () => {
                 {loading ? 'Saving Profile...' : 'Save Profile Settings'}
               </button>
             </form>
+
+            {/* Danger Zone: Permanent Account Deletion */}
+            <div className="border-t border-red-500/20 pt-6 mt-8">
+              <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-5 space-y-3">
+                <div>
+                  <h4 className="text-sm font-extrabold text-red-500 uppercase tracking-wider">Danger Zone</h4>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Permanently delete your user profile and all shared content (posts, comments, etc.). This action is irreversible.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={loading}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-md transition disabled:opacity-50 uppercase tracking-wider"
+                >
+                  Delete Account Permanently
+                </button>
+              </div>
+            </div>
+          </>
           )}
 
           {/* Theme selector */}

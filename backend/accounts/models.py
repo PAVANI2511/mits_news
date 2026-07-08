@@ -5,8 +5,13 @@ from django.dispatch import receiver
 
 class StudentProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    role_type = models.CharField(max_length=20, default='student')
     department = models.CharField(max_length=100, blank=True, default='')
     year = models.CharField(max_length=50, blank=True, default='')
+    roll_number = models.CharField(max_length=50, blank=True, default='')
+    designation = models.CharField(max_length=100, blank=True, default='')
+    teacher_role = models.CharField(max_length=50, blank=True, default='')
+    mobile_number = models.CharField(max_length=15, blank=True, default='')
     bio = models.TextField(blank=True, default='')
     profile_pic = models.FileField(upload_to='profiles/', blank=True, null=True)
     cover_photo = models.ImageField(upload_to='covers/', blank=True, null=True)
@@ -42,7 +47,12 @@ class StudentProfile(models.Model):
                 "email_notifications_enabled": self.email_notifications_enabled,
                 "is_admin": self.user.is_staff or self.user.is_superuser,
                 "followers_count": self.followers_count,
-                "following_count": self.following_count
+                "following_count": self.following_count,
+                "role_type": self.role_type,
+                "roll_number": self.roll_number,
+                "designation": self.designation,
+                "teacher_role": self.teacher_role,
+                "mobile_number": self.mobile_number,
             }},
             upsert=True
         )

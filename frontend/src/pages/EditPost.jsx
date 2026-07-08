@@ -14,11 +14,6 @@ const EditPost = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useSelector((state) => state.auth);
 
-  if (!isAuthenticated) {
-    window.location.href = '/login';
-    return null;
-  }
-
   const [formData, setFormData] = useState({
     caption: '',
     text: '',
@@ -46,8 +41,20 @@ const EditPost = () => {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    loadPost();
-  }, [id]);
+    if (!isAuthenticated) {
+      window.location.href = '/login';
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadPost();
+    }
+  }, [id, isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const loadPost = async () => {
     setFetching(true);
@@ -239,34 +246,39 @@ const EditPost = () => {
               <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Update Campus Media</span>
               
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
+                <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                   <FiImage className="text-xl text-gray-400 mb-1" />
                   <span className="text-[10px] font-semibold text-text">Replace Img</span>
-                  <input type="file" name="image" accept="image/*" onChange={handleFileChange} className="hidden" />
+                  <span className="text-[8px] text-gray-400 mt-0.5">(PNG, JPG, JPEG, GIF, WEBP)</span>
+                  <input type="file" name="image" accept="image/*, .png, .jpg, .jpeg, .gif, .webp" onChange={handleFileChange} className="hidden" />
                 </label>
 
-                <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
+                <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                   <FiVideo className="text-xl text-gray-400 mb-1" />
                   <span className="text-[10px] font-semibold text-text">Replace Vid</span>
-                  <input type="file" name="video" accept="video/*" onChange={handleFileChange} className="hidden" />
+                  <span className="text-[8px] text-gray-400 mt-0.5">(MP4, WEBM, OGG)</span>
+                  <input type="file" name="video" accept="video/*, .mp4, .webm, .ogg" onChange={handleFileChange} className="hidden" />
                 </label>
 
-                <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
+                <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                   <FiMusic className="text-xl text-gray-400 mb-1" />
                   <span className="text-[10px] font-semibold text-text">Replace Audio</span>
-                  <input type="file" name="audio" accept="audio/*" onChange={handleFileChange} className="hidden" />
+                  <span className="text-[8px] text-gray-400 mt-0.5">(MP3, WAV, M4A, OGG)</span>
+                  <input type="file" name="audio" accept="audio/*, .mp3, .wav, .m4a, .ogg" onChange={handleFileChange} className="hidden" />
                 </label>
 
-                <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
+                <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                   <FiImage className="text-xl text-gray-400 mb-1" />
                   <span className="text-[10px] font-semibold text-text">Replace Poster</span>
-                  <input type="file" name="poster" accept="image/*" onChange={handleFileChange} className="hidden" />
+                  <span className="text-[8px] text-gray-400 mt-0.5">(PNG, JPG, JPEG, GIF, WEBP)</span>
+                  <input type="file" name="poster" accept="image/*, .png, .jpg, .jpeg, .gif, .webp" onChange={handleFileChange} className="hidden" />
                 </label>
 
-                <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition">
+                <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                   <FiFileText className="text-xl text-gray-400 mb-1" />
                   <span className="text-[10px] font-semibold text-text">Replace PDF</span>
-                  <input type="file" name="pdf" accept="application/pdf" onChange={handleFileChange} className="hidden" />
+                  <span className="text-[8px] text-gray-400 mt-0.5">(PDF Only)</span>
+                  <input type="file" name="pdf" accept="application/pdf, .pdf" onChange={handleFileChange} className="hidden" />
                 </label>
               </div>
 

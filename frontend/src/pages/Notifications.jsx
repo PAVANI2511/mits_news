@@ -8,21 +8,27 @@ import { notificationsAPI } from '../services/api';
 import { FiBell, FiCheckSquare } from 'react-icons/fi';
 
 const Notifications = () => {
-  const navigate = useNavigate();
   const { isAuthenticated } = useSelector((state) => state.auth);
-
-  if (!isAuthenticated) {
-    window.location.href = '/login';
-    return null;
-  }
 
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    loadNotifications();
-  }, []);
+    if (!isAuthenticated) {
+      window.location.href = '/login';
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadNotifications();
+    }
+  }, [isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const loadNotifications = async () => {
     setLoading(true);

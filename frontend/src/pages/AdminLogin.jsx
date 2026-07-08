@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginStart, loginSuccess, loginFailure } from '../redux/authSlice';
 import { authAPI } from '../services/api';
-import { FiShield, FiLock, FiArrowRight } from 'react-icons/fi';
+import { FiShield, FiLock, FiArrowRight, FiEye, FiEyeOff } from 'react-icons/fi';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -13,6 +13,7 @@ const AdminLogin = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [validationError, setValidationError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -76,13 +77,22 @@ const AdminLogin = () => {
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
               Security Password
             </label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-2xl bg-[#0b0f19] border border-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm text-white"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-4 pr-10 py-3 rounded-2xl bg-[#0b0f19] border border-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm text-white"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-3.5 text-gray-500 hover:text-white focus:outline-none"
+              >
+                {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+              </button>
+            </div>
           </div>
 
           <button

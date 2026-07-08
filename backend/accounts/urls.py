@@ -9,7 +9,9 @@ from .views import (
     UnfollowUserView,
     ForgotPasswordView,
     ResetPasswordView,
-    SearchUsersView
+    SearchUsersView,
+    DeleteAccountView,
+    VerifyOTPView
 )
 
 urlpatterns = [
@@ -17,10 +19,12 @@ urlpatterns = [
     path('login/', CustomTokenObtainPairView.as_view(), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),
+    path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
     path('reset-password/', ResetPasswordView.as_view(), name='reset_password'),
     path('profile/update/', UpdateProfileView.as_view(), name='profile_update'),
     path('profile/<str:username>/', UserProfileView.as_view(), name='profile_detail'),
     path('follow/<str:username>/', FollowUserView.as_view(), name='follow_user'),
     path('unfollow/<str:username>/', UnfollowUserView.as_view(), name='unfollow_user'),
     path('search/', SearchUsersView.as_view(), name='search_users'),
+    path('delete/', DeleteAccountView.as_view(), name='delete_account'),
 ]
