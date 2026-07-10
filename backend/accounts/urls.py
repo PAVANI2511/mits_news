@@ -11,7 +11,9 @@ from .views import (
     ResetPasswordView,
     SearchUsersView,
     DeleteAccountView,
-    VerifyOTPView
+    VerifyOTPView,
+    UserFollowersListView,
+    UserFollowingListView
 )
 
 urlpatterns = [
@@ -23,6 +25,8 @@ urlpatterns = [
     path('reset-password/', ResetPasswordView.as_view(), name='reset_password'),
     path('profile/update/', UpdateProfileView.as_view(), name='profile_update'),
     path('profile/<str:username>/', UserProfileView.as_view(), name='profile_detail'),
+    path('profile/<str:username>/followers/', UserFollowersListView.as_view(), name='user_followers'),
+    path('profile/<str:username>/following/', UserFollowingListView.as_view(), name='user_following'),
     path('follow/<str:username>/', FollowUserView.as_view(), name='follow_user'),
     path('unfollow/<str:username>/', UnfollowUserView.as_view(), name='unfollow_user'),
     path('search/', SearchUsersView.as_view(), name='search_users'),

@@ -8,7 +8,7 @@ from datetime import timedelta
 
 from accounts.models import StudentProfile
 from posts.models import Post, Like
-from comments.models import Comment
+from comments.models import Comment, CommentReaction
 from .models import Report, Announcement
 from db_connection import (
     users_col, posts_col, comments_col, reports_col, announcements_col
@@ -24,7 +24,14 @@ class AdminDashboardStatsView(views.APIView):
         blocked_posts = Post.objects.filter(is_blocked=True).count()
         pending_reports = Report.objects.filter(status='pending').count()
         resolved_reports = Report.objects.filter(status='resolved').count()
+        
+        # Detailed comments stats
         total_comments = Comment.objects.count()
+        active_comments = Comment.objects.filter(is_deleted=False).count()
+        deleted_comments = Comment.objects.filter(is_deleted=True).count()
+        edited_comments = Comment.objects.filter(is_edited=True).count()
+        total_replies = Comment.objects.filter(parent_comment__isnull=False).count()
+        total_comment_likes = CommentReaction.objects.count()
 
         return Response({
             "users": {
@@ -43,9 +50,83 @@ class AdminDashboardStatsView(views.APIView):
                 "resolved": resolved_reports
             },
             "comments": {
-                "total": total_comments
+                "total": total_comments,
+                "active": active_comments,
+                "deleted": deleted_comments,
+                "edited": edited_comments,
+                "replies": total_replies,
+                "likes": total_comment_likes
             }
         }, status=status.HTTP_200_OK)
+
+
+class AdminCommentsListView(views.APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        queryset = Comment.objects.all().select_related('user', 'post', 'parent_comment').order_by('-created_at')
+
+        # Filter by user (username or name)
+        user_query = request.query_params.get('user', '').strip()
+        if user_query:
+            queryset = queryset.filter(
+                models.Q(user__username__icontains=user_query) |
+                models.Q(user__first_name__icontains=user_query) |
+                models.Q(user__last_name__icontains=user_query)
+            )
+
+        # Filter by post (post ID)
+        post_query = request.query_params.get('post', '').strip()
+        if post_query:
+            queryset = queryset.filter(post_id=post_query)
+
+        # Filter by date (YYYY-MM-DD)
+        date_query = request.query_params.get('date', '').strip()
+        if date_query:
+            queryset = queryset.filter(created_at__date=date_query)
+
+        # Filter by status: active, deleted, edited, hidden, pinned
+        status_query = request.query_params.get('status', '').strip()
+        if status_query == 'active':
+            queryset = queryset.filter(is_deleted=False)
+        elif status_query == 'deleted':
+            queryset = queryset.filter(is_deleted=True)
+        elif status_query == 'edited':
+            queryset = queryset.filter(is_edited=True)
+        elif status_query == 'hidden':
+            queryset = queryset.filter(is_hidden=True)
+        elif status_query == 'pinned':
+            queryset = queryset.filter(is_pinned=True)
+
+        # Filter by reported comments
+        reported_query = request.query_params.get('reported', '').strip()
+        if reported_query == 'true':
+            queryset = queryset.filter(reports__isnull=False).distinct()
+
+        results = []
+        for comment in queryset:
+            likes_count = comment.reactions.count()
+            results.append({
+                "id": comment.id,
+                "post_id": comment.post_id,
+                "post_caption": comment.post.caption[:50] if comment.post.caption else (comment.post.text[:50] if comment.post.text else f"Post #{comment.post.id}"),
+                "user_id": comment.user_id,
+                "username": comment.user.username,
+                "user_name": f"{comment.user.first_name} {comment.user.last_name}".strip() or comment.user.username,
+                "content": comment.content,
+                "parent_comment_id": comment.parent_comment_id,
+                "created_at": comment.created_at.isoformat() if comment.created_at else None,
+                "updated_at": comment.updated_at.isoformat() if comment.updated_at else None,
+                "deleted_at": comment.deleted_at.isoformat() if comment.deleted_at else None,
+                "is_deleted": comment.is_deleted,
+                "is_edited": comment.is_edited,
+                "is_hidden": comment.is_hidden,
+                "is_pinned": comment.is_pinned,
+                "likes_count": likes_count,
+                "reports_count": comment.reports.count()
+            })
+
+        return Response(results, status=status.HTTP_200_OK)
 
 
 class AdminUsersListView(views.APIView):

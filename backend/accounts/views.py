@@ -66,6 +66,48 @@ class UserProfileView(views.APIView):
         }, status=status.HTTP_200_OK)
 
 
+class UserFollowersListView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, username):
+        user = get_object_or_404(User, username=username)
+        followers = Follower.objects.filter(following=user).select_related('follower', 'follower__profile')
+        results = []
+        for f in followers:
+            profile = getattr(f.follower, 'profile', None)
+            results.append({
+                "id": f.follower.id,
+                "username": f.follower.username,
+                "name": f"{f.follower.first_name} {f.follower.last_name}".strip() or f.follower.username,
+                "profile_pic": profile.profile_pic.url if profile and profile.profile_pic else '',
+                "bio": profile.bio if profile else '',
+                "department": profile.department if profile else '',
+                "year": profile.year if profile else '',
+            })
+        return Response(results, status=status.HTTP_200_OK)
+
+
+class UserFollowingListView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, username):
+        user = get_object_or_404(User, username=username)
+        following = Follower.objects.filter(follower=user).select_related('following', 'following__profile')
+        results = []
+        for f in following:
+            profile = getattr(f.following, 'profile', None)
+            results.append({
+                "id": f.following.id,
+                "username": f.following.username,
+                "name": f"{f.following.first_name} {f.following.last_name}".strip() or f.following.username,
+                "profile_pic": profile.profile_pic.url if profile and profile.profile_pic else '',
+                "bio": profile.bio if profile else '',
+                "department": profile.department if profile else '',
+                "year": profile.year if profile else '',
+            })
+        return Response(results, status=status.HTTP_200_OK)
+
+
 class UpdateProfileView(generics.UpdateAPIView):
     serializer_class = ProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -130,7 +172,8 @@ class UnfollowUserView(views.APIView):
         relation = Follower.objects.filter(follower=request.user, following=user_to_unfollow)
         
         if relation.exists():
-            relation.delete()
+            for r in relation:
+                r.delete()
             return Response({"message": f"Successfully unfollowed {username}."}, status=status.HTTP_200_OK)
         else:
             return Response({"error": f"You do not follow {username}."}, status=status.HTTP_400_BAD_REQUEST)
@@ -313,13 +356,10 @@ class DeleteAccountView(views.APIView):
         # 2. Delete user comments from MongoDB
         comments_col.delete_many({"user_id": user_id_str})
         
-        # 3. Delete user replies and sync their parent comments in MongoDB
-        from comments.models import Reply
-        user_replies = Reply.objects.filter(user=user)
-        parent_comments = set(r.comment for r in user_replies)
-        user_replies.delete()
-        for comment in parent_comments:
-            comment.sync_to_mongo()
+        # 3. Clean up comments
+        # Django's user.delete() cascades to Comment model in SQL database,
+        # which triggers the delete() hook for individual MongoDB cleanups.
+        # Plus comments_col.delete_many({"user_id": user_id_str}) already deleted them.
             
         # 4. Delete user profile from MongoDB
         users_col.delete_one({"_id": user_id_str})

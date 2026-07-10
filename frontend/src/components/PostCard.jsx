@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { 
@@ -27,6 +27,18 @@ const PostCard = ({ post, onPostDeleted }) => {
   const [commentsCount, setCommentsCount] = useState(post.comments_count || 0);
   const [errorMessage, setErrorMessage] = useState('');
   const [shareSuccess, setShareSuccess] = useState(false);
+
+  useEffect(() => {
+    const handleFollowToggle = (e) => {
+      if (e.detail.username === post.username) {
+        setFollowing(e.detail.isFollowing);
+      }
+    };
+    window.addEventListener('user-follow-toggled', handleFollowToggle);
+    return () => {
+      window.removeEventListener('user-follow-toggled', handleFollowToggle);
+    };
+  }, [post.username]);
 
   const handleLike = async () => {
     if (!isAuthenticated) {
@@ -72,13 +84,16 @@ const PostCard = ({ post, onPostDeleted }) => {
       return;
     }
     try {
+      const nextFollowing = !following;
       if (following) {
         await authAPI.unfollow(post.username);
-        setFollowing(false);
       } else {
         await authAPI.follow(post.username);
-        setFollowing(true);
       }
+      setFollowing(nextFollowing);
+      window.dispatchEvent(new CustomEvent('user-follow-toggled', { 
+        detail: { username: post.username, isFollowing: nextFollowing } 
+      }));
     } catch (err) {
       console.error(err);
     }
@@ -415,6 +430,7 @@ const PostCard = ({ post, onPostDeleted }) => {
         <div className="border-t border-border bg-bg/20">
           <CommentSection 
             postId={post.id} 
+            postOwnerUsername={post.username}
             onCommentAdded={() => setCommentsCount(prev => prev + 1)}
             onCommentDeleted={() => setCommentsCount(prev => Math.max(0, prev - 1))}
           />

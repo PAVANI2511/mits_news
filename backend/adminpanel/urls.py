@@ -8,7 +8,8 @@ from .views import (
     AdminReportsListView,
     AdminReportResolveView,
     AdminAnnouncementView,
-    AdminAnalyticsView
+    AdminAnalyticsView,
+    AdminCommentsListView
 )
 
 urlpatterns = [
@@ -21,4 +22,5 @@ urlpatterns = [
     path('reports/<int:pk>/resolve/', AdminReportResolveView.as_view(), name='admin_report_resolve'),
     path('announcement/', AdminAnnouncementView.as_view(), name='admin_announcement'),
     path('analytics/', AdminAnalyticsView.as_view(), name='admin_analytics'),
+    path('comments/', AdminCommentsListView.as_view(), name='admin_comments'),
 ]

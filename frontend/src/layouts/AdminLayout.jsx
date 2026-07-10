@@ -5,7 +5,7 @@ import { logout } from '../redux/authSlice';
 import { getMediaUrl } from '../services/api';
 import { 
   FiPieChart, FiUsers, FiFileText, FiAlertOctagon, 
-  FiVolume2, FiArrowLeft, FiLogOut, FiActivity 
+  FiVolume2, FiArrowLeft, FiLogOut, FiActivity, FiMessageSquare 
 } from 'react-icons/fi';
 
 const AdminLayout = ({ children }) => {
@@ -23,6 +23,7 @@ const AdminLayout = ({ children }) => {
     { name: 'Dashboard', path: '/admin/dashboard', icon: <FiPieChart /> },
     { name: 'User Management', path: '/admin/users', icon: <FiUsers /> },
     { name: 'Post Management', path: '/admin/posts', icon: <FiFileText /> },
+    { name: 'Comment Management', path: '/admin/comments', icon: <FiMessageSquare /> },
     { name: 'Reports', path: '/admin/reports', icon: <FiAlertOctagon /> },
     { name: 'Announcements', path: '/admin/announcements', icon: <FiVolume2 /> },
   ];

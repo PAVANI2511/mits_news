@@ -6,6 +6,7 @@ class Report(models.Model):
     reporter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reports_filed')
     reported_post = models.ForeignKey(Post, on_delete=models.CASCADE, null=True, blank=True, related_name='reports')
     reported_user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='reports_against')
+    reported_comment = models.ForeignKey('comments.Comment', on_delete=models.CASCADE, null=True, blank=True, related_name='reports')
     reason = models.CharField(max_length=255)
     details = models.TextField(blank=True, default='')
     status = models.CharField(max_length=50, default='pending') # pending, resolved
@@ -25,7 +26,12 @@ class Report(models.Model):
                 "reporter_username": self.reporter.username,
                 "reported_post_id": str(self.reported_post.id) if self.reported_post else None,
                 "reported_user_id": str(self.reported_user.id) if self.reported_user else None,
-                "reported_username": self.reported_user.username if self.reported_user else (self.reported_post.user.username if self.reported_post else None),
+                "reported_comment_id": str(self.reported_comment.id) if self.reported_comment else None,
+                "reported_username": self.reported_user.username if self.reported_user else (
+                    self.reported_post.user.username if self.reported_post else (
+                        self.reported_comment.user.username if self.reported_comment else None
+                    )
+                ),
                 "reason": self.reason,
                 "details": self.details,
                 "status": self.status,

@@ -51,6 +51,8 @@ export const authAPI = {
   verifyOtp: (email, otp) => api.post('/auth/verify-otp/', { email, otp }),
   resetPassword: (email, otp, password) => api.post('/auth/reset-password/', { email, otp, password }),
   getProfile: (username) => api.get(`/auth/profile/${username}/`),
+  getFollowers: (username) => api.get(`/auth/profile/${username}/followers/`),
+  getFollowing: (username) => api.get(`/auth/profile/${username}/following/`),
   updateProfile: (data) => api.put('/auth/profile/update/', data, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
@@ -81,9 +83,20 @@ export const postsAPI = {
 
 export const commentsAPI = {
   getList: (postId) => api.get(`/comments/post/${postId}/`),
-  add: (postId, text) => api.post(`/comments/post/${postId}/add/`, { text }),
+  add: (postId, content) => api.post(`/comments/post/${postId}/add/`, { content }),
+  update: (id, content) => api.put(`/comments/${id}/`, { content }),
   delete: (id) => api.delete(`/comments/${id}/`),
-  addReply: (commentId, text) => api.post(`/comments/${commentId}/reply/`, { text }),
+  addReply: (commentId, content) => api.post(`/comments/${commentId}/reply/`, { content }),
+  like: (id) => api.post(`/comments/${id}/like/`),
+  unlike: (id) => api.post(`/comments/${id}/unlike/`),
+  restore: (id) => api.post(`/comments/${id}/restore/`),
+  permanentDelete: (id) => api.delete(`/comments/${id}/permanent/`),
+  hide: (id) => api.post(`/comments/${id}/hide/`),
+  unhide: (id) => api.post(`/comments/${id}/unhide/`),
+  pin: (id) => api.post(`/comments/${id}/pin/`),
+  unpin: (id) => api.post(`/comments/${id}/unpin/`),
+  react: (id, reactionType) => api.post(`/comments/${id}/react/`, { reaction_type: reactionType }),
+  getReactionsUsers: (id) => api.get(`/comments/${id}/reactions/`),
 };
 
 export const notificationsAPI = {
@@ -111,6 +124,7 @@ export const adminAPI = {
   getAnnouncements: () => api.get('/admin/announcement/'),
   createAnnouncement: (data) => api.post('/admin/announcement/', data),
   getAnalytics: () => api.get('/admin/analytics/'),
+  getComments: (params) => api.get('/admin/comments/', { params }),
 };
 
 export default api;

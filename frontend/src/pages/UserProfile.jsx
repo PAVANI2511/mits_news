@@ -21,10 +21,54 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Followers/Following Modal States
+  const [showConnectionsModal, setShowConnectionsModal] = useState(null); // 'followers' | 'following' | null
+  const [connectionsList, setConnectionsList] = useState([]);
+  const [connectionsLoading, setConnectionsLoading] = useState(false);
+
   const isOwnProfile = currentUser?.username === username;
 
   useEffect(() => {
     loadProfile();
+  }, [username]);
+
+  const handleOpenConnections = async (type) => {
+    setShowConnectionsModal(type);
+    setConnectionsLoading(true);
+    try {
+      let res;
+      if (type === 'followers') {
+        res = await authAPI.getFollowers(username);
+      } else {
+        res = await authAPI.getFollowing(username);
+      }
+      setConnectionsList(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setConnectionsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleFollowToggle = (e) => {
+      if (e.detail.username === username) {
+        setIsFollowing(e.detail.isFollowing);
+        setProfile(prev => {
+          if (!prev) return prev;
+          const diff = e.detail.isFollowing ? 1 : -1;
+          const currentCount = prev.followers_count || 0;
+          return {
+            ...prev,
+            followers_count: Math.max(0, currentCount + diff)
+          };
+        });
+      }
+    };
+    window.addEventListener('user-follow-toggled', handleFollowToggle);
+    return () => {
+      window.removeEventListener('user-follow-toggled', handleFollowToggle);
+    };
   }, [username]);
 
   const loadProfile = async () => {
@@ -59,15 +103,18 @@ const UserProfile = () => {
     }
 
     try {
+      const nextFollowing = !isFollowing;
       if (isFollowing) {
         await authAPI.unfollow(username);
-        setIsFollowing(false);
         setProfile(prev => ({ ...prev, followers_count: Math.max(0, prev.followers_count - 1) }));
       } else {
         await authAPI.follow(username);
-        setIsFollowing(true);
-        setProfile(prev => ({ ...prev, followers_count: prev.followers_count + 1 }));
+        setProfile(prev => ({ ...prev, followers_count: (prev.followers_count || 0) + 1 }));
       }
+      setIsFollowing(nextFollowing);
+      window.dispatchEvent(new CustomEvent('user-follow-toggled', { 
+        detail: { username: username, isFollowing: nextFollowing } 
+      }));
     } catch (err) {
       console.error(err);
     }
@@ -160,25 +207,32 @@ const UserProfile = () => {
                   </p>
                 )}
               </div>
-
               {/* Counts */}
               <div className="mt-6 flex justify-center sm:justify-start gap-8 border-t border-border pt-4 text-center sm:text-left">
                 <div>
                   <div className="text-lg font-black text-text">{userPosts.length}</div>
                   <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Articles</div>
                 </div>
-                <div>
+                <div 
+                  onClick={() => handleOpenConnections('followers')}
+                  className="cursor-pointer hover:opacity-80 transition"
+                  title="View Followers"
+                >
                   <div className="text-lg font-black text-text">{profile.followers_count || 0}</div>
                   <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Followers</div>
                 </div>
-                <div>
+                <div 
+                  onClick={() => handleOpenConnections('following')}
+                  className="cursor-pointer hover:opacity-80 transition"
+                  title="View Following"
+                >
                   <div className="text-lg font-black text-text">{profile.following_count || 0}</div>
                   <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Following</div>
                 </div>
               </div>
             </div>
           </div>
-
+ 
           {/* Profile Tabs */}
           <div className="bg-card rounded-2xl border border-border overflow-hidden">
             <div className="flex border-b border-border">
@@ -205,7 +259,7 @@ const UserProfile = () => {
                 </button>
               )}
             </div>
-
+ 
             <div className="p-4 space-y-6">
               {activeTab === 'posts' && (
                 <div className="space-y-6">
@@ -217,7 +271,7 @@ const UserProfile = () => {
                   )}
                 </div>
               )}
-
+ 
               {activeTab === 'saved' && isOwnProfile && (
                 <div className="space-y-6">
                   {savedPosts.map(post => (
@@ -228,6 +282,79 @@ const UserProfile = () => {
                   )}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConnectionsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-card border border-border p-6 rounded-2xl max-w-sm w-full mx-4 shadow-xl flex flex-col max-h-[80vh]">
+            <div className="flex items-center justify-between border-b border-border/60 pb-3 mb-4 shrink-0">
+              <h3 className="text-sm font-black uppercase tracking-wider text-text">
+                {showConnectionsModal === 'followers' ? 'Followers' : 'Following'}
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowConnectionsModal(null);
+                  setConnectionsList([]);
+                }} 
+                className="text-gray-400 hover:text-text font-bold text-lg"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              {connectionsLoading ? (
+                <div className="py-8 text-center text-gray-500 flex flex-col items-center">
+                  <div className="h-6 w-6 rounded-full border-3 border-primary border-t-transparent animate-spin mb-2" />
+                  <span className="text-xs">Loading list...</span>
+                </div>
+              ) : connectionsList.length === 0 ? (
+                <p className="text-xs text-gray-400 italic text-center py-6">
+                  {showConnectionsModal === 'followers' ? 'No followers yet.' : 'Not following anyone yet.'}
+                </p>
+              ) : (
+                connectionsList.map((c) => (
+                  <div 
+                    key={c.id} 
+                    onClick={() => {
+                      setShowConnectionsModal(null);
+                      setConnectionsList([]);
+                      navigate(`/profile/${c.username}`);
+                    }}
+                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-bg cursor-pointer transition"
+                  >
+                    <img
+                      src={getMediaUrl(c.profile_pic) || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'}
+                      alt={c.username}
+                      className="h-9 w-9 rounded-full object-cover border border-border shrink-0 bg-card"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <span className="text-xs font-bold text-text block truncate hover:underline">{c.name}</span>
+                      <span className="text-[10px] text-gray-400 block truncate">@{c.username}</span>
+                      {c.department && (
+                        <span className="text-[9px] text-primary font-semibold block truncate">
+                          {c.department} {c.year ? `• ${c.year}` : ''}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="border-t border-border/60 pt-3 mt-4 flex justify-end shrink-0">
+              <button
+                onClick={() => {
+                  setShowConnectionsModal(null);
+                  setConnectionsList([]);
+                }}
+                className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold transition hover:bg-primary/90"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

@@ -82,7 +82,9 @@ const AdminDashboard = () => {
               <div>
                 <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">Discussion Comments</span>
                 <h3 className="text-2xl font-black text-text mt-1">{stats.comments.total}</h3>
-                <div className="text-[10px] text-gray-400 mt-1 font-semibold">Campus posts discussions</div>
+                <div className="text-[10px] text-gray-400 mt-1 font-semibold">
+                  Active: {stats.comments.active} • Deleted: {stats.comments.deleted} • Likes: {stats.comments.likes}
+                </div>
               </div>
               <div className="p-4 bg-green-500/10 rounded-2xl text-green-500 text-xl">
                 <FiCheckCircle />

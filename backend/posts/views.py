@@ -230,7 +230,8 @@ class UnlikePostView(views.APIView):
         post = get_object_or_404(Post, pk=pk)
         like_rel = Like.objects.filter(post=post, user=request.user)
         if like_rel.exists():
-            like_rel.delete()
+            for l in like_rel:
+                l.delete()
             return Response({"message": "Post unliked successfully."}, status=status.HTTP_200_OK)
         return Response({"error": "Post not liked yet."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -253,7 +254,8 @@ class UnsavePostView(views.APIView):
         post = get_object_or_404(Post, pk=pk)
         save_rel = SavedPost.objects.filter(user=request.user, post=post)
         if save_rel.exists():
-            save_rel.delete()
+            for s in save_rel:
+                s.delete()
             return Response({"message": "Post unsaved successfully."}, status=status.HTTP_200_OK)
         return Response({"error": "Post not saved."}, status=status.HTTP_400_BAD_REQUEST)
 

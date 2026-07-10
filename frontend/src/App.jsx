@@ -25,6 +25,7 @@ import UserManagement from './pages/UserManagement';
 import PostManagement from './pages/PostManagement';
 import Reports from './pages/Reports';
 import Announcements from './pages/Announcements';
+import CommentManagement from './pages/CommentManagement';
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
             <Route path="/admin/posts" element={<PostManagement />} />
             <Route path="/admin/reports" element={<Reports />} />
             <Route path="/admin/announcements" element={<Announcements />} />
+            <Route path="/admin/comments" element={<CommentManagement />} />
           </Routes>
         </Router>
       </ThemeWrapper>
