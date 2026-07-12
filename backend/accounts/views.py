@@ -60,9 +60,17 @@ class UserProfileView(views.APIView):
         if request.user.is_authenticated and request.user != user:
             is_following = Follower.objects.filter(follower=request.user, following=user).exists()
             
+        from posts.models import Post, Like
+        total_posts = Post.objects.filter(user=user).count()
+        total_likes = Like.objects.filter(post__user=user).count()
+        joined_date = user.date_joined.isoformat()
+
         return Response({
             **profile_serializer.data,
-            "is_following": is_following
+            "is_following": is_following,
+            "total_posts": total_posts,
+            "total_likes": total_likes,
+            "joined_date": joined_date
         }, status=status.HTTP_200_OK)
 
 
@@ -408,4 +416,51 @@ class VerifyOTPView(views.APIView):
             return Response({"error": "Verification code has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
             
         return Response({"message": "Verification code verified successfully."}, status=status.HTTP_200_OK)
+
+
+class SuggestedUsersView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        user_id = str(user.id)
+        profile = getattr(user, 'profile', None)
+        dept = profile.department if profile else ''
+        
+        # 1. Get IDs of users already followed
+        from db_connection import followers_col, users_col
+        following_cursor = followers_col.find({"follower_id": user_id})
+        followed_ids = [doc["following_id"] for doc in following_cursor]
+        
+        # Exclude logged in user and already followed
+        exclude_ids = followed_ids + [user_id]
+        
+        # Query MongoDB for suggestions
+        # Option A: Users in the same department
+        dept_suggestions = []
+        if dept:
+            dept_cursor = users_col.find({
+                "id": {"$nin": exclude_ids},
+                "department": dept,
+                "is_blocked": False
+            }).limit(10)
+            dept_suggestions = list(dept_cursor)
+            
+        # Option B: Other users
+        other_cursor = users_col.find({
+            "id": {"$nin": exclude_ids + [d["id"] for d in dept_suggestions]},
+            "is_blocked": False
+        }).limit(10)
+        other_suggestions = list(other_cursor)
+        
+        # Combine
+        suggestions = dept_suggestions + other_suggestions
+        results = []
+        for doc in suggestions:
+            doc["id"] = doc.get("id") or str(doc.get("_id"))
+            doc.pop("_id", None)
+            results.append(doc)
+            
+        return Response(results[:10], status=status.HTTP_200_OK)
+
 # reload views password validation changes

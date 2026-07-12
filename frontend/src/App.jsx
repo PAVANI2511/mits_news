@@ -17,6 +17,9 @@ import UserProfile from './pages/UserProfile';
 import Search from './pages/Search';
 import Notifications from './pages/Notifications';
 import Settings from './pages/Settings';
+import SavedPosts from './pages/SavedPosts';
+import FollowingFeed from './pages/FollowingFeed';
+import ExploreFeed from './pages/ExploreFeed';
 
 // Admin Pages
 import AdminLogin from './pages/AdminLogin';
@@ -26,6 +29,7 @@ import PostManagement from './pages/PostManagement';
 import Reports from './pages/Reports';
 import Announcements from './pages/Announcements';
 import CommentManagement from './pages/CommentManagement';
+import FollowManagement from './pages/FollowManagement';
 
 function App() {
   return (
@@ -39,6 +43,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/feed" element={<HomeFeed />} />
+            <Route path="/explore" element={<ExploreFeed />} />
             
             {/* Student Protected Pages */}
             <Route path="/create-post" element={<CreatePost />} />
@@ -48,6 +53,8 @@ function App() {
             <Route path="/search" element={<Search />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/saved" element={<SavedPosts />} />
+            <Route path="/following" element={<FollowingFeed />} />
 
             {/* Admin Console Pages */}
             <Route path="/admin/login" element={<AdminLogin />} />
@@ -57,6 +64,7 @@ function App() {
             <Route path="/admin/reports" element={<Reports />} />
             <Route path="/admin/announcements" element={<Announcements />} />
             <Route path="/admin/comments" element={<CommentManagement />} />
+            <Route path="/admin/follows" element={<FollowManagement />} />
           </Routes>
         </Router>
       </ThemeWrapper>

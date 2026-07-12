@@ -3,10 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../redux/authSlice';
 import { changeTheme } from '../redux/themeSlice';
-import { themesAPI } from '../services/api';
+import { themesAPI, notificationsAPI } from '../services/api';
 import { 
   FiSearch, FiLogOut, FiSettings, FiBell, FiPlusSquare, 
-  FiHome, FiUser, FiActivity, FiMenu, FiX, FiCheck 
+  FiHome, FiUser, FiActivity, FiMenu, FiX, FiCheck, FiBookmark, FiUsers, FiTrendingUp
 } from 'react-icons/fi';
 
 const Navbar = () => {
@@ -18,6 +18,26 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const res = await notificationsAPI.getUnreadCount();
+      setUnreadCount(res.data.unread_count);
+    } catch (err) {
+      console.error("Failed to load unread count:", err);
+    }
+  };
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      fetchUnreadCount();
+      const interval = setInterval(fetchUnreadCount, 8000);
+      return () => clearInterval(interval);
+    } else {
+      setUnreadCount(0);
+    }
+  }, [isAuthenticated]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -73,7 +93,13 @@ const Navbar = () => {
           {/* Navigation Links */}
           <div className="hidden lg:flex items-center space-x-4">
             <Link to="/feed" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition">
-              <FiHome /> Feed
+              <FiHome /> Home
+            </Link>
+            <Link to="/following" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition">
+              <FiUsers /> Following
+            </Link>
+            <Link to="/explore" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition">
+              <FiTrendingUp /> Explore
             </Link>
 
             {isAuthenticated ? (
@@ -83,6 +109,14 @@ const Navbar = () => {
                 </Link>
                 <Link to="/notifications" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition relative">
                   <FiBell /> Alerts
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white leading-none shadow-sm animate-pulse">
+                      {unreadCount}
+                    </span>
+                  )}
+                </Link>
+                <Link to="/saved" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition">
+                  <FiBookmark /> Saved
                 </Link>
                 <Link to={`/profile/${user?.username}`} className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition">
                   <FiUser /> Profile
@@ -211,7 +245,21 @@ const Navbar = () => {
             onClick={() => setMobileMenuOpen(false)}
             className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-bg text-base font-medium transition"
           >
-            <FiHome /> Feed
+            <FiHome /> Home
+          </Link>
+          <Link
+            to="/following"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-bg text-base font-medium transition"
+          >
+            <FiUsers /> Following
+          </Link>
+          <Link
+            to="/explore"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-bg text-base font-medium transition"
+          >
+            <FiTrendingUp /> Explore
           </Link>
 
           {isAuthenticated ? (
@@ -226,9 +274,21 @@ const Navbar = () => {
               <Link
                 to="/notifications"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-bg text-base font-medium transition"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-bg text-base font-medium transition relative"
               >
                 <FiBell /> Notifications
+                {unreadCount > 0 && (
+                  <span className="absolute right-3 top-3.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white leading-none shadow-sm animate-pulse">
+                    {unreadCount}
+                  </span>
+                )}
+              </Link>
+              <Link
+                to="/saved"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-bg text-base font-medium transition"
+              >
+                <FiBookmark /> Saved Posts
               </Link>
               <Link
                 to={`/profile/${user?.username}`}

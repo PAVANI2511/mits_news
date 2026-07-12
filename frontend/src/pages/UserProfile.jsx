@@ -188,6 +188,7 @@ const UserProfile = () => {
                     {profile.role_type || 'student'}
                   </span>
                   {profile.department && <span>• {profile.department}</span>}
+                  {profile.branch && <span>• {profile.branch}</span>}
                   {profile.role_type === 'teacher' ? (
                     <>
                       {profile.designation && <span>• {profile.designation}</span>}
@@ -206,12 +207,22 @@ const UserProfile = () => {
                     {profile.bio}
                   </p>
                 )}
+                
+                {profile.joined_date && (
+                  <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-2.5">
+                    Joined on {new Date(profile.joined_date).toLocaleDateString(undefined, { month: 'long', year: 'numeric', day: 'numeric' })}
+                  </div>
+                )}
               </div>
               {/* Counts */}
-              <div className="mt-6 flex justify-center sm:justify-start gap-8 border-t border-border pt-4 text-center sm:text-left">
+              <div className="mt-6 flex flex-wrap justify-center sm:justify-start gap-8 border-t border-border pt-4 text-center sm:text-left">
                 <div>
-                  <div className="text-lg font-black text-text">{userPosts.length}</div>
+                  <div className="text-lg font-black text-text">{profile.total_posts ?? userPosts.length}</div>
                   <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Articles</div>
+                </div>
+                <div>
+                  <div className="text-lg font-black text-text">{profile.total_likes ?? 0}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Total Likes</div>
                 </div>
                 <div 
                   onClick={() => handleOpenConnections('followers')}
@@ -275,7 +286,12 @@ const UserProfile = () => {
               {activeTab === 'saved' && isOwnProfile && (
                 <div className="space-y-6">
                   {savedPosts.map(post => (
-                    <PostCard key={post.id} post={post} onPostDeleted={handlePostDeleted} />
+                    <PostCard 
+                      key={post.id} 
+                      post={post} 
+                      onPostDeleted={handlePostDeleted} 
+                      onPostUnsaved={(unsavedId) => setSavedPosts(prev => prev.filter(p => p.id !== unsavedId))}
+                    />
                   ))}
                   {savedPosts.length === 0 && (
                     <p className="text-xs text-gray-400 italic text-center py-6">You haven't saved any articles yet.</p>

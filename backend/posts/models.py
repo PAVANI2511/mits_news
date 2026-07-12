@@ -17,6 +17,8 @@ class Post(models.Model):
     poster = models.FileField(upload_to='posts/posters/', blank=True, null=True)
     pdf = models.FileField(upload_to='posts/pdfs/', blank=True, null=True)
     external_url = models.URLField(max_length=500, blank=True, default='')
+    share_count = models.PositiveIntegerField(default=0)
+    last_shared_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return f"Post by {self.user.username} at {self.created_at}"
@@ -48,14 +50,18 @@ class Post(models.Model):
                 "audio": self.audio.url if self.audio else '',
                 "poster": self.poster.url if self.poster else '',
                 "pdf": self.pdf.url if self.pdf else '',
-                "external_url": self.external_url
+                "external_url": self.external_url,
+                "share_count": self.share_count,
+                "last_shared_at": self.last_shared_at.isoformat() if self.last_shared_at else None
             }},
             upsert=True
         )
 
     def delete(self, *args, **kwargs):
-        from db_connection import posts_col
+        from db_connection import posts_col, saved_posts_col, likes_col
         posts_col.delete_one({"_id": str(self.id)})
+        saved_posts_col.delete_many({"post_id": str(self.id)})
+        likes_col.delete_many({"post_id": str(self.id)})
         super().delete(*args, **kwargs)
 
 

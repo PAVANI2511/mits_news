@@ -15,6 +15,24 @@ import threading
 from django.core.mail import send_mail
 
 def send_new_post_notifications(post, author):
+    # 1. Create in-app notifications for followers who have opted in
+    from accounts.models import Follower
+    try:
+        followers = Follower.objects.filter(following=author).select_related('follower', 'follower__profile')
+        for f in followers:
+            follower_user = f.follower
+            follower_profile = getattr(follower_user, 'profile', None)
+            if follower_profile and getattr(follower_profile, 'followed_notifications_enabled', True):
+                Notification.objects.create(
+                    recipient=follower_user,
+                    sender=author,
+                    type='new_post',
+                    post=post,
+                    message=f"{author.first_name or author.username} published a new post: {post.caption[:50]}..."
+                )
+    except Exception as err:
+        print(f"Error creating follower in-app notifications: {err}")
+
     # Query all users who have opted in for email notifications
     # Excluding empty emails and the author themselves
     recipients = list(User.objects.filter(
@@ -29,7 +47,7 @@ def send_new_post_notifications(post, author):
         return
         
     subject = "New Article Published on MITS Newspaper"
-    message = f"Hello,\n\nA new article has been published by @{author.username} on MITS Newspaper!\n\nHeadline: {post.caption}\n\nRead the article here: http://localhost:5173/feed"
+    message = f"Hello,\n\nA new article has been published by @{author.username} on MITS Newspaper!\n\nHeadline: {post.caption}\n\nRead the article here: http://localhost:5173/posts/{post.id}"
     
     try:
         send_mail(
@@ -60,10 +78,21 @@ class PostCreateView(generics.CreateAPIView):
         # Dispatch notification emails asynchronously in a background thread
         threading.Thread(target=send_new_post_notifications, args=(post, request.user)).start()
 
+        # Trigger mention notifications
+        from notifications.models import create_mention_notifications
+        create_mention_notifications(post.caption + " " + post.text, request.user, post=post)
+
         # Fetch fresh synced post from MongoDB
         post_doc = posts_col.find_one({"_id": str(post.id)})
         if post_doc:
             post_doc["id"] = post_doc.pop("_id")
+            post_doc["likes_count"] = 0
+            post_doc["comments_count"] = 0
+            post_doc["saved_count"] = 0
+            post_doc["share_count"] = 0
+            post_doc["is_liked"] = False
+            post_doc["is_saved"] = False
+            post_doc["is_following"] = False
         return Response(post_doc or serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -78,9 +107,12 @@ class PostDetailView(views.APIView):
 
         post_doc["id"] = post_doc.pop("_id")
         
-        # Inject like and save counts
+        # Inject like, comment, and save counts
         post_doc["likes_count"] = likes_col.count_documents({"post_id": str(pk)})
-        post_doc["comments_count"] = Like.objects.filter(post_id=pk).count() # or MongoDB comment search
+        from db_connection import comments_col
+        post_doc["comments_count"] = comments_col.count_documents({"post_id": str(pk)})
+        post_doc["saved_count"] = saved_posts_col.count_documents({"post_id": str(pk)})
+        post_doc["share_count"] = post_doc.get("share_count", 0)
         
         # Inject current user states
         post_doc["is_liked"] = False
@@ -122,6 +154,11 @@ class PostDetailView(views.APIView):
             post.pdf = request.FILES['pdf']
 
         post.save()
+
+        # Trigger mention notifications on edit
+        from notifications.models import create_mention_notifications
+        create_mention_notifications(caption + " " + text, request.user, post=post)
+
         post_doc = posts_col.find_one({"_id": str(post.id)})
         if post_doc:
             post_doc["id"] = post_doc.pop("_id")
@@ -175,10 +212,12 @@ class HomeFeedView(views.APIView):
             doc["id"] = post_id
             doc.pop("_id", None)
             
-            # Fetch likes & comments count from MongoDB
+            # Fetch likes, comments & saves count from MongoDB
             doc["likes_count"] = likes_col.count_documents({"post_id": str(post_id)})
             from db_connection import comments_col
             doc["comments_count"] = comments_col.count_documents({"post_id": str(post_id)})
+            doc["saved_count"] = saved_posts_col.count_documents({"post_id": str(post_id)})
+            doc["share_count"] = doc.get("share_count", 0)
 
             # Inject request.user follow state, liked, saved
             doc["is_liked"] = False
@@ -260,30 +299,55 @@ class UnsavePostView(views.APIView):
         return Response({"error": "Post not saved."}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class SharePostView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, pk):
+        from django.utils import timezone
+        post = get_object_or_404(Post, pk=pk)
+        post.share_count += 1
+        post.last_shared_at = timezone.now()
+        post.save()
+        return Response({
+            "message": "Post share recorded.",
+            "share_count": post.share_count,
+            "last_shared_at": post.last_shared_at.isoformat()
+        }, status=status.HTTP_200_OK)
+
+
 class GetSavedPostsView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        # Fetch saved post IDs from MongoDB
+        # Fetch saved post IDs from MongoDB, sorted by when they were bookmarked (newest first)
         user_id = str(request.user.id)
-        saved_cursor = saved_posts_col.find({"user_id": user_id})
+        saved_cursor = saved_posts_col.find({"user_id": user_id}).sort("created_at", -1)
         post_ids = [doc["post_id"] for doc in saved_cursor]
 
         # Fetch actual post details
         posts_cursor = posts_col.find({"_id": {"$in": post_ids}, "is_blocked": False})
+        posts_map = {str(doc["_id"]): doc for doc in posts_cursor}
+        
         results = []
-        for doc in posts_cursor:
-            post_id = doc["_id"]
-            doc["id"] = post_id
-            doc.pop("_id", None)
-            
-            doc["likes_count"] = likes_col.count_documents({"post_id": str(post_id)})
-            from db_connection import comments_col
-            doc["comments_count"] = comments_col.count_documents({"post_id": str(post_id)})
-            doc["is_liked"] = likes_col.count_documents({"post_id": str(post_id), "user_id": user_id}) > 0
-            doc["is_saved"] = True
-            doc["is_following"] = followers_col.count_documents({"follower_id": user_id, "following_id": str(doc["user_id"])}) > 0
-            results.append(doc)
+        for pid in post_ids:
+            if pid in posts_map:
+                doc = posts_map[pid]
+                post_id = doc["_id"]
+                
+                # Make a copy to avoid mutating any cached object and pop _id safely
+                doc_copy = dict(doc)
+                doc_copy["id"] = str(post_id)
+                doc_copy.pop("_id", None)
+                
+                doc_copy["likes_count"] = likes_col.count_documents({"post_id": str(post_id)})
+                from db_connection import comments_col
+                doc_copy["comments_count"] = comments_col.count_documents({"post_id": str(post_id)})
+                doc_copy["saved_count"] = saved_posts_col.count_documents({"post_id": str(post_id)})
+                doc_copy["share_count"] = doc_copy.get("share_count", 0)
+                doc_copy["is_liked"] = likes_col.count_documents({"post_id": str(post_id), "user_id": user_id}) > 0
+                doc_copy["is_saved"] = True
+                doc_copy["is_following"] = followers_col.count_documents({"follower_id": user_id, "following_id": str(doc_copy["user_id"])}) > 0
+                results.append(doc_copy)
 
         return Response(results, status=status.HTTP_200_OK)
 
@@ -337,3 +401,111 @@ class TrendingHashtagsView(views.APIView):
         results = list(posts_col.aggregate(pipeline))
         trends = [{"tag": r["_id"], "count": r["count"]} for r in results]
         return Response(trends, status=status.HTTP_200_OK)
+
+
+class FollowingFeedView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 10))
+        
+        user_id = str(request.user.id)
+        
+        # Get IDs of users followed by the logged-in user
+        following_cursor = followers_col.find({"follower_id": user_id})
+        followed_ids = [doc["following_id"] for doc in following_cursor]
+        
+        if not followed_ids:
+            return Response({
+                "results": [],
+                "page": page,
+                "has_next": False,
+                "total_count": 0
+            }, status=status.HTTP_200_OK)
+            
+        mongo_query = {
+            "user_id": {"$in": followed_ids},
+            "is_blocked": False
+        }
+        
+        posts_cursor = posts_col.find(mongo_query).sort("created_at", -1)
+        total_count = posts_col.count_documents(mongo_query)
+        
+        skipped = (page - 1) * page_size
+        posts_list = list(posts_cursor.skip(skipped).limit(page_size))
+        
+        results = []
+        for doc in posts_list:
+            post_id = doc["_id"]
+            doc["id"] = post_id
+            doc.pop("_id", None)
+            
+            doc["likes_count"] = likes_col.count_documents({"post_id": str(post_id)})
+            from db_connection import comments_col
+            doc["comments_count"] = comments_col.count_documents({"post_id": str(post_id)})
+            doc["saved_count"] = saved_posts_col.count_documents({"post_id": str(post_id)})
+            doc["share_count"] = doc.get("share_count", 0)
+            
+            doc["is_liked"] = likes_col.count_documents({"post_id": str(post_id), "user_id": user_id}) > 0
+            doc["is_saved"] = saved_posts_col.count_documents({"post_id": str(post_id), "user_id": user_id}) > 0
+            doc["is_following"] = True
+            
+            results.append(doc)
+            
+        has_next = (skipped + page_size) < total_count
+        return Response({
+            "results": results,
+            "page": page,
+            "has_next": has_next,
+            "total_count": total_count
+        }, status=status.HTTP_200_OK)
+
+
+class ExploreFeedView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 10))
+        
+        mongo_query = {"is_blocked": False}
+        posts_cursor = posts_col.find(mongo_query)
+        posts_list = list(posts_cursor)
+        
+        # Inject engagement statistics and follow states
+        for doc in posts_list:
+            post_id = doc["_id"]
+            doc["id"] = post_id
+            doc["likes_count"] = likes_col.count_documents({"post_id": str(post_id)})
+            from db_connection import comments_col
+            doc["comments_count"] = comments_col.count_documents({"post_id": str(post_id)})
+            doc["saved_count"] = saved_posts_col.count_documents({"post_id": str(post_id)})
+            doc["share_count"] = doc.get("share_count", 0)
+            
+            doc["is_liked"] = False
+            doc["is_saved"] = False
+            doc["is_following"] = False
+            if request.user.is_authenticated:
+                user_id = str(request.user.id)
+                doc["is_liked"] = likes_col.count_documents({"post_id": str(post_id), "user_id": user_id}) > 0
+                doc["is_saved"] = saved_posts_col.count_documents({"post_id": str(post_id), "user_id": user_id}) > 0
+                doc["is_following"] = followers_col.count_documents({"follower_id": user_id, "following_id": str(doc["user_id"])}) > 0
+        
+        # Sort by popularity: (likes_count * 2) + comments_count DESC, then created_at DESC
+        posts_list.sort(key=lambda x: (x["likes_count"] * 2 + x["comments_count"], x.get("created_at", "")), reverse=True)
+        
+        total_count = len(posts_list)
+        skipped = (page - 1) * page_size
+        paginated_posts = posts_list[skipped : skipped + page_size]
+        
+        for doc in paginated_posts:
+            doc.pop("_id", None)
+            
+        has_next = (skipped + page_size) < total_count
+        return Response({
+            "results": paginated_posts,
+            "page": page,
+            "has_next": has_next,
+            "total_count": total_count
+        }, status=status.HTTP_200_OK)

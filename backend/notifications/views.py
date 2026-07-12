@@ -41,3 +41,12 @@ class MarkAllNotificationsReadView(views.APIView):
         )
         
         return Response({"message": "All notifications marked as read."}, status=status.HTTP_200_OK)
+
+
+class UnreadNotificationsCountView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user_id = str(request.user.id)
+        count = notifications_col.count_documents({"recipient_id": user_id, "is_read": False})
+        return Response({"unread_count": count}, status=status.HTTP_200_OK)

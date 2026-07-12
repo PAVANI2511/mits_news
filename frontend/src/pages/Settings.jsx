@@ -34,6 +34,8 @@ const Settings = () => {
   const [teacherRole, setTeacherRole] = useState(user?.profile?.teacher_role ? (isPresetRole ? user.profile.teacher_role : 'Others') : '');
   const [customTeacherRole, setCustomTeacherRole] = useState(user?.profile?.teacher_role ? (isPresetRole ? '' : user.profile.teacher_role) : '');
   const [mobileNumber, setMobileNumber] = useState(user?.profile?.mobile_number || '');
+  const [branch, setBranch] = useState(user?.profile?.branch || '');
+  const [followedNotificationsEnabled, setFollowedNotificationsEnabled] = useState(user?.profile?.followed_notifications_enabled ?? true);
   
   const [profilePic, setProfilePic] = useState(null);
   const [coverPhoto, setCoverPhoto] = useState(null);
@@ -157,6 +159,8 @@ const Settings = () => {
       submitData.append('designation', roleType === 'teacher' ? designation : '');
       submitData.append('teacher_role', roleType === 'teacher' ? teacherRoleValue : '');
       submitData.append('mobile_number', mobileNumber);
+      submitData.append('branch', branch);
+      submitData.append('followed_notifications_enabled', followedNotificationsEnabled);
 
       if (profilePic) {
         submitData.append('profile_pic', profilePic);
@@ -394,6 +398,18 @@ const Settings = () => {
                       <>
                         <div>
                           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                            Branch
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. CSE or CST"
+                            value={branch}
+                            onChange={(e) => setBranch(e.target.value)}
+                            className="w-full px-4 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                             Year of Study
                           </label>
                           <select
@@ -536,21 +552,38 @@ const Settings = () => {
                 </div>
               </div>
 
-              {/* Email Notifications Subscription Toggle */}
-              <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-bg/50 border border-border/80">
-                <input
-                  type="checkbox"
-                  id="email_notifications_enabled"
-                  checked={emailNotificationsEnabled}
-                  onChange={(e) => setEmailNotificationsEnabled(e.target.checked)}
-                  className="h-4.5 w-4.5 rounded-lg text-primary focus:ring-primary border-border bg-bg cursor-pointer"
-                />
-                <label 
-                  htmlFor="email_notifications_enabled" 
-                  className="text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer select-none"
-                >
-                  Receive email alerts when new articles are published
-                </label>
+              {/* Notifications Subscription Toggles */}
+              <div className="space-y-3 p-4 rounded-2xl bg-bg/50 border border-border/80">
+                <div className="flex items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    id="email_notifications_enabled"
+                    checked={emailNotificationsEnabled}
+                    onChange={(e) => setEmailNotificationsEnabled(e.target.checked)}
+                    className="h-4.5 w-4.5 rounded-lg text-primary focus:ring-primary border-border bg-bg cursor-pointer"
+                  />
+                  <label 
+                    htmlFor="email_notifications_enabled" 
+                    className="text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer select-none"
+                  >
+                    Receive email alerts when new articles are published
+                  </label>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    id="followed_notifications_enabled"
+                    checked={followedNotificationsEnabled}
+                    onChange={(e) => setFollowedNotificationsEnabled(e.target.checked)}
+                    className="h-4.5 w-4.5 rounded-lg text-primary focus:ring-primary border-border bg-bg cursor-pointer"
+                  />
+                  <label 
+                    htmlFor="followed_notifications_enabled" 
+                    className="text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer select-none"
+                  >
+                    Receive alerts when users you follow publish new posts
+                  </label>
+                </div>
               </div>
 
               <button

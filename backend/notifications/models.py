@@ -42,3 +42,27 @@ class Notification(models.Model):
         from db_connection import notifications_col
         notifications_col.delete_one({"_id": str(self.id)})
         super().delete(*args, **kwargs)
+
+
+def create_mention_notifications(text, sender, post=None, comment=None):
+    import re
+    if not text:
+        return
+    # Find all words starting with @
+    usernames = set(re.findall(r'@([a-zA-Z0-9_]+)', text))
+    for username in usernames:
+        if username.lower() == sender.username.lower():
+            continue
+        try:
+            recipient = User.objects.get(username__iexact=username)
+            # Create mention notification
+            Notification.objects.create(
+                recipient=recipient,
+                sender=sender,
+                type='mention',
+                post=post,
+                comment=comment,
+                message=f"{sender.first_name or sender.username} mentioned you in a {'post' if post and not comment else 'comment'}."
+            )
+        except User.DoesNotExist:
+            pass

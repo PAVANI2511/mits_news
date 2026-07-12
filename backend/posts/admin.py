@@ -3,7 +3,7 @@ from .models import Post, Like, SavedPost
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    list_display = ('user', 'caption', 'created_at', 'is_blocked')
+    list_display = ('user', 'caption', 'created_at', 'share_count', 'last_shared_at', 'is_blocked')
     search_fields = ('user__username', 'caption', 'text')
     list_filter = ('is_blocked', 'created_at')
 
@@ -14,3 +14,5 @@ class LikeAdmin(admin.ModelAdmin):
 @admin.register(SavedPost)
 class SavedPostAdmin(admin.ModelAdmin):
     list_display = ('user', 'post', 'created_at')
+    search_fields = ('user__username', 'user__email', 'post__caption')
+    list_filter = ('created_at',)

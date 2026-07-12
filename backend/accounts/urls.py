@@ -13,10 +13,12 @@ from .views import (
     DeleteAccountView,
     VerifyOTPView,
     UserFollowersListView,
-    UserFollowingListView
+    UserFollowingListView,
+    SuggestedUsersView
 )
 
 urlpatterns = [
+    path('suggestions/', SuggestedUsersView.as_view(), name='suggested_users'),
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', CustomTokenObtainPairView.as_view(), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

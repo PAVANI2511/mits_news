@@ -7,6 +7,7 @@ class StudentProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role_type = models.CharField(max_length=20, default='student')
     department = models.CharField(max_length=100, blank=True, default='')
+    branch = models.CharField(max_length=100, blank=True, default='')
     year = models.CharField(max_length=50, blank=True, default='')
     roll_number = models.CharField(max_length=50, blank=True, default='')
     designation = models.CharField(max_length=100, blank=True, default='')
@@ -18,6 +19,7 @@ class StudentProfile(models.Model):
     theme_preference = models.CharField(max_length=50, default='light')
     is_blocked = models.BooleanField(default=False)
     email_notifications_enabled = models.BooleanField(default=True)
+    followed_notifications_enabled = models.BooleanField(default=True)
     followers_count = models.IntegerField(default=0)
     following_count = models.IntegerField(default=0)
 
@@ -38,6 +40,7 @@ class StudentProfile(models.Model):
                 "email": self.user.email,
                 "name": f"{self.user.first_name} {self.user.last_name}".strip() or self.user.username,
                 "department": self.department,
+                "branch": self.branch,
                 "year": self.year,
                 "bio": self.bio,
                 "profile_pic": profile_pic_url,
@@ -45,6 +48,7 @@ class StudentProfile(models.Model):
                 "theme_preference": self.theme_preference,
                 "is_blocked": self.is_blocked,
                 "email_notifications_enabled": self.email_notifications_enabled,
+                "followed_notifications_enabled": self.followed_notifications_enabled,
                 "is_admin": self.user.is_staff or self.user.is_superuser,
                 "followers_count": self.followers_count,
                 "following_count": self.following_count,

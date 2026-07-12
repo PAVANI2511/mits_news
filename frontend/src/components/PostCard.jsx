@@ -6,10 +6,13 @@ import {
   FiShare2, FiMapPin, FiMusic, FiFileText, FiUserCheck, FiUserPlus,
   FiLink, FiExternalLink
 } from 'react-icons/fi';
+import { 
+  FaWhatsapp, FaFacebook, FaLinkedin, FaTelegram, FaTwitter 
+} from 'react-icons/fa';
 import { postsAPI, authAPI } from '../services/api';
 import CommentSection from './CommentSection';
 
-const PostCard = ({ post, onPostDeleted }) => {
+const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useSelector((state) => state.auth);
 
@@ -22,6 +25,9 @@ const PostCard = ({ post, onPostDeleted }) => {
   const [liked, setLiked] = useState(post.is_liked || false);
   const [likesCount, setLikesCount] = useState(post.likes_count || 0);
   const [saved, setSaved] = useState(post.is_saved || false);
+  const [savedCount, setSavedCount] = useState(post.saved_count || 0);
+  const [sharesCount, setSharesCount] = useState(post.share_count || 0);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [following, setFollowing] = useState(post.is_following || false);
   const [showComments, setShowComments] = useState(false);
   const [commentsCount, setCommentsCount] = useState(post.comments_count || 0);
@@ -69,9 +75,13 @@ const PostCard = ({ post, onPostDeleted }) => {
       if (saved) {
         await postsAPI.unsave(post.id);
         setSaved(false);
+        setSavedCount(prev => Math.max(0, prev - 1));
+        if (onPostUnsaved) onPostUnsaved(post.id);
       } else {
         await postsAPI.save(post.id);
         setSaved(true);
+        setSavedCount(prev => prev + 1);
+        if (onPostSaved) onPostSaved(post.id);
       }
     } catch (err) {
       console.error(err);
@@ -99,11 +109,53 @@ const PostCard = ({ post, onPostDeleted }) => {
     }
   };
 
-  const handleShare = () => {
+  const handleShareToPlatform = async (platform) => {
     const shareUrl = `${window.location.origin}/posts/${post.id}`;
-    navigator.clipboard.writeText(shareUrl);
-    setShareSuccess(true);
-    setTimeout(() => setShareSuccess(false), 2000);
+    const text = `Check out this article: "${post.caption || 'Campus update'}" on MITS Newspaper!`;
+    let redirectUrl = '';
+
+    switch (platform) {
+      case 'whatsapp':
+        redirectUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text + ' ' + shareUrl)}`;
+        break;
+      case 'facebook':
+        redirectUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+        break;
+      case 'linkedin':
+        redirectUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
+        break;
+      case 'telegram':
+        redirectUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
+        break;
+      case 'twitter':
+        redirectUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
+        break;
+      case 'copy':
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          setShareSuccess(true);
+          setTimeout(() => setShareSuccess(false), 2000);
+        } catch (err) {
+          console.error("Failed to copy link:", err);
+        }
+        break;
+      default:
+        break;
+    }
+
+    if (redirectUrl) {
+      window.open(redirectUrl, '_blank', 'noopener,noreferrer');
+    }
+
+    // Call backend API to record share
+    try {
+      const res = await postsAPI.share(post.id);
+      setSharesCount(res.data.share_count);
+    } catch (err) {
+      console.error("Failed to increment share count on backend:", err);
+    }
+
+    setShowShareModal(false);
   };
 
   const handleDownload = async (mediaType, mediaUrl) => {
@@ -377,11 +429,12 @@ const PostCard = ({ post, onPostDeleted }) => {
           </button>
           
           <button
-            onClick={handleShare}
-            className="text-gray-500 hover:text-primary transition"
-            title="Share Link"
+            onClick={() => setShowShareModal(true)}
+            className="flex items-center gap-1 text-sm font-bold text-gray-500 hover:text-primary transition"
+            title="Share Post"
           >
             <FiShare2 />
+            <span>{sharesCount}</span>
           </button>
         </div>
 
@@ -417,10 +470,13 @@ const PostCard = ({ post, onPostDeleted }) => {
 
           <button
             onClick={handleSave}
-            className={`text-lg transition ${saved ? 'text-yellow-500 scale-105' : 'text-gray-500 hover:text-yellow-500'}`}
+            className={`flex items-center gap-1 text-sm font-bold transition ${
+              saved ? 'text-yellow-500 scale-105' : 'text-gray-500 hover:text-yellow-500'
+            }`}
             title={saved ? "Unsave" : "Save"}
           >
             <FiBookmark className={saved ? 'fill-current' : ''} />
+            <span>{savedCount}</span>
           </button>
         </div>
       </div>
@@ -434,6 +490,78 @@ const PostCard = ({ post, onPostDeleted }) => {
             onCommentAdded={() => setCommentsCount(prev => prev + 1)}
             onCommentDeleted={() => setCommentsCount(prev => Math.max(0, prev - 1))}
           />
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-card border border-border p-6 rounded-2xl max-w-sm w-full mx-4 shadow-2xl flex flex-col space-y-4">
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <h3 className="text-sm font-black uppercase tracking-wider text-text">
+                Share this post
+              </h3>
+              <button 
+                onClick={() => setShowShareModal(false)} 
+                className="text-gray-400 hover:text-text font-bold text-lg"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3 py-2">
+              <button
+                onClick={() => handleShareToPlatform('whatsapp')}
+                className="flex items-center justify-center gap-2 p-3 bg-green-500/10 hover:bg-green-500/20 text-green-600 rounded-xl text-xs font-bold transition duration-200"
+              >
+                <FaWhatsapp className="text-lg" /> WhatsApp
+              </button>
+              
+              <button
+                onClick={() => handleShareToPlatform('telegram')}
+                className="flex items-center justify-center gap-2 p-3 bg-blue-400/10 hover:bg-blue-400/20 text-blue-500 rounded-xl text-xs font-bold transition duration-200"
+              >
+                <FaTelegram className="text-lg" /> Telegram
+              </button>
+              
+              <button
+                onClick={() => handleShareToPlatform('twitter')}
+                className="flex items-center justify-center gap-2 p-3 bg-black/5 hover:bg-black/10 text-black dark:text-white rounded-xl text-xs font-bold transition duration-200"
+              >
+                <FaTwitter className="text-lg" /> Twitter / X
+              </button>
+              
+              <button
+                onClick={() => handleShareToPlatform('facebook')}
+                className="flex items-center justify-center gap-2 p-3 bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 rounded-xl text-xs font-bold transition duration-200"
+              >
+                <FaFacebook className="text-lg" /> Facebook
+              </button>
+              
+              <button
+                onClick={() => handleShareToPlatform('linkedin')}
+                className="flex items-center justify-center gap-2 p-3 bg-blue-700/10 hover:bg-blue-700/20 text-blue-700 rounded-xl text-xs font-bold transition duration-200"
+              >
+                <FaLinkedin className="text-lg" /> LinkedIn
+              </button>
+              
+              <button
+                onClick={() => handleShareToPlatform('copy')}
+                className="flex items-center justify-center gap-2 p-3 bg-gray-500/10 hover:bg-gray-500/20 text-gray-600 rounded-xl text-xs font-bold col-span-2 transition duration-200"
+              >
+                <FiLink className="text-lg" /> Copy Link
+              </button>
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="px-4 py-2 border border-border text-gray-500 rounded-xl text-xs font-bold hover:bg-bg transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

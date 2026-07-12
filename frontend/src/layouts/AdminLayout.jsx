@@ -22,6 +22,7 @@ const AdminLayout = ({ children }) => {
   const navItems = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: <FiPieChart /> },
     { name: 'User Management', path: '/admin/users', icon: <FiUsers /> },
+    { name: 'Follow Management', path: '/admin/follows', icon: <FiUsers /> },
     { name: 'Post Management', path: '/admin/posts', icon: <FiFileText /> },
     { name: 'Comment Management', path: '/admin/comments', icon: <FiMessageSquare /> },
     { name: 'Reports', path: '/admin/reports', icon: <FiAlertOctagon /> },

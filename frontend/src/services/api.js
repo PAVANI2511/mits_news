@@ -60,6 +60,7 @@ export const authAPI = {
   unfollow: (username) => api.post(`/auth/unfollow/${username}/`),
   searchUsers: (params) => api.get('/auth/search/', { params }),
   deleteAccount: () => api.post('/auth/delete/'),
+  getSuggestions: () => api.get('/auth/suggestions/'),
 };
 
 export const postsAPI = {
@@ -77,8 +78,11 @@ export const postsAPI = {
   unlike: (id) => api.post(`/posts/${id}/unlike/`),
   save: (id) => api.post(`/posts/${id}/save/`),
   unsave: (id) => api.post(`/posts/${id}/unsave/`),
+  share: (id) => api.post(`/posts/${id}/share/`),
   getDownloadUrl: (id, type) => api.get(`/posts/${id}/download/`, { params: { type } }),
   getTrends: () => api.get('/posts/trends/'),
+  getFollowingFeed: (params) => api.get('/posts/following/', { params }),
+  getExplore: (params) => api.get('/posts/explore/', { params }),
 };
 
 export const commentsAPI = {
@@ -103,6 +107,7 @@ export const notificationsAPI = {
   getList: () => api.get('/notifications/'),
   markRead: (id) => api.post(`/notifications/${id}/read/`),
   markAllRead: () => api.post('/notifications/read-all/'),
+  getUnreadCount: () => api.get('/notifications/unread-count/'),
 };
 
 export const themesAPI = {
@@ -125,6 +130,8 @@ export const adminAPI = {
   createAnnouncement: (data) => api.post('/admin/announcement/', data),
   getAnalytics: () => api.get('/admin/analytics/'),
   getComments: (params) => api.get('/admin/comments/', { params }),
+  getFollows: () => api.get('/admin/follows/'),
+  deleteFollow: (id) => api.delete(`/admin/follows/${id}/`),
 };
 
 export default api;

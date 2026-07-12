@@ -27,6 +27,10 @@ class CommentCreateView(views.APIView):
             content=content
         )
 
+        # Trigger mention notifications
+        from notifications.models import create_mention_notifications
+        create_mention_notifications(content, request.user, post=post, comment=comment)
+
         # Notify post owner
         if post.user != request.user:
             Notification.objects.create(
@@ -61,6 +65,10 @@ class CommentDetailView(views.APIView):
         comment.is_edited = True
         comment.updated_at = timezone.now()
         comment.save()
+
+        # Trigger mention notifications on edit
+        from notifications.models import create_mention_notifications
+        create_mention_notifications(content, request.user, post=comment.post, comment=comment)
 
         serializer = CommentSerializer(comment, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -121,6 +129,10 @@ class ReplyCreateView(views.APIView):
             parent_comment=parent_comment,
             content=content
         )
+
+        # Trigger mention notifications
+        from notifications.models import create_mention_notifications
+        create_mention_notifications(content, request.user, post=parent_comment.post, comment=reply)
 
         # Notify parent comment owner
         if parent_comment.user != request.user:

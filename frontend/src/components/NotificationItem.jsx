@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiHeart, FiMessageSquare, FiUserCheck, FiBell, FiAlertCircle } from 'react-icons/fi';
+import { FiHeart, FiMessageSquare, FiUserCheck, FiBell, FiAlertCircle, FiAtSign } from 'react-icons/fi';
 import { notificationsAPI } from '../services/api';
 
 const NotificationItem = ({ notification, onMarkRead }) => {
@@ -36,7 +36,8 @@ const NotificationItem = ({ notification, onMarkRead }) => {
     reply: <FiMessageSquare className="text-green-500" />,
     follow: <FiUserCheck className="text-purple-500" />,
     announcement: <FiBell className="text-yellow-500" />,
-    admin: <FiAlertCircle className="text-red-500 font-bold" />
+    admin: <FiAlertCircle className="text-red-500 font-bold" />,
+    mention: <FiAtSign className="text-pink-500 font-bold" />
   };
 
   const icon = icons[notification.type] || <FiBell className="text-primary" />;

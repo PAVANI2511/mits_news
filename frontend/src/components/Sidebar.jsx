@@ -13,13 +13,11 @@ const Sidebar = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      // Fetch some user suggestions
-      authAPI.searchUsers({ limit: 4 })
+      authAPI.getSuggestions()
         .then((res) => {
-          const filtered = res.data.filter(u => u.username !== user?.username).slice(0, 3);
-          setSuggestions(filtered);
+          setSuggestions(res.data.slice(0, 3));
         })
-        .catch((err) => console.error("Error loading suggestions:", err));
+        .catch((err) => console.error("Failed to load suggestions:", err));
     }
 
     // Fetch live trending hashtags
@@ -55,8 +53,9 @@ const Sidebar = () => {
           </h2>
           <p className="text-xs text-gray-500 truncate">{user.email}</p>
           
-          <div className="mt-1 flex justify-center gap-1.5 text-xs text-primary font-semibold">
+          <div className="mt-1 flex justify-center flex-wrap gap-1.5 text-xs text-primary font-semibold">
             {user.profile?.department && <span>{user.profile.department}</span>}
+            {user.profile?.branch && <span>• {user.profile.branch}</span>}
             {user.profile?.year && <span>• {user.profile.year}</span>}
           </div>
 

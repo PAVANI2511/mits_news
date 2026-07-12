@@ -352,8 +352,62 @@ class AdminAnalyticsView(views.APIView):
             for item in dept_data
         ]
 
+        # Followers/Creators analytics
+        most_followed = StudentProfile.objects.order_by('-followers_count')[:5]
+        most_followed_data = [
+            {"username": p.user.username, "name": f"{p.user.first_name} {p.user.last_name}".strip() or p.user.username, "followers": p.followers_count}
+            for p in most_followed
+        ]
+        
+        thirty_days_ago = now - timedelta(days=30)
+        fastest_growing = StudentProfile.objects.filter(user__date_joined__gte=thirty_days_ago).order_by('-followers_count')[:5]
+        fastest_growing_data = [
+            {"username": p.user.username, "name": f"{p.user.first_name} {p.user.last_name}".strip() or p.user.username, "followers": p.followers_count}
+            for p in fastest_growing
+        ]
+        
+        creators = User.objects.annotate(posts_count=Count('posts')).order_by('-posts_count')[:5]
+        top_creators_data = [
+            {"username": u.username, "name": f"{u.first_name} {u.last_name}".strip() or u.username, "posts": u.posts_count}
+            for u in creators
+        ]
+
         return Response({
             "user_trends": user_trends,
             "post_trends": post_trends,
-            "departments": departments
+            "departments": departments,
+            "most_followed": most_followed_data,
+            "fastest_growing": fastest_growing_data,
+            "top_creators": top_creators_data
         }, status=status.HTTP_200_OK)
+
+
+class AdminFollowsListView(views.APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        from accounts.models import Follower
+        follows = Follower.objects.all().select_related('follower', 'following').order_by('-created_at')
+        results = []
+        for f in follows:
+            results.append({
+                "id": f.id,
+                "follower_id": f.follower.id,
+                "follower_username": f.follower.username,
+                "follower_name": f"{f.follower.first_name} {f.follower.last_name}".strip() or f.follower.username,
+                "following_id": f.following.id,
+                "following_username": f.following.username,
+                "following_name": f"{f.following.first_name} {f.following.last_name}".strip() or f.following.username,
+                "created_at": f.created_at.isoformat() if f.created_at else None
+            })
+        return Response(results, status=status.HTTP_200_OK)
+
+
+class AdminFollowDeleteView(views.APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def delete(self, request, pk):
+        from accounts.models import Follower
+        relation = get_object_or_404(Follower, pk=pk)
+        relation.delete()
+        return Response({"message": "Follow relationship removed successfully."}, status=status.HTTP_200_OK)

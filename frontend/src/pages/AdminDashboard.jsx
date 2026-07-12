@@ -145,6 +145,71 @@ const AdminDashboard = () => {
               </div>
             </div>
           )}
+
+          {/* Follow & Content Analytics Grid */}
+          {analytics && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Top Content Creators */}
+              <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-4">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-gray-500">Top Content Creators</h4>
+                <div className="divide-y divide-border text-xs">
+                  {analytics.top_creators?.map((creator, i) => (
+                    <div key={creator.username} className="flex justify-between items-center py-2.5">
+                      <span className="font-bold text-text">
+                        {i + 1}. {creator.name} <span className="text-[10px] text-gray-400 font-normal block sm:inline">@{creator.username}</span>
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 text-[10px] font-bold whitespace-nowrap">
+                        {creator.posts} articles
+                      </span>
+                    </div>
+                  ))}
+                  {(!analytics.top_creators || analytics.top_creators.length === 0) && (
+                    <p className="text-xs text-gray-400 italic py-4">No content creator analytics.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Most Followed Profiles */}
+              <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-4">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-gray-500">Most Followed Profiles</h4>
+                <div className="divide-y divide-border text-xs">
+                  {analytics.most_followed?.map((profile, i) => (
+                    <div key={profile.username} className="flex justify-between items-center py-2.5">
+                      <span className="font-bold text-text">
+                        {i + 1}. {profile.name} <span className="text-[10px] text-gray-400 font-normal block sm:inline">@{profile.username}</span>
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 text-[10px] font-bold whitespace-nowrap">
+                        {profile.followers} followers
+                      </span>
+                    </div>
+                  ))}
+                  {(!analytics.most_followed || analytics.most_followed.length === 0) && (
+                    <p className="text-xs text-gray-400 italic py-4">No follow count analytics.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Fastest Growing Profiles */}
+              <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-4">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-gray-500">Fastest Growing Profiles</h4>
+                <div className="divide-y divide-border text-xs">
+                  {analytics.fastest_growing?.map((profile, i) => (
+                    <div key={profile.username} className="flex justify-between items-center py-2.5">
+                      <span className="font-bold text-text">
+                        {i + 1}. {profile.name} <span className="text-[10px] text-gray-400 font-normal block sm:inline">@{profile.username}</span>
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 text-[10px] font-bold whitespace-nowrap">
+                        {profile.followers} followers
+                      </span>
+                    </div>
+                  ))}
+                  {(!analytics.fastest_growing || analytics.fastest_growing.length === 0) && (
+                    <p className="text-xs text-gray-400 italic py-4">No growth statistics available.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </AdminLayout>

@@ -214,8 +214,9 @@ const Search = () => {
                     <div className="min-w-0 flex-1">
                       <h4 className="font-bold text-sm text-text truncate">{usr.name}</h4>
                       <p className="text-[10px] text-gray-500 truncate">@{usr.username} • {usr.email}</p>
-                      <div className="flex gap-1 text-[9px] text-primary font-bold mt-0.5">
-                        {usr.department && <span className="truncate max-w-[150px]">{usr.department.split(' ')[0]}</span>}
+                      <div className="flex gap-1 text-[9px] text-primary font-bold mt-0.5 flex-wrap">
+                        {usr.department && <span className="truncate max-w-[120px]">{usr.department.split(' ')[0]}</span>}
+                        {usr.branch && <span>• {usr.branch}</span>}
                         {usr.year && <span>• {usr.year}</span>}
                       </div>
                     </div>
