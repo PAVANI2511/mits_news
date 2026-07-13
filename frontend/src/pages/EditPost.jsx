@@ -22,6 +22,13 @@ const EditPost = () => {
     music_url: '',
   });
 
+  const [clearedFields, setClearedFields] = useState({
+    image: false,
+    video: false,
+    audio: false,
+    pdf: false,
+  });
+
   const [files, setFiles] = useState({
     image: null,
     video: null,
@@ -31,6 +38,9 @@ const EditPost = () => {
 
   const [previews, setPreviews] = useState({
     image: '',
+    video: '',
+    audio: '',
+    pdf: '',
   });
 
   const [error, setError] = useState('');
@@ -77,6 +87,9 @@ const EditPost = () => {
 
       setPreviews({
         image: post.image || '',
+        video: post.video || '',
+        audio: post.audio || '',
+        pdf: post.pdf || '',
       });
     } catch (err) {
       setError("Failed to fetch post details. It might have been deleted.");
@@ -95,6 +108,7 @@ const EditPost = () => {
     if (!file) return;
 
     setFiles(prev => ({ ...prev, [type]: file }));
+    setClearedFields(prev => ({ ...prev, [type]: false }));
 
     if (type === 'image') {
       const reader = new FileReader();
@@ -102,12 +116,15 @@ const EditPost = () => {
         setPreviews(prev => ({ ...prev, [type]: reader.result }));
       };
       reader.readAsDataURL(file);
+    } else {
+      setPreviews(prev => ({ ...prev, [type]: file.name }));
     }
   };
 
   const removeFile = (type) => {
     setFiles(prev => ({ ...prev, [type]: null }));
     setPreviews(prev => ({ ...prev, [type]: '' }));
+    setClearedFields(prev => ({ ...prev, [type]: true }));
   };
 
   const handleSubmit = async (e) => {
@@ -134,6 +151,11 @@ const EditPost = () => {
       if (files.video) submitData.append('video', files.video);
       if (files.audio) submitData.append('audio', files.audio);
       if (files.pdf) submitData.append('pdf', files.pdf);
+
+      if (clearedFields.image) submitData.append('clear_image', 'true');
+      if (clearedFields.video) submitData.append('clear_video', 'true');
+      if (clearedFields.audio) submitData.append('clear_audio', 'true');
+      if (clearedFields.pdf) submitData.append('clear_pdf', 'true');
 
       await postsAPI.update(id, submitData);
       setSuccess("Your campus article was successfully updated!");
@@ -290,15 +312,45 @@ const EditPost = () => {
               </div>
 
               {/* Current or New Previews */}
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-4 mt-2">
                 {previews.image && (
-                  <div className="relative h-20 w-20 rounded-lg overflow-hidden border border-border">
+                  <div className="relative h-20 w-20 rounded-lg overflow-hidden border border-border flex items-center justify-center bg-bg">
                     <img 
                       src={getMediaUrl(previews.image)} 
                       alt="Image preview" 
                       className="h-full w-full object-cover" 
                     />
-                    <button type="button" onClick={() => removeFile('image')} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs">
+                    <button type="button" onClick={() => removeFile('image')} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs hover:bg-red-500">
+                      <FiX />
+                    </button>
+                  </div>
+                )}
+
+                {previews.video && (
+                  <div className="relative h-20 w-32 rounded-lg overflow-hidden border border-border flex flex-col items-center justify-center bg-bg p-2 text-center">
+                    <FiVideo className="text-xl text-primary mb-1" />
+                    <span className="text-[8px] text-text truncate w-full">{previews.video.split('/').pop()}</span>
+                    <button type="button" onClick={() => removeFile('video')} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs hover:bg-red-500">
+                      <FiX />
+                    </button>
+                  </div>
+                )}
+
+                {previews.audio && (
+                  <div className="relative h-20 w-24 rounded-lg overflow-hidden border border-border flex flex-col items-center justify-center bg-bg p-2 text-center">
+                    <FiMusic className="text-xl text-green-500 mb-1" />
+                    <span className="text-[8px] text-text truncate w-full">{previews.audio.split('/').pop()}</span>
+                    <button type="button" onClick={() => removeFile('audio')} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs hover:bg-red-500">
+                      <FiX />
+                    </button>
+                  </div>
+                )}
+
+                {previews.pdf && (
+                  <div className="relative h-20 w-24 rounded-lg overflow-hidden border border-border flex flex-col items-center justify-center bg-bg p-2 text-center">
+                    <FiFileText className="text-xl text-red-500 mb-1" />
+                    <span className="text-[8px] text-text truncate w-full">{previews.pdf.split('/').pop()}</span>
+                    <button type="button" onClick={() => removeFile('pdf')} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs hover:bg-red-500">
                       <FiX />
                     </button>
                   </div>

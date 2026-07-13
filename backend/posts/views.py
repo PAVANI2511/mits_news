@@ -84,6 +84,18 @@ class PostDetailView(views.APIView):
         post.location = request.data.get('location', post.location)
         post.music_url = request.data.get('music_url', post.music_url)
 
+        # Check explicit clear flags
+        if request.data.get('clear_image') == 'true':
+            post.image = None
+        if request.data.get('clear_video') == 'true':
+            post.video = None
+        if request.data.get('clear_audio') == 'true':
+            post.audio = None
+        if request.data.get('clear_poster') == 'true':
+            post.poster = None
+        if request.data.get('clear_pdf') == 'true':
+            post.pdf = None
+
         # Files updates
         if 'image' in request.FILES:
             post.image = request.FILES['image']
