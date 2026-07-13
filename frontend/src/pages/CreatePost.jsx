@@ -106,7 +106,28 @@ const CreatePost = () => {
       setSuccess("Your campus article was successfully published!");
       setTimeout(() => navigate('/feed'), 1500);
     } catch (err) {
-      setError(err.response?.data?.detail || err.response?.data?.error || "An error occurred while publishing the post.");
+      let errorMsg = "An error occurred while publishing the post.";
+      if (err.response?.data) {
+        const data = err.response.data;
+        if (typeof data === 'string') {
+          errorMsg = data;
+        } else if (data.detail) {
+          errorMsg = data.detail;
+        } else if (data.error) {
+          errorMsg = data.error;
+        } else {
+          const messages = Object.entries(data).map(([field, errs]) => {
+            const fieldName = field.charAt(0).toUpperCase() + field.slice(1).replace('_', ' ');
+            return `${fieldName}: ${Array.isArray(errs) ? errs.join(', ') : errs}`;
+          });
+          if (messages.length > 0) {
+            errorMsg = messages.join(' | ');
+          }
+        }
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      setError(errorMsg);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
