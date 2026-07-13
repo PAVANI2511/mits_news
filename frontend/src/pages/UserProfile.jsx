@@ -232,7 +232,6 @@ const UserProfile = () => {
                     {profile.role_type || 'student'}
                   </span>
                   {profile.department && <span>• {profile.department}</span>}
-                  {profile.branch && <span>• {profile.branch}</span>}
                   {profile.role_type === 'teacher' ? (
                     <>
                       {profile.designation && <span>• {profile.designation}</span>}

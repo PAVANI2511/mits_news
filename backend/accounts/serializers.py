@@ -10,7 +10,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentProfile
-        fields = ['id', 'username', 'email', 'name', 'department', 'branch', 'year', 'bio', 'profile_pic', 'cover_photo', 'theme_preference', 'is_blocked', 'followers_count', 'following_count', 'email_notifications_enabled', 'followed_notifications_enabled', 'role_type', 'roll_number', 'designation', 'teacher_role', 'mobile_number']
+        fields = ['id', 'username', 'email', 'name', 'department', 'year', 'bio', 'profile_pic', 'cover_photo', 'theme_preference', 'is_blocked', 'followers_count', 'following_count', 'email_notifications_enabled', 'followed_notifications_enabled', 'role_type', 'roll_number', 'designation', 'teacher_role', 'mobile_number']
         read_only_fields = ['is_blocked', 'followers_count', 'following_count']
 
     def get_name(self, obj):

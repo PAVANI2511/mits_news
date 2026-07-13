@@ -34,7 +34,6 @@ const Settings = () => {
   const [teacherRole, setTeacherRole] = useState(user?.profile?.teacher_role ? (isPresetRole ? user.profile.teacher_role : 'Others') : '');
   const [customTeacherRole, setCustomTeacherRole] = useState(user?.profile?.teacher_role ? (isPresetRole ? '' : user.profile.teacher_role) : '');
   const [mobileNumber, setMobileNumber] = useState(user?.profile?.mobile_number || '');
-  const [branch, setBranch] = useState(user?.profile?.branch || '');
   const [followedNotificationsEnabled, setFollowedNotificationsEnabled] = useState(user?.profile?.followed_notifications_enabled ?? true);
   
   const [profilePic, setProfilePic] = useState(null);
@@ -159,7 +158,7 @@ const Settings = () => {
       submitData.append('designation', roleType === 'teacher' ? designation : '');
       submitData.append('teacher_role', roleType === 'teacher' ? teacherRoleValue : '');
       submitData.append('mobile_number', mobileNumber);
-      submitData.append('branch', branch);
+
       submitData.append('followed_notifications_enabled', followedNotificationsEnabled);
 
       if (profilePic) {
@@ -396,18 +395,7 @@ const Settings = () => {
 
                     {roleType === 'student' ? (
                       <>
-                        <div>
-                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                            Branch
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="e.g. CSE or CST"
-                            value={branch}
-                            onChange={(e) => setBranch(e.target.value)}
-                            className="w-full px-4 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                          />
-                        </div>
+
                         <div>
                           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                             Year of Study

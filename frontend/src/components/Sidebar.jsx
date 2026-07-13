@@ -55,7 +55,6 @@ const Sidebar = () => {
           
           <div className="mt-1 flex justify-center flex-wrap gap-1.5 text-xs text-primary font-semibold">
             {user.profile?.department && <span>{user.profile.department}</span>}
-            {user.profile?.branch && <span>• {user.profile.branch}</span>}
             {user.profile?.year && <span>• {user.profile.year}</span>}
           </div>
 

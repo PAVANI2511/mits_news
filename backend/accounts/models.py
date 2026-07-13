@@ -7,7 +7,6 @@ class StudentProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role_type = models.CharField(max_length=20, default='student')
     department = models.CharField(max_length=100, blank=True, default='')
-    branch = models.CharField(max_length=100, blank=True, default='')
     year = models.CharField(max_length=50, blank=True, default='')
     roll_number = models.CharField(max_length=50, blank=True, default='')
     designation = models.CharField(max_length=100, blank=True, default='')

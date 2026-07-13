@@ -22,7 +22,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         if self.user.profile.is_blocked:
             raise serializers.ValidationError("Your account has been blocked by the admin.")
         
-        user_serializer = UserSerializer(self.user)
+        user_serializer = UserSerializer(self.user, context={'request': self.context.get('request')})
         data['user'] = user_serializer.data
 
         # Log successful login
@@ -45,7 +45,7 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        user_data = UserSerializer(user).data
+        user_data = UserSerializer(user, context={'request': request}).data
         return Response({
             "message": "User registered successfully.",
             "user": user_data
@@ -61,7 +61,7 @@ class UserProfileView(views.APIView):
         if not profile:
             profile = StudentProfile.objects.create(user=user)
         
-        profile_serializer = ProfileSerializer(profile)
+        profile_serializer = ProfileSerializer(profile, context={'request': request})
         is_following = False
         if request.user.is_authenticated and request.user != user:
             is_following = Follower.objects.filter(follower=request.user, following=user).exists()
@@ -342,7 +342,7 @@ class SearchUsersView(views.APIView):
                 "email": u.email,
                 "name": f"{u.first_name} {u.last_name}".strip() or u.username,
                 "department": prof.department if prof else '',
-                "branch": prof.branch if prof else '',
+
                 "year": prof.year if prof else '',
                 "bio": prof.bio if prof else '',
                 "profile_pic": profile_pic_url,
@@ -442,7 +442,7 @@ class SuggestedUsersView(views.APIView):
                 "email": u.email,
                 "name": f"{u.first_name} {u.last_name}".strip() or u.username,
                 "department": prof.department if prof else '',
-                "branch": prof.branch if prof else '',
+
                 "year": prof.year if prof else '',
                 "bio": prof.bio if prof else '',
                 "profile_pic": profile_pic_url,
