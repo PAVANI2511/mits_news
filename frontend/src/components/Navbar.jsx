@@ -164,7 +164,7 @@ const Navbar = () => {
               </button>
 
               {themeDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 rounded-lg bg-card border border-border shadow-lg py-1 z-50">
+                <div className="absolute right-0 top-full mt-1.5 w-48 rounded-lg bg-card border border-border shadow-lg py-1 z-50">
                   <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 border-b border-border">Select Theme</div>
                   {Object.keys(presets).map((name) => (
                     <button
