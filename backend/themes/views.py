@@ -2,7 +2,6 @@ from rest_framework import status, views, permissions
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import Theme
-from db_connection import themes_col, users_col
 
 class ThemePreferenceSaveView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -10,16 +9,10 @@ class ThemePreferenceSaveView(views.APIView):
     def post(self, request):
         theme_name = request.data.get('theme_preference', 'light').strip()
         
-        # Save theme preference in StudentProfile (SQLite)
+        # Save theme preference in StudentProfile
         profile = request.user.profile
         profile.theme_preference = theme_name
         profile.save()
-
-        # Update in MongoDB users collection
-        users_col.update_one(
-            {"_id": str(request.user.id)},
-            {"$set": {"theme_preference": theme_name}}
-        )
 
         return Response({
             "message": "Theme preference updated successfully.",

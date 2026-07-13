@@ -2,20 +2,15 @@ from rest_framework import status, views, permissions
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .models import Notification
-from db_connection import notifications_col
+from .serializers import NotificationSerializer
 
 class NotificationsListView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        user_id = str(request.user.id)
-        # Fetch from MongoDB sorted by newest
-        cursor = notifications_col.find({"recipient_id": user_id}).sort("created_at", -1)
-        results = []
-        for doc in cursor:
-            doc["id"] = doc.pop("_id")
-            results.append(doc)
-        return Response(results, status=status.HTTP_200_OK)
+        notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
+        serializer = NotificationSerializer(notifications, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class MarkNotificationReadView(views.APIView):
@@ -33,13 +28,6 @@ class MarkAllNotificationsReadView(views.APIView):
 
     def post(self, request):
         Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
-        
-        # Sync all recipient notifications in MongoDB
-        notifications_col.update_many(
-            {"recipient_id": str(request.user.id), "is_read": False},
-            {"$set": {"is_read": True}}
-        )
-        
         return Response({"message": "All notifications marked as read."}, status=status.HTTP_200_OK)
 
 
@@ -47,6 +35,5 @@ class UnreadNotificationsCountView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        user_id = str(request.user.id)
-        count = notifications_col.count_documents({"recipient_id": user_id, "is_read": False})
+        count = Notification.objects.filter(recipient=request.user, is_read=False).count()
         return Response({"unread_count": count}, status=status.HTTP_200_OK)

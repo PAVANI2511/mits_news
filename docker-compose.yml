@@ -2,12 +2,16 @@ version: '3.8'
 
 services:
   db:
-    image: mongo:latest
-    container_name: mits_mongodb
+    image: postgres:15-alpine
+    container_name: mits_postgres
     ports:
-      - "27017:27017"
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=mits_newspaper
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
     volumes:
-      - mongo_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
   backend:
@@ -18,8 +22,11 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - MONGO_URI=mongodb://db:27017
-      - MONGO_DB_NAME=mits_newspaper
+      - DB_NAME=mits_newspaper
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
       - DEBUG=True
     depends_on:
       - db
@@ -33,9 +40,11 @@ services:
       - /app/node_modules
     ports:
       - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
     depends_on:
       - backend
     restart: unless-stopped
 
 volumes:
-  mongo_data:
+  postgres_data:

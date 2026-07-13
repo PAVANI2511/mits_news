@@ -9,7 +9,6 @@ import os
 from .models import Post, Like, SavedPost
 from .serializers import PostSerializer
 from notifications.models import Notification
-from db_connection import posts_col, likes_col, saved_posts_col, followers_col
 
 import threading
 
@@ -55,46 +54,17 @@ class PostCreateView(generics.CreateAPIView):
         from notifications.models import create_mention_notifications
         create_mention_notifications(post.caption + " " + post.text, request.user, post=post)
 
-        # Fetch fresh synced post from MongoDB
-        post_doc = posts_col.find_one({"_id": str(post.id)})
-        if post_doc:
-            post_doc["id"] = post_doc.pop("_id")
-            post_doc["likes_count"] = 0
-            post_doc["comments_count"] = 0
-            post_doc["saved_count"] = 0
-            post_doc["share_count"] = 0
-            post_doc["is_liked"] = False
-            post_doc["is_saved"] = False
-            post_doc["is_following"] = False
-        return Response(post_doc or serializer.data, status=status.HTTP_201_CREATED)
+        response_serializer = PostSerializer(post, context={'request': request})
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
 class PostDetailView(views.APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request, pk):
-        # Query MongoDB
-        post_doc = posts_col.find_one({"_id": str(pk), "is_blocked": False})
-        if not post_doc:
-            return Response({"error": "Post not found or blocked."}, status=status.HTTP_404_NOT_FOUND)
-
-        post_doc["id"] = post_doc.pop("_id")
-        
-        # Inject like, comment, and save counts
-        post_doc["likes_count"] = likes_col.count_documents({"post_id": str(pk)})
-        from db_connection import comments_col
-        post_doc["comments_count"] = comments_col.count_documents({"post_id": str(pk), "is_deleted": False})
-        post_doc["saved_count"] = saved_posts_col.count_documents({"post_id": str(pk)})
-        post_doc["share_count"] = post_doc.get("share_count", 0)
-        
-        # Inject current user states
-        post_doc["is_liked"] = False
-        post_doc["is_saved"] = False
-        if request.user.is_authenticated:
-            post_doc["is_liked"] = likes_col.count_documents({"post_id": str(pk), "user_id": str(request.user.id)}) > 0
-            post_doc["is_saved"] = saved_posts_col.count_documents({"post_id": str(pk), "user_id": str(request.user.id)}) > 0
-
-        return Response(post_doc, status=status.HTTP_200_OK)
+        post = get_object_or_404(Post, pk=pk, is_blocked=False)
+        serializer = PostSerializer(post, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk):
         post = get_object_or_404(Post, pk=pk)
@@ -132,10 +102,8 @@ class PostDetailView(views.APIView):
         from notifications.models import create_mention_notifications
         create_mention_notifications(caption + " " + text, request.user, post=post)
 
-        post_doc = posts_col.find_one({"_id": str(post.id)})
-        if post_doc:
-            post_doc["id"] = post_doc.pop("_id")
-        return Response(post_doc, status=status.HTTP_200_OK)
+        serializer = PostSerializer(post, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, pk):
         post = get_object_or_404(Post, pk=pk)
@@ -156,58 +124,30 @@ class HomeFeedView(views.APIView):
         hashtag = request.query_params.get('hashtag', '').strip()
         username = request.query_params.get('username', '').strip()
 
-        # Build mongo query
-        mongo_query = {"is_blocked": False}
+        queryset = Post.objects.filter(is_blocked=False)
         if query:
-            import re
-            escaped_query = re.escape(query)
-            mongo_query["$or"] = [
-                {"caption": re.compile(escaped_query, re.IGNORECASE)},
-                {"text": re.compile(escaped_query, re.IGNORECASE)},
-                {"location": re.compile(escaped_query, re.IGNORECASE)}
-            ]
+            from django.db.models import Q
+            queryset = queryset.filter(
+                Q(caption__icontains=query) |
+                Q(text__icontains=query) |
+                Q(location__icontains=query)
+            )
         if hashtag:
-            mongo_query["hashtags"] = hashtag.strip("#")
+            queryset = queryset.filter(hashtags__icontains=hashtag)
         if username:
-            mongo_query["username"] = username
+            queryset = queryset.filter(user__username=username)
 
-        # Total post docs sorting by newest
-        posts_cursor = posts_col.find(mongo_query).sort("created_at", -1)
-        
-        # Paginate manually via PyMongo
-        total_count = posts_col.count_documents(mongo_query)
+        queryset = queryset.order_by('-created_at')
+
+        total_count = queryset.count()
         skipped = (page - 1) * page_size
-        posts_list = list(posts_cursor.skip(skipped).limit(page_size))
+        page_items = queryset[skipped:skipped + page_size]
 
-        results = []
-        for doc in posts_list:
-            post_id = doc["_id"]
-            doc["id"] = post_id
-            doc.pop("_id", None)
-            
-            # Fetch likes, comments & saves count from MongoDB
-            doc["likes_count"] = likes_col.count_documents({"post_id": str(post_id)})
-            from db_connection import comments_col
-            doc["comments_count"] = comments_col.count_documents({"post_id": str(post_id), "is_deleted": False})
-            doc["saved_count"] = saved_posts_col.count_documents({"post_id": str(post_id)})
-            doc["share_count"] = doc.get("share_count", 0)
-
-            # Inject request.user follow state, liked, saved
-            doc["is_liked"] = False
-            doc["is_saved"] = False
-            doc["is_following"] = False
-            
-            if request.user.is_authenticated:
-                doc["is_liked"] = likes_col.count_documents({"post_id": str(post_id), "user_id": str(request.user.id)}) > 0
-                doc["is_saved"] = saved_posts_col.count_documents({"post_id": str(post_id), "user_id": str(request.user.id)}) > 0
-                doc["is_following"] = followers_col.count_documents({"follower_id": str(request.user.id), "following_id": str(doc["user_id"])}) > 0
-
-            results.append(doc)
-
+        serializer = PostSerializer(page_items, many=True, context={'request': request})
         has_next = (skipped + page_size) < total_count
 
         return Response({
-            "results": results,
+            "results": serializer.data,
             "page": page,
             "has_next": has_next,
             "total_count": total_count
@@ -301,63 +241,27 @@ class GetSavedPostsView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        # Fetch saved post IDs from MongoDB, sorted by when they were bookmarked (newest first)
-        user_id = str(request.user.id)
-        saved_cursor = saved_posts_col.find({"user_id": user_id}).sort("created_at", -1)
-        post_ids = [doc["post_id"] for doc in saved_cursor]
-
-        # Fetch actual post details
-        posts_cursor = posts_col.find({"_id": {"$in": post_ids}, "is_blocked": False})
-        posts_map = {str(doc["_id"]): doc for doc in posts_cursor}
-        
-        results = []
-        for pid in post_ids:
-            if pid in posts_map:
-                doc = posts_map[pid]
-                post_id = doc["_id"]
-                
-                # Make a copy to avoid mutating any cached object and pop _id safely
-                doc_copy = dict(doc)
-                doc_copy["id"] = str(post_id)
-                doc_copy.pop("_id", None)
-                
-                doc_copy["likes_count"] = likes_col.count_documents({"post_id": str(post_id)})
-                from db_connection import comments_col
-                doc_copy["comments_count"] = comments_col.count_documents({"post_id": str(post_id), "is_deleted": False})
-                doc_copy["saved_count"] = saved_posts_col.count_documents({"post_id": str(post_id)})
-                doc_copy["share_count"] = doc_copy.get("share_count", 0)
-                doc_copy["is_liked"] = likes_col.count_documents({"post_id": str(post_id), "user_id": user_id}) > 0
-                doc_copy["is_saved"] = True
-                doc_copy["is_following"] = followers_col.count_documents({"follower_id": user_id, "following_id": str(doc_copy["user_id"])}) > 0
-                results.append(doc_copy)
-
-        return Response(results, status=status.HTTP_200_OK)
+        saved_relations = SavedPost.objects.filter(user=request.user, post__is_blocked=False).order_by('-created_at').select_related('post')
+        posts = [rel.post for rel in saved_relations]
+        serializer = PostSerializer(posts, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class MediaDownloadView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, pk):
-        # Check permissions: Viewers cannot download restricted media.
-        # Restricted media: PDF, Audio, Video, Poster? Let's check user roles.
-        # User roles:
-        # 1. Viewer: No login (request.user.is_anonymous) -> Cannot download restricted media.
-        # 2. Student: Logged in (request.user.is_authenticated) -> Can download.
-        
-        post_doc = posts_col.find_one({"_id": str(pk), "is_blocked": False})
-        if not post_doc:
-            return Response({"error": "Media not found."}, status=status.HTTP_404_NOT_FOUND)
+        post = get_object_or_404(Post, pk=pk, is_blocked=False)
 
         # Determine media url requested
         media_type = request.query_params.get('type', 'image') # image, video, audio, poster, pdf
-        media_url = post_doc.get(media_type, '')
+        media_field = getattr(post, media_type, None)
+        media_url = media_field.url if media_field else ''
 
         if not media_url:
             return Response({"error": "Requested media file does not exist on this post."}, status=status.HTTP_404_NOT_FOUND)
 
         # Check permission:
-        # "Cannot download restricted media" -> applies to Viewer. Student can download allowed media.
-        # Let's say video, audio, posters, and PDFs are restricted media. Only students can download them.
         is_restricted = media_type in ['video', 'audio', 'poster', 'pdf']
         
         if is_restricted and (not request.user.is_authenticated):
@@ -365,7 +269,6 @@ class MediaDownloadView(views.APIView):
                 "error": "Viewers are not allowed to download restricted media. Please log in using your @mits.ac.in account."
             }, status=status.HTTP_403_FORBIDDEN)
 
-        # Return download url or redirect
         return Response({"download_url": media_url}, status=status.HTTP_200_OK)
 
 
@@ -373,15 +276,19 @@ class TrendingHashtagsView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        pipeline = [
-            {"$match": {"is_blocked": False}},
-            {"$unwind": "$hashtags"},
-            {"$group": {"_id": "$hashtags", "count": {"$sum": 1}}},
-            {"$sort": {"count": -1}},
-            {"$limit": 10}
-        ]
-        results = list(posts_col.aggregate(pipeline))
-        trends = [{"tag": r["_id"], "count": r["count"]} for r in results]
+        from django.db.models import Q
+        import re
+        from collections import Counter
+        
+        posts = Post.objects.filter(is_blocked=False).values_list('hashtags', flat=True)
+        all_tags = []
+        for tags_str in posts:
+            if tags_str:
+                tokens = re.split(r'[\s,]+', tags_str)
+                all_tags.extend([t.lstrip("#").lower() for t in tokens if t.strip()])
+                
+        counter = Counter(all_tags)
+        trends = [{"tag": tag, "count": count} for tag, count in counter.most_common(10)]
         return Response(trends, status=status.HTTP_200_OK)
 
 
@@ -392,13 +299,10 @@ class FollowingFeedView(views.APIView):
         page = int(request.query_params.get('page', 1))
         page_size = int(request.query_params.get('page_size', 10))
         
-        user_id = str(request.user.id)
+        from accounts.models import Follower
+        followed_users = Follower.objects.filter(follower=request.user).values_list('following', flat=True)
         
-        # Get IDs of users followed by the logged-in user
-        following_cursor = followers_col.find({"follower_id": user_id})
-        followed_ids = [doc["following_id"] for doc in following_cursor]
-        
-        if not followed_ids:
+        if not followed_users:
             return Response({
                 "results": [],
                 "page": page,
@@ -406,38 +310,17 @@ class FollowingFeedView(views.APIView):
                 "total_count": 0
             }, status=status.HTTP_200_OK)
             
-        mongo_query = {
-            "user_id": {"$in": followed_ids},
-            "is_blocked": False
-        }
-        
-        posts_cursor = posts_col.find(mongo_query).sort("created_at", -1)
-        total_count = posts_col.count_documents(mongo_query)
+        queryset = Post.objects.filter(user__in=followed_users, is_blocked=False).order_by('-created_at')
+        total_count = queryset.count()
         
         skipped = (page - 1) * page_size
-        posts_list = list(posts_cursor.skip(skipped).limit(page_size))
+        page_items = queryset[skipped:skipped + page_size]
         
-        results = []
-        for doc in posts_list:
-            post_id = doc["_id"]
-            doc["id"] = post_id
-            doc.pop("_id", None)
-            
-            doc["likes_count"] = likes_col.count_documents({"post_id": str(post_id)})
-            from db_connection import comments_col
-            doc["comments_count"] = comments_col.count_documents({"post_id": str(post_id), "is_deleted": False})
-            doc["saved_count"] = saved_posts_col.count_documents({"post_id": str(post_id)})
-            doc["share_count"] = doc.get("share_count", 0)
-            
-            doc["is_liked"] = likes_col.count_documents({"post_id": str(post_id), "user_id": user_id}) > 0
-            doc["is_saved"] = saved_posts_col.count_documents({"post_id": str(post_id), "user_id": user_id}) > 0
-            doc["is_following"] = True
-            
-            results.append(doc)
-            
+        serializer = PostSerializer(page_items, many=True, context={'request': request})
         has_next = (skipped + page_size) < total_count
+        
         return Response({
-            "results": results,
+            "results": serializer.data,
             "page": page,
             "has_next": has_next,
             "total_count": total_count
@@ -451,42 +334,30 @@ class ExploreFeedView(views.APIView):
         page = int(request.query_params.get('page', 1))
         page_size = int(request.query_params.get('page_size', 10))
         
-        mongo_query = {"is_blocked": False}
-        posts_cursor = posts_col.find(mongo_query)
-        posts_list = list(posts_cursor)
+        queryset = Post.objects.filter(is_blocked=False)
+        posts_list = list(queryset)
         
-        # Inject engagement statistics and follow states
-        for doc in posts_list:
-            post_id = doc["_id"]
-            doc["id"] = post_id
-            doc["likes_count"] = likes_col.count_documents({"post_id": str(post_id)})
-            from db_connection import comments_col
-            doc["comments_count"] = comments_col.count_documents({"post_id": str(post_id), "is_deleted": False})
-            doc["saved_count"] = saved_posts_col.count_documents({"post_id": str(post_id)})
-            doc["share_count"] = doc.get("share_count", 0)
-            
-            doc["is_liked"] = False
-            doc["is_saved"] = False
-            doc["is_following"] = False
-            if request.user.is_authenticated:
-                user_id = str(request.user.id)
-                doc["is_liked"] = likes_col.count_documents({"post_id": str(post_id), "user_id": user_id}) > 0
-                doc["is_saved"] = saved_posts_col.count_documents({"post_id": str(post_id), "user_id": user_id}) > 0
-                doc["is_following"] = followers_col.count_documents({"follower_id": user_id, "following_id": str(doc["user_id"])}) > 0
+        # We need to compute (likes_count * 2) + comments_count to sort them
+        # Let's serialize the posts first to get their precomputed likes_count and comments_count
+        serializer = PostSerializer(posts_list, many=True, context={'request': request})
+        serialized_data = serializer.data
         
         # Sort by popularity: (likes_count * 2) + comments_count DESC, then created_at DESC
-        posts_list.sort(key=lambda x: (x["likes_count"] * 2 + x["comments_count"], x.get("created_at", "")), reverse=True)
+        serialized_data.sort(
+            key=lambda x: (
+                (x.get("likes_count", 0) * 2) + x.get("comments_count", 0), 
+                x.get("created_at", "")
+            ), 
+            reverse=True
+        )
         
-        total_count = len(posts_list)
+        total_count = len(serialized_data)
         skipped = (page - 1) * page_size
-        paginated_posts = posts_list[skipped : skipped + page_size]
+        paginated_data = serialized_data[skipped : skipped + page_size]
         
-        for doc in paginated_posts:
-            doc.pop("_id", None)
-            
         has_next = (skipped + page_size) < total_count
         return Response({
-            "results": paginated_posts,
+            "results": paginated_data,
             "page": page,
             "has_next": has_next,
             "total_count": total_count

@@ -209,22 +209,16 @@ class ForgotPasswordView(views.APIView):
         from django.utils import timezone
         from datetime import datetime, timedelta
         from django.core.mail import send_mail
-        from db_connection import users_col
         
         # Generate 6-digit OTP
         otp = "".join([str(random.randint(0, 9)) for _ in range(6)])
-        expiry = timezone.now() + timedelta(minutes=5)
+        expiry = timezone.now() + timedelta(minutes=10)
         
-        # Store OTP in MongoDB
-        users_col.update_one(
-            {"_id": str(user.id)},
-            {"$set": {
-                "reset_otp": {
-                    "code": otp,
-                    "expiry": expiry.isoformat()
-                }
-            }}
-        )
+        # Store OTP in StudentProfile
+        profile = user.profile
+        profile.reset_otp_code = otp
+        profile.reset_otp_expiry = expiry
+        profile.save()
         
         # Send Email
         from django.conf import settings
@@ -272,27 +266,16 @@ class ResetPasswordView(views.APIView):
         if not user:
             return Response({"error": "User with this email does not exist."}, status=status.HTTP_404_NOT_FOUND)
         
-        from db_connection import users_col
         from django.utils import timezone
-        from datetime import datetime
         
-        doc = users_col.find_one({"_id": str(user.id)})
-        reset_otp = doc.get("reset_otp") if doc else None
-        
-        if not reset_otp:
+        profile = user.profile
+        if not profile.reset_otp_code:
             return Response({"error": "No password reset request found. Please request a new verification code."}, status=status.HTTP_400_BAD_REQUEST)
         
-        stored_code = reset_otp.get("code")
-        stored_expiry = reset_otp.get("expiry")
-        
-        if stored_code != str(otp).strip():
+        if profile.reset_otp_code != str(otp).strip():
             return Response({"error": "Invalid verification code."}, status=status.HTTP_400_BAD_REQUEST)
             
-        expiry_dt = datetime.fromisoformat(stored_expiry)
-        if timezone.is_naive(expiry_dt):
-            expiry_dt = timezone.make_aware(expiry_dt)
-            
-        if timezone.now() > expiry_dt:
+        if timezone.now() > profile.reset_otp_expiry:
             return Response({"error": "Verification code has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
             
         # Validate new password complexity constraints (min 8 chars, containing upper, lowercase, numbers, spl characters)
@@ -309,7 +292,9 @@ class ResetPasswordView(views.APIView):
             return Response({"error": "Password must contain at least one special character."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Clean up OTP and reset password
-        users_col.update_one({"_id": str(user.id)}, {"$unset": {"reset_otp": ""}})
+        profile.reset_otp_code = ''
+        profile.reset_otp_expiry = None
+        profile.save()
         
         user.set_password(new_password)
         user.save()
@@ -324,33 +309,54 @@ class SearchUsersView(views.APIView):
         dept = request.query_params.get('department', '').strip()
         year = request.query_params.get('year', '').strip()
 
-        # Connect to MongoDB for searching users
-        from db_connection import users_col
-        
-        import re
-        mongo_query = {}
+        from django.db.models import Q
+        queryset = User.objects.all()
+
         if query:
-            escaped_query = re.escape(query)
-            mongo_query["$or"] = [
-                {"username": re.compile(escaped_query, re.IGNORECASE)},
-                {"name": re.compile(escaped_query, re.IGNORECASE)},
-                {"email": re.compile(escaped_query, re.IGNORECASE)}
-            ]
+            queryset = queryset.filter(
+                Q(username__icontains=query) |
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query) |
+                Q(email__icontains=query)
+            )
         if dept:
-            mongo_query["department"] = re.compile(re.escape(dept), re.IGNORECASE)
+            queryset = queryset.filter(profile__department__icontains=dept)
         if year:
-            mongo_query["year"] = re.compile(re.escape(year), re.IGNORECASE)
+            queryset = queryset.filter(profile__year__icontains=year)
 
         # Hide blocked profiles unless requester is admin
         if not (request.user.is_authenticated and request.user.is_staff):
-            mongo_query["is_blocked"] = False
+            queryset = queryset.filter(profile__is_blocked=False)
 
-        users_cursor = users_col.find(mongo_query).limit(50)
+        # Limit to 50 results
+        queryset = queryset.select_related('profile')[:50]
+
         results = []
-        for doc in users_cursor:
-            doc["id"] = doc.get("_id")
-            doc.pop("_id", None)
-            results.append(doc)
+        for u in queryset:
+            prof = getattr(u, 'profile', None)
+            profile_pic_url = prof.profile_pic.url if prof and prof.profile_pic else ''
+            cover_photo_url = prof.cover_photo.url if prof and prof.cover_photo else ''
+            results.append({
+                "id": str(u.id),
+                "username": u.username,
+                "email": u.email,
+                "name": f"{u.first_name} {u.last_name}".strip() or u.username,
+                "department": prof.department if prof else '',
+                "branch": prof.branch if prof else '',
+                "year": prof.year if prof else '',
+                "bio": prof.bio if prof else '',
+                "profile_pic": profile_pic_url,
+                "cover_photo": cover_photo_url,
+                "theme_preference": prof.theme_preference if prof else 'light',
+                "is_blocked": prof.is_blocked if prof else False,
+                "followers_count": prof.followers_count if prof else 0,
+                "following_count": prof.following_count if prof else 0,
+                "role_type": prof.role_type if prof else 'student',
+                "roll_number": prof.roll_number if prof else '',
+                "designation": prof.designation if prof else '',
+                "teacher_role": prof.teacher_role if prof else '',
+                "mobile_number": prof.mobile_number if prof else '',
+            })
 
         return Response(results, status=status.HTTP_200_OK)
 
@@ -360,27 +366,7 @@ class DeleteAccountView(views.APIView):
 
     def post(self, request):
         user = request.user
-        user_id_str = str(user.id)
-        
-        from db_connection import posts_col, comments_col, users_col
-        
-        # 1. Delete user posts from MongoDB
-        posts_col.delete_many({"user_id": user_id_str})
-        
-        # 2. Delete user comments from MongoDB
-        comments_col.delete_many({"user_id": user_id_str})
-        
-        # 3. Clean up comments
-        # Django's user.delete() cascades to Comment model in SQL database,
-        # which triggers the delete() hook for individual MongoDB cleanups.
-        # Plus comments_col.delete_many({"user_id": user_id_str}) already deleted them.
-            
-        # 4. Delete user profile from MongoDB
-        users_col.delete_one({"_id": user_id_str})
-        
-        # 5. Delete the User model itself (cascades database relations automatically)
         user.delete()
-        
         return Response({"message": "Your account and all associated content have been permanently deleted."}, status=status.HTTP_200_OK)
 
 
@@ -398,27 +384,16 @@ class VerifyOTPView(views.APIView):
         if not user:
             return Response({"error": "User with this email does not exist."}, status=status.HTTP_404_NOT_FOUND)
             
-        from db_connection import users_col
         from django.utils import timezone
-        from datetime import datetime
+        profile = user.profile
         
-        doc = users_col.find_one({"_id": str(user.id)})
-        reset_otp = doc.get("reset_otp") if doc else None
-        
-        if not reset_otp:
+        if not profile.reset_otp_code:
             return Response({"error": "No password reset request found. Please request a new verification code."}, status=status.HTTP_400_BAD_REQUEST)
             
-        stored_code = reset_otp.get("code")
-        stored_expiry = reset_otp.get("expiry")
-        
-        if stored_code != str(otp).strip():
+        if profile.reset_otp_code != str(otp).strip():
             return Response({"error": "Invalid verification code."}, status=status.HTTP_400_BAD_REQUEST)
             
-        expiry_dt = datetime.fromisoformat(stored_expiry)
-        if timezone.is_naive(expiry_dt):
-            expiry_dt = timezone.make_aware(expiry_dt)
-            
-        if timezone.now() > expiry_dt:
+        if timezone.now() > profile.reset_otp_expiry:
             return Response({"error": "Verification code has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
             
         return Response({"message": "Verification code verified successfully."}, status=status.HTTP_200_OK)
@@ -429,45 +404,61 @@ class SuggestedUsersView(views.APIView):
 
     def get(self, request):
         user = request.user
-        user_id = str(user.id)
         profile = getattr(user, 'profile', None)
         dept = profile.department if profile else ''
         
         # 1. Get IDs of users already followed
-        from db_connection import followers_col, users_col
-        following_cursor = followers_col.find({"follower_id": user_id})
-        followed_ids = [doc["following_id"] for doc in following_cursor]
+        from accounts.models import Follower
+        followed_ids = Follower.objects.filter(follower=user).values_list('following_id', flat=True)
         
         # Exclude logged in user and already followed
-        exclude_ids = followed_ids + [user_id]
+        exclude_ids = list(followed_ids) + [user.id]
         
-        # Query MongoDB for suggestions
+        # Query SQL for suggestions
         # Option A: Users in the same department
         dept_suggestions = []
         if dept:
-            dept_cursor = users_col.find({
-                "id": {"$nin": exclude_ids},
-                "department": dept,
-                "is_blocked": False
-            }).limit(10)
-            dept_suggestions = list(dept_cursor)
+            dept_suggestions = User.objects.filter(
+                profile__department=dept,
+                profile__is_blocked=False
+            ).exclude(id__in=exclude_ids).select_related('profile')[:10]
             
         # Option B: Other users
-        other_cursor = users_col.find({
-            "id": {"$nin": exclude_ids + [d["id"] for d in dept_suggestions]},
-            "is_blocked": False
-        }).limit(10)
-        other_suggestions = list(other_cursor)
+        exclude_ids_b = exclude_ids + [u.id for u in dept_suggestions]
+        other_suggestions = User.objects.filter(
+            profile__is_blocked=False
+        ).exclude(id__in=exclude_ids_b).select_related('profile')[:10]
         
         # Combine
-        suggestions = dept_suggestions + other_suggestions
+        suggestions = list(dept_suggestions) + list(other_suggestions)
         results = []
-        for doc in suggestions:
-            doc["id"] = doc.get("id") or str(doc.get("_id"))
-            doc.pop("_id", None)
-            results.append(doc)
+        for u in suggestions[:10]:
+            prof = getattr(u, 'profile', None)
+            profile_pic_url = prof.profile_pic.url if prof and prof.profile_pic else ''
+            cover_photo_url = prof.cover_photo.url if prof and prof.cover_photo else ''
+            results.append({
+                "id": str(u.id),
+                "username": u.username,
+                "email": u.email,
+                "name": f"{u.first_name} {u.last_name}".strip() or u.username,
+                "department": prof.department if prof else '',
+                "branch": prof.branch if prof else '',
+                "year": prof.year if prof else '',
+                "bio": prof.bio if prof else '',
+                "profile_pic": profile_pic_url,
+                "cover_photo": cover_photo_url,
+                "theme_preference": prof.theme_preference if prof else 'light',
+                "is_blocked": prof.is_blocked if prof else False,
+                "followers_count": prof.followers_count if prof else 0,
+                "following_count": prof.following_count if prof else 0,
+                "role_type": prof.role_type if prof else 'student',
+                "roll_number": prof.roll_number if prof else '',
+                "designation": prof.designation if prof else '',
+                "teacher_role": prof.teacher_role if prof else '',
+                "mobile_number": prof.mobile_number if prof else '',
+            })
             
-        return Response(results[:10], status=status.HTTP_200_OK)
+        return Response(results, status=status.HTTP_200_OK)
 
 
 class ReportUserProfileView(views.APIView):

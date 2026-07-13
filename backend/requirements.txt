@@ -1,8 +1,10 @@
 django>=5.0
 djangorestframework
 djangorestframework-simplejwt
-pymongo
 django-cors-headers
 pillow
 python-dotenv
-mongomock
+psycopg2-binary
+cloudinary
+django-cloudinary-storage
+whitenoise

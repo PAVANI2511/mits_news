@@ -16,24 +16,6 @@ class Theme(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        from db_connection import themes_col
-        themes_col.update_one(
-            {"_id": str(self.id)},
-            {"$set": {
-                "id": str(self.id),
-                "name": self.name,
-                "user_id": str(self.user.id) if self.user else None,
-                "primary_color": self.primary_color,
-                "secondary_color": self.secondary_color,
-                "bg_color": self.bg_color,
-                "text_color": self.text_color,
-                "card_bg": self.card_bg,
-                "border_color": self.border_color
-            }},
-            upsert=True
-        )
 
     def delete(self, *args, **kwargs):
-        from db_connection import themes_col
-        themes_col.delete_one({"_id": str(self.id)})
         super().delete(*args, **kwargs)

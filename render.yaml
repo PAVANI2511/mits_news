@@ -1,0 +1,42 @@
+services:
+  # Django Backend
+  - type: web
+    name: mits-news-backend
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn mits_news.wsgi:application"
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: DB_HOST
+        fromDatabase:
+          name: mits-news-db
+          property: host
+      - key: DB_NAME
+        fromDatabase:
+          name: mits-news-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: mits-news-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: mits-news-db
+          property: password
+      - key: DB_PORT
+        value: "5432"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CORS_ALLOW_ALL_ORIGINS
+        value: "True"
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+databases:
+  - name: mits-news-db
+    plan: free

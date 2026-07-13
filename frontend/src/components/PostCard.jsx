@@ -9,18 +9,14 @@ import {
 import { 
   FaWhatsapp, FaFacebook, FaLinkedin, FaTelegram, FaTwitter 
 } from 'react-icons/fa';
-import { postsAPI, authAPI } from '../services/api';
+import { postsAPI, authAPI, getMediaUrl } from '../services/api';
 import CommentSection from './CommentSection';
 
 const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useSelector((state) => state.auth);
 
-  const getMediaUrl = (path) => {
-    if (!path) return '';
-    if (path.startsWith('http')) return path;
-    return `${window.location.protocol}//${window.location.hostname}:8000${path}`;
-  };
+
 
   const [liked, setLiked] = useState(post.is_liked || false);
   const [likesCount, setLikesCount] = useState(post.likes_count || 0);

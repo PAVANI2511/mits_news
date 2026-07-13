@@ -22,48 +22,18 @@ class StudentProfile(models.Model):
     followed_notifications_enabled = models.BooleanField(default=True)
     followers_count = models.IntegerField(default=0)
     following_count = models.IntegerField(default=0)
+    
+    # Password Reset OTP fields
+    reset_otp_code = models.CharField(max_length=6, blank=True, default='')
+    reset_otp_expiry = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.username}'s Profile"
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        # Sync with MongoDB
-        from db_connection import users_col
-        profile_pic_url = self.profile_pic.url if self.profile_pic else ''
-        cover_photo_url = self.cover_photo.url if self.cover_photo else ''
-        users_col.update_one(
-            {"_id": str(self.user.id)},
-            {"$set": {
-                "id": str(self.user.id),
-                "username": self.user.username,
-                "email": self.user.email,
-                "name": f"{self.user.first_name} {self.user.last_name}".strip() or self.user.username,
-                "department": self.department,
-                "branch": self.branch,
-                "year": self.year,
-                "bio": self.bio,
-                "profile_pic": profile_pic_url,
-                "cover_photo": cover_photo_url,
-                "theme_preference": self.theme_preference,
-                "is_blocked": self.is_blocked,
-                "email_notifications_enabled": self.email_notifications_enabled,
-                "followed_notifications_enabled": self.followed_notifications_enabled,
-                "is_admin": self.user.is_staff or self.user.is_superuser,
-                "followers_count": self.followers_count,
-                "following_count": self.following_count,
-                "role_type": self.role_type,
-                "roll_number": self.roll_number,
-                "designation": self.designation,
-                "teacher_role": self.teacher_role,
-                "mobile_number": self.mobile_number,
-            }},
-            upsert=True
-        )
 
     def delete(self, *args, **kwargs):
-        from db_connection import users_col
-        users_col.delete_one({"_id": str(self.user.id)})
         super().delete(*args, **kwargs)
 
 # Signals to automatically create profile for User
@@ -89,7 +59,6 @@ class Follower(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        from db_connection import followers_col
         
         # Recalculate follower and following counts
         self.follower.profile.following_count = Follower.objects.filter(follower=self.follower).count()
@@ -98,21 +67,7 @@ class Follower(models.Model):
         self.following.profile.followers_count = Follower.objects.filter(following=self.following).count()
         self.following.profile.save()
 
-        followers_col.update_one(
-            {"_id": f"{self.follower.id}_{self.following.id}"},
-            {"$set": {
-                "follower_id": str(self.follower.id),
-                "follower_username": self.follower.username,
-                "following_id": str(self.following.id),
-                "following_username": self.following.username,
-                "created_at": self.created_at.isoformat() if self.created_at else None
-            }},
-            upsert=True
-        )
-
     def delete(self, *args, **kwargs):
-        from db_connection import followers_col
-        followers_col.delete_one({"_id": f"{self.follower.id}_{self.following.id}"})
         super().delete(*args, **kwargs)
         
         # Recalculate counts after deletion
@@ -132,21 +87,8 @@ class LoginLog(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        from db_connection import login_logs_col
-        login_logs_col.update_one(
-            {"_id": str(self.id)},
-            {"$set": {
-                "id": str(self.id),
-                "user_id": str(self.user.id),
-                "username": self.user.username,
-                "created_at": self.created_at.isoformat() if self.created_at else None
-            }},
-            upsert=True
-        )
 
     def delete(self, *args, **kwargs):
-        from db_connection import login_logs_col
-        login_logs_col.delete_one({"_id": str(self.id)})
         super().delete(*args, **kwargs)
 
 

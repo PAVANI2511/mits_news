@@ -46,33 +46,8 @@ class Report(models.Model):
                 self.reported_user_email_snapshot = self.reported_comment.user.email
 
         super().save(*args, **kwargs)
-        from db_connection import reports_col
-        reports_col.update_one(
-            {"_id": str(self.id)},
-            {"$set": {
-                "id": str(self.id),
-                "reporter_id": str(self.reporter.id),
-                "reporter_username": self.reporter.username,
-                "reported_post_id": str(self.reported_post.id) if self.reported_post else None,
-                "reported_user_id": str(self.reported_user.id) if self.reported_user else None,
-                "reported_comment_id": str(self.reported_comment.id) if self.reported_comment else None,
-                "reported_username": self.reported_user.username if self.reported_user else (
-                    self.reported_post.user.username if self.reported_post else (
-                        self.reported_comment.user.username if self.reported_comment else self.reported_username_snapshot
-                    )
-                ),
-                "reason": self.reason,
-                "details": self.details,
-                "status": self.status,
-                "admin_notes": self.admin_notes,
-                "created_at": self.created_at.isoformat() if self.created_at else None
-            }},
-            upsert=True
-        )
 
     def delete(self, *args, **kwargs):
-        from db_connection import reports_col
-        reports_col.delete_one({"_id": str(self.id)})
         super().delete(*args, **kwargs)
 
 
@@ -87,23 +62,8 @@ class Announcement(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        from db_connection import announcements_col
-        announcements_col.update_one(
-            {"_id": str(self.id)},
-            {"$set": {
-                "id": str(self.id),
-                "author_id": str(self.author.id),
-                "author_username": self.author.username,
-                "title": self.title,
-                "content": self.content,
-                "created_at": self.created_at.isoformat() if self.created_at else None
-            }},
-            upsert=True
-        )
 
     def delete(self, *args, **kwargs):
-        from db_connection import announcements_col
-        announcements_col.delete_one({"_id": str(self.id)})
         super().delete(*args, **kwargs)
 
 
@@ -118,22 +78,7 @@ class ModerationLog(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        from db_connection import moderation_logs_col
-        moderation_logs_col.update_one(
-            {"_id": str(self.id)},
-            {"$set": {
-                "id": str(self.id),
-                "admin_id": str(self.admin.id),
-                "admin_username": self.admin.username,
-                "action": self.action,
-                "details": self.details,
-                "created_at": self.created_at.isoformat() if self.created_at else None
-            }},
-            upsert=True
-        )
 
     def delete(self, *args, **kwargs):
-        from db_connection import moderation_logs_col
-        moderation_logs_col.delete_one({"_id": str(self.id)})
         super().delete(*args, **kwargs)
 

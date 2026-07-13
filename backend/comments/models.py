@@ -25,39 +25,9 @@ class Comment(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        self.sync_to_mongo()
 
     def delete(self, *args, **kwargs):
-        from db_connection import comments_col
-        comments_col.delete_one({"_id": str(self.id)})
         super().delete(*args, **kwargs)
-
-    def sync_to_mongo(self):
-        from db_connection import comments_col
-        comments_col.update_one(
-            {"_id": str(self.id)},
-            {"$set": {
-                "id": str(self.id),
-                "post_id": str(self.post.id),
-                "user_id": str(self.user.id),
-                "username": self.user.username,
-                "name": f"{self.user.first_name} {self.user.last_name}".strip() or self.user.username,
-                "profile_pic": self.user.profile.profile_pic.url if hasattr(self.user, 'profile') and self.user.profile.profile_pic else '',
-                "content": self.content,
-                "parent_comment_id": str(self.parent_comment.id) if self.parent_comment else None,
-                "created_at": self.created_at.isoformat() if self.created_at else None,
-                "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-                "deleted_at": self.deleted_at.isoformat() if self.deleted_at else None,
-                "is_deleted": self.is_deleted,
-                "is_edited": self.is_edited,
-                "is_hidden": self.is_hidden,
-                "hidden_by_id": str(self.hidden_by.id) if self.hidden_by else None,
-                "hidden_at": self.hidden_at.isoformat() if self.hidden_at else None,
-                "is_pinned": self.is_pinned,
-                "pinned_at": self.pinned_at.isoformat() if self.pinned_at else None,
-            }},
-            upsert=True
-        )
 
 
 class CommentReaction(models.Model):

@@ -1,11 +1,17 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 
 export const getMediaUrl = (path) => {
   if (!path) return '';
   if (path.startsWith('http') || path.startsWith('data:')) return path;
-  return `${window.location.protocol}//${window.location.hostname}:8000${path}`;
+  
+  try {
+    const urlObj = new URL(API_BASE_URL);
+    return `${urlObj.origin}${path}`;
+  } catch (e) {
+    return `http://127.0.0.1:8000${path}`;
+  }
 };
 
 const api = axios.create({

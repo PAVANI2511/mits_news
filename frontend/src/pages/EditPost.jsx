@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import MainLayout from '../layouts/MainLayout';
 import Sidebar from '../components/Sidebar';
-import { postsAPI } from '../services/api';
+import { postsAPI, getMediaUrl } from '../services/api';
 import { 
   FiFileText, FiImage, FiVideo, FiMusic, 
   FiMapPin, FiPaperclip, FiSend, FiX, FiInfo 
@@ -294,7 +294,7 @@ const EditPost = () => {
                 {previews.image && (
                   <div className="relative h-20 w-20 rounded-lg overflow-hidden border border-border">
                     <img 
-                      src={previews.image.startsWith('data:') || previews.image.startsWith('http') ? previews.image : `http://127.0.0.1:8000${previews.image}`} 
+                      src={getMediaUrl(previews.image)} 
                       alt="Image preview" 
                       className="h-full w-full object-cover" 
                     />

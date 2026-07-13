@@ -10,9 +10,7 @@ from accounts.models import StudentProfile
 from posts.models import Post, Like
 from comments.models import Comment, CommentReaction
 from .models import Report, Announcement
-from db_connection import (
-    users_col, posts_col, comments_col, reports_col, announcements_col
-)
+# db_connection import removed for PostgreSQL centralized architecture
 
 class AdminDashboardStatsView(views.APIView):
     permission_classes = [permissions.IsAdminUser]
@@ -284,12 +282,8 @@ class AdminUserBlockView(views.APIView):
         # Block posts if user is blocked
         if profile.is_blocked:
             Post.objects.filter(user=user).update(is_blocked=True)
-            # Sync in MongoDB
-            posts_col.update_many({"user_id": str(user_id)}, {"$set": {"is_blocked": True}})
         else:
             Post.objects.filter(user=user).update(is_blocked=False)
-            # Sync in MongoDB
-            posts_col.update_many({"user_id": str(user_id)}, {"$set": {"is_blocked": False}})
 
         return Response({
             "message": f"User {user.username} successfully {action}.",
@@ -300,12 +294,6 @@ class AdminUserBlockView(views.APIView):
         user = get_object_or_404(User, pk=user_id)
         if user.is_staff or user.is_superuser:
             return Response({"error": "Cannot delete admin users."}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Clean up MongoDB collections for this user
-        users_col.delete_one({"_id": str(user_id)})
-        posts_col.delete_many({"user_id": str(user_id)})
-        comments_col.delete_many({"user_id": str(user_id)})
-        reports_col.delete_many({"user_id": str(user_id)})
         
         user.delete()
         return Response({"message": "User deleted successfully."}, status=status.HTTP_200_OK)
@@ -630,7 +618,6 @@ class AdminReportDetailView(views.APIView):
             profile.is_blocked = True
             profile.save()
             Post.objects.filter(user=user).update(is_blocked=True)
-            posts_col.update_many({"user_id": str(user.id)}, {"$set": {"is_blocked": True}})
             moderation_action_taken = f"Suspended user @{user.username}"
             moderation_details = f"Suspended/Blocked student account. Email: {user.email}."
             
@@ -640,21 +627,12 @@ class AdminReportDetailView(views.APIView):
             profile.is_blocked = False
             profile.save()
             Post.objects.filter(user=user).update(is_blocked=False)
-            posts_col.update_many({"user_id": str(user.id)}, {"$set": {"is_blocked": False}})
             moderation_action_taken = f"Unsuspended user @{user.username}"
             moderation_details = f"Unsuspended/Unblocked student account."
             
         elif action_val == 'delete_user' and report.reported_user:
             user = report.reported_user
-            u_id = user.id
             u_username = user.username
-            
-            # Clean MongoDB
-            users_col.delete_one({"_id": str(u_id)})
-            posts_col.delete_many({"user_id": str(u_id)})
-            comments_col.delete_many({"user_id": str(u_id)})
-            reports_col.delete_many({"user_id": str(u_id)})
-            
             user.delete()
             moderation_action_taken = f"Deleted user @{u_username}"
             moderation_details = f"Permanently deleted student account."
@@ -711,11 +689,18 @@ class AdminAnnouncementView(views.APIView):
         return [permissions.IsAdminUser()]
 
     def get(self, request):
-        cursor = announcements_col.find().sort("created_at", -1)
+        announcements = Announcement.objects.all().order_by('-created_at')
         results = []
-        for doc in cursor:
-            doc["id"] = doc.pop("_id")
-            results.append(doc)
+        for a in announcements:
+            results.append({
+                "id": str(a.id),
+                "title": a.title,
+                "content": a.content,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+                "author_id": str(a.author.id),
+                "author_username": a.author.username,
+                "author_name": f"{a.author.first_name} {a.author.last_name}".strip() or a.author.username
+            })
         return Response(results, status=status.HTTP_200_OK)
 
     def post(self, request):
