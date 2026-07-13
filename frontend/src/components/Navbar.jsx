@@ -91,45 +91,54 @@ const Navbar = () => {
           </div>
 
           {/* Navigation Links */}
-          <div className="hidden lg:flex items-center space-x-4">
-            <Link to="/feed" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition" title="Home">
-              <FiHome /> <span className="hidden xl:inline">Home</span>
+          <div className="hidden lg:flex items-center space-x-1 xl:space-x-2.5">
+            <Link to="/feed" className="flex flex-col items-center justify-center px-2 py-1 rounded-md hover:bg-bg transition text-center" title="Home">
+              <FiHome className="text-lg" />
+              <span className="text-[10px] font-medium mt-0.5">Home</span>
             </Link>
-            <Link to="/following" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition" title="Following">
-              <FiUsers /> <span className="hidden xl:inline">Following</span>
+            <Link to="/following" className="flex flex-col items-center justify-center px-2 py-1 rounded-md hover:bg-bg transition text-center" title="Following">
+              <FiUsers className="text-lg" />
+              <span className="text-[10px] font-medium mt-0.5">Following</span>
             </Link>
-            <Link to="/explore" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition" title="Explore">
-              <FiTrendingUp /> <span className="hidden xl:inline">Explore</span>
+            <Link to="/explore" className="flex flex-col items-center justify-center px-2 py-1 rounded-md hover:bg-bg transition text-center" title="Explore">
+              <FiTrendingUp className="text-lg" />
+              <span className="text-[10px] font-medium mt-0.5">Explore</span>
             </Link>
 
             {isAuthenticated ? (
               <>
-                <Link to="/create-post" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition" title="Post">
-                  <FiPlusSquare /> <span className="hidden xl:inline">Post</span>
+                <Link to="/create-post" className="flex flex-col items-center justify-center px-2 py-1 rounded-md hover:bg-bg transition text-center" title="Post">
+                  <FiPlusSquare className="text-lg" />
+                  <span className="text-[10px] font-medium mt-0.5">Post</span>
                 </Link>
-                <Link to="/notifications" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition relative" title="Alerts">
-                  <FiBell /> <span className="hidden xl:inline">Alerts</span>
+                <Link to="/notifications" className="flex flex-col items-center justify-center px-2 py-1 rounded-md hover:bg-bg transition text-center relative" title="Alerts">
+                  <FiBell className="text-lg" />
+                  <span className="text-[10px] font-medium mt-0.5">Alerts</span>
                   {unreadCount > 0 && (
-                    <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white leading-none shadow-sm animate-pulse">
+                    <span className="absolute top-0.5 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white leading-none shadow-sm animate-pulse">
                       {unreadCount}
                     </span>
                   )}
                 </Link>
-                <Link to="/saved" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition" title="Saved">
-                  <FiBookmark /> <span className="hidden xl:inline">Saved</span>
+                <Link to="/saved" className="flex flex-col items-center justify-center px-2 py-1 rounded-md hover:bg-bg transition text-center" title="Saved">
+                  <FiBookmark className="text-lg" />
+                  <span className="text-[10px] font-medium mt-0.5">Saved</span>
                 </Link>
-                <Link to={`/profile/${user?.username}`} className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition" title="Profile">
-                  <FiUser /> <span className="hidden xl:inline">Profile</span>
+                <Link to={`/profile/${user?.username}`} className="flex flex-col items-center justify-center px-2 py-1 rounded-md hover:bg-bg transition text-center" title="Profile">
+                  <FiUser className="text-lg" />
+                  <span className="text-[10px] font-medium mt-0.5">Profile</span>
                 </Link>
 
                 {user?.is_staff && (
-                  <Link to="/admin/dashboard" className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary/10 text-primary hover:bg-primary/20 text-sm font-semibold transition" title="Admin">
-                    <FiActivity /> <span className="hidden xl:inline">Admin</span>
+                  <Link to="/admin/dashboard" className="flex flex-col items-center justify-center px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition text-center" title="Admin">
+                    <FiActivity className="text-lg" />
+                    <span className="text-[10px] font-semibold mt-0.5">Admin</span>
                   </Link>
                 )}
 
-                <Link to="/settings" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition" title="Settings">
-                  <FiSettings /> <span className="hidden xl:inline">Settings</span>
+                <Link to="/settings" className="flex flex-col items-center justify-center px-2 py-1 rounded-md hover:bg-bg transition text-center" title="Settings">
+                  <FiSettings className="text-lg" />
+                  <span className="text-[10px] font-medium mt-0.5">Settings</span>
                 </Link>
               </>
             ) : (
@@ -144,13 +153,14 @@ const Navbar = () => {
             )}
 
             {/* Theme Dropdown */}
-            <div className="relative">
+            <div className="relative flex flex-col items-center justify-center">
               <button
                 onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
-                className="p-2 rounded-full hover:bg-bg text-lg transition"
+                className="p-1 rounded-full hover:bg-bg text-base transition flex flex-col items-center justify-center"
                 title="Change Theme"
               >
-                🎨
+                <span>🎨</span>
+                <span className="text-[10px] font-medium mt-0.5 text-text">Theme</span>
               </button>
 
               {themeDropdownOpen && (
@@ -185,10 +195,11 @@ const Navbar = () => {
             {isAuthenticated && (
               <button
                 onClick={handleLogout}
-                className="p-2 rounded-full text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition"
+                className="flex flex-col items-center justify-center px-2 py-1 rounded-md text-gray-500 hover:text-red-500 hover:bg-red-500/10 transition text-center"
                 title="Logout"
               >
                 <FiLogOut className="text-lg" />
+                <span className="text-[10px] font-medium mt-0.5">Logout</span>
               </button>
             )}
           </div>
