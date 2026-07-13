@@ -56,6 +56,43 @@ const CommentNode = ({
   const canDeleteComment = isMyComment || isPostOwner || user?.is_staff || user?.is_superuser;
   const canEditComment = isMyComment || user?.is_staff || user?.is_superuser;
   const isEditing = editingCommentId === comment.id;
+  const isAdmin = user && (user.is_staff || user.is_superuser);
+
+  // If comment is deleted and user is not admin, completely hide it like Instagram
+  if (comment.is_deleted && !isAdmin) {
+    if (!comment.replies || comment.replies.length === 0) {
+      return null;
+    }
+    return (
+      <div className="space-y-1">
+        {comment.replies.map((reply) => (
+          <CommentNode
+            key={reply.id}
+            comment={reply}
+            user={user}
+            isAuthenticated={isAuthenticated}
+            isPostOwner={isPostOwner}
+            activeReplyBox={activeReplyBox}
+            setActiveReplyBox={setActiveReplyBox}
+            replyTexts={replyTexts}
+            handleReplyChange={handleReplyChange}
+            handleAddReply={handleAddReply}
+            editingCommentId={editingCommentId}
+            setEditingCommentId={setEditingCommentId}
+            editText={editText}
+            setEditText={setEditText}
+            handleEditComment={handleEditComment}
+            handleDeleteComment={handleDeleteComment}
+            handleReactComment={handleReactComment}
+            handleShowReactionsUsersList={handleShowReactionsUsersList}
+            handlePinComment={handlePinComment}
+            handleHideComment={handleHideComment}
+            depth={depth} // Lift replies to parent level depth since parent is invisible
+          />
+        ))}
+      </div>
+    );
+  }
 
   const [showPopover, setShowPopover] = useState(false);
   let hoverTimeout = null;
@@ -95,19 +132,21 @@ const CommentNode = ({
       <div className="flex items-start justify-between gap-2.5">
         <div className="flex items-start gap-2.5 flex-1 min-w-0">
           <img
-            src={getMediaUrl(comment.user?.profile?.profile_pic) || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'}
-            alt={comment.user?.username || comment.username}
+            src={((!comment.is_deleted || isAdmin) && comment.user?.profile?.profile_pic) ? getMediaUrl(comment.user.profile.profile_pic) : 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'}
+            alt={comment.user?.username || comment.username || 'deleted'}
             className="h-7 w-7 rounded-full object-cover border border-border shrink-0 bg-card shadow-sm"
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center flex-wrap gap-1.5">
               <span className="text-xs font-bold text-text truncate">
-                {comment.user?.profile?.name || comment.name || comment.username || comment.user?.username}
+                {comment.is_deleted && !isAdmin
+                  ? 'deleted'
+                  : (comment.user?.profile?.name || comment.name || comment.username || comment.user?.username || 'deleted')}
               </span>
               <span className="text-[9px] text-gray-400 shrink-0">
                 {comment.created_at ? new Date(comment.created_at).toLocaleDateString(undefined, {hour: '2-digit', minute:'2-digit'}) : ''}
               </span>
-              {comment.is_edited && (
+              {comment.is_edited && (!comment.is_deleted || isAdmin) && (
                 <span className="text-[8px] font-medium bg-primary/10 text-primary px-1 py-0.5 rounded shrink-0" title="Edited">
                   Edited
                 </span>
@@ -139,6 +178,15 @@ const CommentNode = ({
             ) : (
               <p className={`text-xs text-text mt-0.5 leading-relaxed break-words ${comment.is_deleted ? 'italic text-gray-400 bg-bg/50 px-2 py-1 rounded border border-dashed border-border/50' : ''} ${comment.is_hidden ? 'text-gray-400 italic' : ''}`}>
                 {comment.content}
+                {comment.is_deleted && comment.original_content && (
+                  <button
+                    onClick={() => alert(`Original Content:\n"${comment.original_content}"`)}
+                    className="ml-2 text-primary hover:underline not-italic font-bold text-[10px] bg-primary/10 px-1.5 py-0.5 rounded cursor-pointer"
+                    title="View original comment details (Admin only)"
+                  >
+                    ℹ️ View Original
+                  </button>
+                )}
               </p>
             )}
 

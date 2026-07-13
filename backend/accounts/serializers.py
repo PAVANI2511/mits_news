@@ -16,6 +16,18 @@ class ProfileSerializer(serializers.ModelSerializer):
     def get_name(self, obj):
         return f"{obj.user.first_name} {obj.user.last_name}".strip() or obj.user.username
 
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        request = self.context.get('request')
+        
+        is_admin = request and request.user and (request.user.is_staff or request.user.is_superuser)
+        is_self = request and request.user and request.user.is_authenticated and (instance.user == request.user)
+        
+        if not (is_admin or is_self):
+            rep.pop('mobile_number', None)
+            
+        return rep
+
 
 class UserSerializer(serializers.ModelSerializer):
     profile = ProfileSerializer(read_only=True)

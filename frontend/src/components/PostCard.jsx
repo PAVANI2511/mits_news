@@ -34,6 +34,41 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [shareSuccess, setShareSuccess] = useState(false);
 
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportError, setReportError] = useState('');
+  const [reportSuccess, setReportSuccess] = useState(false);
+
+  const handleReportPost = async (e) => {
+    e.preventDefault();
+    if (!reportReason) {
+      setReportError("Please select a reason.");
+      return;
+    }
+    setReportSubmitting(true);
+    setReportError('');
+    try {
+      await postsAPI.report(post.id, {
+        reason: reportReason,
+        details: reportDetails
+      });
+      setReportSuccess(true);
+      setTimeout(() => {
+        setShowReportModal(false);
+        setReportSuccess(false);
+        setReportReason('');
+        setReportDetails('');
+      }, 2000);
+    } catch (err) {
+      setReportError(err.response?.data?.error || "Failed to submit report. You may have already reported this post.");
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
+
   useEffect(() => {
     const handleFollowToggle = (e) => {
       if (e.detail.username === post.username) {
@@ -264,8 +299,17 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
               </button>
             </div>
           )}
+          {!isOwner && isAuthenticated && (
+            <button
+              onClick={() => setShowReportModal(true)}
+              className="text-xs px-2.5 py-1 text-red-500 hover:bg-red-500/10 rounded transition font-semibold"
+            >
+              Report Post
+            </button>
+          )}
         </div>
       </div>
+
 
       {/* Main Content */}
       <div className="px-4 pb-3">
@@ -564,6 +608,93 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
           </div>
         </div>
       )}
+
+      {/* Report Post Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-card border border-border p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl flex flex-col space-y-4">
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <h3 className="text-sm font-black uppercase tracking-wider text-text">
+                Report Post
+              </h3>
+              <button 
+                onClick={() => setShowReportModal(false)} 
+                className="text-gray-400 hover:text-text font-bold text-lg"
+              >
+                &times;
+              </button>
+            </div>
+            
+            {reportSuccess ? (
+              <div className="bg-green-50 border border-green-200 text-green-700 text-xs px-4 py-3 rounded-xl text-center font-semibold animate-pulse">
+                Thank you. The post has been reported to administrators.
+              </div>
+            ) : (
+              <form onSubmit={handleReportPost} className="space-y-4">
+                {reportError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 text-[11px] px-3 py-2 rounded-lg">
+                    {reportError}
+                  </div>
+                )}
+                
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">
+                    Reason for Report
+                  </label>
+                  <select
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    required
+                    className="w-full bg-bg border border-border px-3.5 py-2.5 rounded-xl text-xs text-text focus:outline-none focus:border-primary font-semibold"
+                  >
+                    <option value="">Select a reason...</option>
+                    <option value="Spam">Spam</option>
+                    <option value="Fake News">Fake News</option>
+                    <option value="Harassment">Harassment</option>
+                    <option value="Hate Speech">Hate Speech</option>
+                    <option value="Violence">Violence</option>
+                    <option value="Copyright Violation">Copyright Violation</option>
+                    <option value="Inappropriate Content">Inappropriate Content</option>
+                    <option value="Misinformation">Misinformation</option>
+                    <option value="Other">Other (Custom Reason)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">
+                    Additional Details
+                  </label>
+                  <textarea
+                    value={reportDetails}
+                    onChange={(e) => setReportDetails(e.target.value)}
+                    placeholder="Provide details about why you are reporting this post..."
+                    rows="3"
+                    className="w-full bg-bg border border-border px-3.5 py-2.5 rounded-xl text-xs text-text focus:outline-none focus:border-primary font-semibold"
+                  />
+                </div>
+
+                <div className="flex gap-3 justify-end pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowReportModal(false)}
+                    className="px-4 py-2 border border-border text-gray-500 rounded-xl text-xs font-bold hover:bg-bg transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={reportSubmitting}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition shadow-md shadow-red-600/10"
+                  >
+                    {reportSubmitting ? 'Submitting...' : 'Submit Report'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

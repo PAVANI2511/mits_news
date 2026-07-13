@@ -14,7 +14,8 @@ from .views import (
     VerifyOTPView,
     UserFollowersListView,
     UserFollowingListView,
-    SuggestedUsersView
+    SuggestedUsersView,
+    ReportUserProfileView
 )
 
 urlpatterns = [
@@ -29,8 +30,10 @@ urlpatterns = [
     path('profile/<str:username>/', UserProfileView.as_view(), name='profile_detail'),
     path('profile/<str:username>/followers/', UserFollowersListView.as_view(), name='user_followers'),
     path('profile/<str:username>/following/', UserFollowingListView.as_view(), name='user_following'),
+    path('profile/<str:username>/report/', ReportUserProfileView.as_view(), name='report_profile'),
     path('follow/<str:username>/', FollowUserView.as_view(), name='follow_user'),
     path('unfollow/<str:username>/', UnfollowUserView.as_view(), name='unfollow_user'),
     path('search/', SearchUsersView.as_view(), name='search_users'),
     path('delete/', DeleteAccountView.as_view(), name='delete_account'),
 ]
+

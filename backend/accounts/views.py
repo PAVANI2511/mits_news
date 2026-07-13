@@ -24,7 +24,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         
         user_serializer = UserSerializer(self.user)
         data['user'] = user_serializer.data
+
+        # Log successful login
+        from .models import LoginLog
+        LoginLog.objects.create(user=self.user)
+
         return data
+
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -462,5 +468,57 @@ class SuggestedUsersView(views.APIView):
             results.append(doc)
             
         return Response(results[:10], status=status.HTTP_200_OK)
+
+
+class ReportUserProfileView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, username):
+        target_user = get_object_or_404(User, username=username)
+        if target_user == request.user:
+            return Response({"error": "You cannot report your own profile."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        reason = request.data.get('reason', '').strip()
+        details = request.data.get('details', '').strip()
+
+        if not reason:
+            return Response({"error": "Reason is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Prevent duplicate reports
+        from adminpanel.models import Report
+        duplicate = Report.objects.filter(
+            reporter=request.user,
+            reported_user=target_user,
+            reported_post__isnull=True,
+            reported_comment__isnull=True
+        ).exists()
+
+        if duplicate:
+            return Response({"error": "You have already reported this profile."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create report
+        report = Report.objects.create(
+            reporter=request.user,
+            reported_user=target_user,
+            reason=reason,
+            details=details,
+            status='pending'
+        )
+
+        # Notify administrators
+        admins = User.objects.filter(is_staff=True)
+        for admin in admins:
+            Notification.objects.create(
+                recipient=admin,
+                sender=request.user,
+                type='admin_report',
+                message=f"User profile @{target_user.username} was reported by @{request.user.username} for: {reason}."
+            )
+
+        return Response({
+            "message": "Profile reported successfully.",
+            "report_id": report.id
+        }, status=status.HTTP_201_CREATED)
+
 
 # reload views password validation changes

@@ -70,8 +70,10 @@ class CommentSerializer(serializers.ModelSerializer):
         
         # Soft delete masking
         if instance.is_deleted:
+            rep['original_content'] = instance.content if is_admin else None
+            rep['content'] = "This comment was deleted."
             if not is_admin:
-                rep['content'] = "This comment was deleted."
+                rep['user'] = None
                 
         # Hiding masking
         elif instance.is_hidden:

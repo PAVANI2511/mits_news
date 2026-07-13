@@ -12,7 +12,8 @@ from .views import (
     MediaDownloadView,
     TrendingHashtagsView,
     FollowingFeedView,
-    ExploreFeedView
+    ExploreFeedView,
+    ReportPostView
 )
 
 urlpatterns = [
@@ -29,4 +30,6 @@ urlpatterns = [
     path('<int:pk>/unsave/', UnsavePostView.as_view(), name='unsave_post'),
     path('<int:pk>/share/', SharePostView.as_view(), name='share_post'),
     path('<int:pk>/download/', MediaDownloadView.as_view(), name='media_download'),
+    path('<int:pk>/report/', ReportPostView.as_view(), name='report_post'),
 ]
+

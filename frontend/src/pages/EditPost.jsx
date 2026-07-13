@@ -26,13 +26,11 @@ const EditPost = () => {
     image: null,
     video: null,
     audio: null,
-    poster: null,
     pdf: null,
   });
 
   const [previews, setPreviews] = useState({
     image: '',
-    poster: '',
   });
 
   const [error, setError] = useState('');
@@ -79,7 +77,6 @@ const EditPost = () => {
 
       setPreviews({
         image: post.image || '',
-        poster: post.poster || '',
       });
     } catch (err) {
       setError("Failed to fetch post details. It might have been deleted.");
@@ -99,7 +96,7 @@ const EditPost = () => {
 
     setFiles(prev => ({ ...prev, [type]: file }));
 
-    if (type === 'image' || type === 'poster') {
+    if (type === 'image') {
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviews(prev => ({ ...prev, [type]: reader.result }));
@@ -136,7 +133,6 @@ const EditPost = () => {
       if (files.image) submitData.append('image', files.image);
       if (files.video) submitData.append('video', files.video);
       if (files.audio) submitData.append('audio', files.audio);
-      if (files.poster) submitData.append('poster', files.poster);
       if (files.pdf) submitData.append('pdf', files.pdf);
 
       await postsAPI.update(id, submitData);
@@ -245,10 +241,10 @@ const EditPost = () => {
             <div className="border border-dashed border-border rounded-2xl p-4 bg-bg/20 space-y-4">
               <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Update Campus Media</span>
               
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                   <FiImage className="text-xl text-gray-400 mb-1" />
-                  <span className="text-[10px] font-semibold text-text">Replace Img</span>
+                  <span className="text-[10px] font-semibold text-text">Replace Image / Poster</span>
                   <span className="text-[8px] text-gray-400 mt-0.5">(PNG, JPG, JPEG, GIF, WEBP)</span>
                   <input type="file" name="image" accept="image/*, .png, .jpg, .jpeg, .gif, .webp" onChange={handleFileChange} className="hidden" />
                 </label>
@@ -263,15 +259,8 @@ const EditPost = () => {
                 <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                   <FiMusic className="text-xl text-gray-400 mb-1" />
                   <span className="text-[10px] font-semibold text-text">Replace Audio</span>
-                  <span className="text-[8px] text-gray-400 mt-0.5">(MP3, WAV, M4A, OGG)</span>
-                  <input type="file" name="audio" accept="audio/*, .mp3, .wav, .m4a, .ogg" onChange={handleFileChange} className="hidden" />
-                </label>
-
-                <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
-                  <FiImage className="text-xl text-gray-400 mb-1" />
-                  <span className="text-[10px] font-semibold text-text">Replace Poster</span>
-                  <span className="text-[8px] text-gray-400 mt-0.5">(PNG, JPG, JPEG, GIF, WEBP)</span>
-                  <input type="file" name="poster" accept="image/*, .png, .jpg, .jpeg, .gif, .webp" onChange={handleFileChange} className="hidden" />
+                  <span className="text-[8px] text-gray-400 mt-0.5">(MP3, WAV, M4A, OGG, MPEG)</span>
+                  <input type="file" name="audio" accept="audio/*, .mp3, .wav, .m4a, .ogg, .mpeg" onChange={handleFileChange} className="hidden" />
                 </label>
 
                 <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
@@ -310,18 +299,6 @@ const EditPost = () => {
                       className="h-full w-full object-cover" 
                     />
                     <button type="button" onClick={() => removeFile('image')} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs">
-                      <FiX />
-                    </button>
-                  </div>
-                )}
-                {previews.poster && (
-                  <div className="relative h-20 w-20 rounded-lg overflow-hidden border border-border">
-                    <img 
-                      src={previews.poster.startsWith('data:') || previews.poster.startsWith('http') ? previews.poster : `http://127.0.0.1:8000${previews.poster}`} 
-                      alt="Poster preview" 
-                      className="h-full w-full object-cover" 
-                    />
-                    <button type="button" onClick={() => removeFile('poster')} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs">
                       <FiX />
                     </button>
                   </div>

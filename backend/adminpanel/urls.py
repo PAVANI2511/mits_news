@@ -7,6 +7,7 @@ from .views import (
     AdminPostBlockView,
     AdminReportsListView,
     AdminReportResolveView,
+    AdminReportDetailView,
     AdminAnnouncementView,
     AdminAnalyticsView,
     AdminCommentsListView,
@@ -21,6 +22,7 @@ urlpatterns = [
     path('posts/', AdminPostsListView.as_view(), name='admin_posts'),
     path('posts/<int:pk>/', AdminPostBlockView.as_view(), name='admin_post_action'),
     path('reports/', AdminReportsListView.as_view(), name='admin_reports'),
+    path('reports/<int:pk>/', AdminReportDetailView.as_view(), name='admin_report_detail'),
     path('reports/<int:pk>/resolve/', AdminReportResolveView.as_view(), name='admin_report_resolve'),
     path('announcement/', AdminAnnouncementView.as_view(), name='admin_announcement'),
     path('analytics/', AdminAnalyticsView.as_view(), name='admin_analytics'),
@@ -28,3 +30,4 @@ urlpatterns = [
     path('follows/', AdminFollowsListView.as_view(), name='admin_follows'),
     path('follows/<int:pk>/', AdminFollowDeleteView.as_view(), name='admin_follow_action'),
 ]
+

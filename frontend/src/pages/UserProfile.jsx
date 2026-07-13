@@ -21,6 +21,41 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportError, setReportError] = useState('');
+  const [reportSuccess, setReportSuccess] = useState(false);
+
+  const handleReportProfile = async (e) => {
+    e.preventDefault();
+    if (!reportReason) {
+      setReportError("Please select a reason.");
+      return;
+    }
+    setReportSubmitting(true);
+    setReportError('');
+    try {
+      await authAPI.reportProfile(username, {
+        reason: reportReason,
+        details: reportDetails
+      });
+      setReportSuccess(true);
+      setTimeout(() => {
+        setShowReportModal(false);
+        setReportSuccess(false);
+        setReportReason('');
+        setReportDetails('');
+      }, 2000);
+    } catch (err) {
+      setReportError(err.response?.data?.error || "Failed to report user profile. You may have already reported this profile.");
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
+
   // Followers/Following Modal States
   const [showConnectionsModal, setShowConnectionsModal] = useState(null); // 'followers' | 'following' | null
   const [connectionsList, setConnectionsList] = useState([]);
@@ -164,17 +199,26 @@ const UserProfile = () => {
                       <FiSettings /> Edit Profile
                     </button>
                   ) : (
-                    <button
-                      onClick={handleFollow}
-                      className={`px-6 py-2 rounded-xl text-xs font-bold transition shadow-sm ${
-                        isFollowing 
-                          ? 'bg-border text-gray-500 hover:bg-border/80' 
-                          : 'bg-primary text-white hover:bg-primary/95'
-                      }`}
-                    >
-                      {isFollowing ? 'Following' : 'Follow'}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleFollow}
+                        className={`px-6 py-2 rounded-xl text-xs font-bold transition shadow-sm ${
+                          isFollowing 
+                            ? 'bg-border text-gray-500 hover:bg-border/80' 
+                            : 'bg-primary text-white hover:bg-primary/95'
+                        }`}
+                      >
+                        {isFollowing ? 'Following' : 'Follow'}
+                      </button>
+                      <button
+                        onClick={() => setShowReportModal(true)}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold transition shadow-sm"
+                      >
+                        Report
+                      </button>
+                    </div>
                   )}
+
                 </div>
               </div>
 
@@ -375,6 +419,91 @@ const UserProfile = () => {
           </div>
         </div>
       )}
+
+      {/* Report User Profile Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-card border border-border p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl flex flex-col space-y-4">
+            <div className="flex items-center justify-between border-b border-border/60 pb-3">
+              <h3 className="text-sm font-black uppercase tracking-wider text-text">
+                Report User Profile
+              </h3>
+              <button 
+                onClick={() => setShowReportModal(false)} 
+                className="text-gray-400 hover:text-text font-bold text-lg"
+              >
+                &times;
+              </button>
+            </div>
+            
+            {reportSuccess ? (
+              <div className="bg-green-50 border border-green-200 text-green-700 text-xs px-4 py-3 rounded-xl text-center font-semibold animate-pulse">
+                Thank you. The user profile has been reported to administrators.
+              </div>
+            ) : (
+              <form onSubmit={handleReportProfile} className="space-y-4">
+                {reportError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 text-[11px] px-3 py-2 rounded-lg">
+                    {reportError}
+                  </div>
+                )}
+                
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">
+                    Reason for Report
+                  </label>
+                  <select
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    required
+                    className="w-full bg-bg border border-border px-3.5 py-2.5 rounded-xl text-xs text-text focus:outline-none focus:border-primary font-semibold font-medium"
+                  >
+                    <option value="">Select a reason...</option>
+                    <option value="Fake Account">Fake Account</option>
+                    <option value="Impersonation">Impersonation</option>
+                    <option value="Spam">Spam</option>
+                    <option value="Harassment">Harassment</option>
+                    <option value="Inappropriate Profile">Inappropriate Profile</option>
+                    <option value="Offensive Content">Offensive Content</option>
+                    <option value="Other">Other (Custom Reason)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">
+                    Additional Details
+                  </label>
+                  <textarea
+                    value={reportDetails}
+                    onChange={(e) => setReportDetails(e.target.value)}
+                    placeholder="Provide details about why you are reporting this user..."
+                    rows="3"
+                    className="w-full bg-bg border border-border px-3.5 py-2.5 rounded-xl text-xs text-text focus:outline-none focus:border-primary font-semibold"
+                  />
+                </div>
+
+                <div className="flex gap-3 justify-end pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowReportModal(false)}
+                    className="px-4 py-2 border border-border text-gray-500 rounded-xl text-xs font-bold hover:bg-bg transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={reportSubmitting}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition shadow-md shadow-red-600/10"
+                  >
+                    {reportSubmitting ? 'Submitting...' : 'Submit Report'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
     </MainLayout>
   );
 };

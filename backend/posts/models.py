@@ -58,10 +58,19 @@ class Post(models.Model):
         )
 
     def delete(self, *args, **kwargs):
-        from db_connection import posts_col, saved_posts_col, likes_col
+        from db_connection import posts_col, saved_posts_col, likes_col, reports_col
         posts_col.delete_one({"_id": str(self.id)})
         saved_posts_col.delete_many({"post_id": str(self.id)})
         likes_col.delete_many({"post_id": str(self.id)})
+        
+        # Auto-resolve reports filed against this post
+        try:
+            from adminpanel.models import Report
+            Report.objects.filter(reported_post=self).update(status='resolved')
+            reports_col.update_many({"reported_post_id": str(self.id)}, {"$set": {"status": "resolved"}})
+        except Exception as e:
+            print(f"Error resolving reports on post delete: {e}")
+
         super().delete(*args, **kwargs)
 
 
@@ -117,3 +126,33 @@ class SavedPost(models.Model):
         from db_connection import saved_posts_col
         saved_posts_col.delete_one({"_id": f"{self.user.id}_{self.post.id}"})
         super().delete(*args, **kwargs)
+
+
+class ShareLog(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='share_logs')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='share_logs')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Post {self.post.id} shared at {self.created_at}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        from db_connection import share_logs_col
+        share_logs_col.update_one(
+            {"_id": str(self.id)},
+            {"$set": {
+                "id": str(self.id),
+                "post_id": str(self.post.id),
+                "user_id": str(self.user.id) if self.user else None,
+                "username": self.user.username if self.user else None,
+                "created_at": self.created_at.isoformat() if self.created_at else None
+            }},
+            upsert=True
+        )
+
+    def delete(self, *args, **kwargs):
+        from db_connection import share_logs_col
+        share_logs_col.delete_one({"_id": str(self.id)})
+        super().delete(*args, **kwargs)
+

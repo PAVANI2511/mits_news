@@ -557,21 +557,6 @@ const Settings = () => {
                 <div className="flex items-center gap-2.5">
                   <input
                     type="checkbox"
-                    id="email_notifications_enabled"
-                    checked={emailNotificationsEnabled}
-                    onChange={(e) => setEmailNotificationsEnabled(e.target.checked)}
-                    className="h-4.5 w-4.5 rounded-lg text-primary focus:ring-primary border-border bg-bg cursor-pointer"
-                  />
-                  <label 
-                    htmlFor="email_notifications_enabled" 
-                    className="text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer select-none"
-                  >
-                    Receive email alerts when new articles are published
-                  </label>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <input
-                    type="checkbox"
                     id="followed_notifications_enabled"
                     checked={followedNotificationsEnabled}
                     onChange={(e) => setFollowedNotificationsEnabled(e.target.checked)}

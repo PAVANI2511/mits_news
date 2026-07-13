@@ -12,7 +12,6 @@ from notifications.models import Notification
 from db_connection import posts_col, likes_col, saved_posts_col, followers_col
 
 import threading
-from django.core.mail import send_mail
 
 def send_new_post_notifications(post, author):
     # 1. Create in-app notifications for followers who have opted in
@@ -33,32 +32,6 @@ def send_new_post_notifications(post, author):
     except Exception as err:
         print(f"Error creating follower in-app notifications: {err}")
 
-    # Query all users who have opted in for email notifications
-    # Excluding empty emails and the author themselves
-    recipients = list(User.objects.filter(
-        profile__email_notifications_enabled=True
-    ).exclude(
-        email=''
-    ).exclude(
-        id=author.id
-    ).values_list('email', flat=True))
-    
-    if not recipients:
-        return
-        
-    subject = "New Article Published on MITS Newspaper"
-    message = f"Hello,\n\nA new article has been published by @{author.username} on MITS Newspaper!\n\nHeadline: {post.caption}\n\nRead the article here: http://localhost:5173/posts/{post.id}"
-    
-    try:
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email="no-reply@mits.ac.in",
-            recipient_list=recipients,
-            fail_silently=False,
-        )
-    except Exception as e:
-        print(f"Error sending new post email notifications: {e}")
 
 
 class PostCreateView(generics.CreateAPIView):
@@ -110,7 +83,7 @@ class PostDetailView(views.APIView):
         # Inject like, comment, and save counts
         post_doc["likes_count"] = likes_col.count_documents({"post_id": str(pk)})
         from db_connection import comments_col
-        post_doc["comments_count"] = comments_col.count_documents({"post_id": str(pk)})
+        post_doc["comments_count"] = comments_col.count_documents({"post_id": str(pk), "is_deleted": False})
         post_doc["saved_count"] = saved_posts_col.count_documents({"post_id": str(pk)})
         post_doc["share_count"] = post_doc.get("share_count", 0)
         
@@ -215,7 +188,7 @@ class HomeFeedView(views.APIView):
             # Fetch likes, comments & saves count from MongoDB
             doc["likes_count"] = likes_col.count_documents({"post_id": str(post_id)})
             from db_connection import comments_col
-            doc["comments_count"] = comments_col.count_documents({"post_id": str(post_id)})
+            doc["comments_count"] = comments_col.count_documents({"post_id": str(post_id), "is_deleted": False})
             doc["saved_count"] = saved_posts_col.count_documents({"post_id": str(post_id)})
             doc["share_count"] = doc.get("share_count", 0)
 
@@ -308,11 +281,20 @@ class SharePostView(views.APIView):
         post.share_count += 1
         post.last_shared_at = timezone.now()
         post.save()
+
+        # Log share event
+        from .models import ShareLog
+        ShareLog.objects.create(
+            post=post,
+            user=request.user if request.user.is_authenticated else None
+        )
+
         return Response({
             "message": "Post share recorded.",
             "share_count": post.share_count,
             "last_shared_at": post.last_shared_at.isoformat()
         }, status=status.HTTP_200_OK)
+
 
 
 class GetSavedPostsView(views.APIView):
@@ -341,7 +323,7 @@ class GetSavedPostsView(views.APIView):
                 
                 doc_copy["likes_count"] = likes_col.count_documents({"post_id": str(post_id)})
                 from db_connection import comments_col
-                doc_copy["comments_count"] = comments_col.count_documents({"post_id": str(post_id)})
+                doc_copy["comments_count"] = comments_col.count_documents({"post_id": str(post_id), "is_deleted": False})
                 doc_copy["saved_count"] = saved_posts_col.count_documents({"post_id": str(post_id)})
                 doc_copy["share_count"] = doc_copy.get("share_count", 0)
                 doc_copy["is_liked"] = likes_col.count_documents({"post_id": str(post_id), "user_id": user_id}) > 0
@@ -443,7 +425,7 @@ class FollowingFeedView(views.APIView):
             
             doc["likes_count"] = likes_col.count_documents({"post_id": str(post_id)})
             from db_connection import comments_col
-            doc["comments_count"] = comments_col.count_documents({"post_id": str(post_id)})
+            doc["comments_count"] = comments_col.count_documents({"post_id": str(post_id), "is_deleted": False})
             doc["saved_count"] = saved_posts_col.count_documents({"post_id": str(post_id)})
             doc["share_count"] = doc.get("share_count", 0)
             
@@ -479,7 +461,7 @@ class ExploreFeedView(views.APIView):
             doc["id"] = post_id
             doc["likes_count"] = likes_col.count_documents({"post_id": str(post_id)})
             from db_connection import comments_col
-            doc["comments_count"] = comments_col.count_documents({"post_id": str(post_id)})
+            doc["comments_count"] = comments_col.count_documents({"post_id": str(post_id), "is_deleted": False})
             doc["saved_count"] = saved_posts_col.count_documents({"post_id": str(post_id)})
             doc["share_count"] = doc.get("share_count", 0)
             
@@ -509,3 +491,54 @@ class ExploreFeedView(views.APIView):
             "has_next": has_next,
             "total_count": total_count
         }, status=status.HTTP_200_OK)
+
+
+class ReportPostView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        post = get_object_or_404(Post, pk=pk)
+        if post.user == request.user:
+            return Response({"error": "You cannot report your own post."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        reason = request.data.get('reason', '').strip()
+        details = request.data.get('details', '').strip()
+
+        if not reason:
+            return Response({"error": "Reason is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Prevent duplicate reports
+        from adminpanel.models import Report
+        duplicate = Report.objects.filter(
+            reporter=request.user,
+            reported_post=post
+        ).exists()
+
+        if duplicate:
+            return Response({"error": "You have already reported this post."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create report
+        report = Report.objects.create(
+            reporter=request.user,
+            reported_post=post,
+            reported_user=post.user,
+            reason=reason,
+            details=details,
+            status='pending'
+        )
+
+        # Notify administrators
+        admins = User.objects.filter(is_staff=True)
+        for admin in admins:
+            Notification.objects.create(
+                recipient=admin,
+                sender=request.user,
+                type='admin_report',
+                message=f"Post #{post.id} (by @{post.user.username}) was reported by @{request.user.username} for: {reason}."
+            )
+
+        return Response({
+            "message": "Post reported successfully.",
+            "report_id": report.id
+        }, status=status.HTTP_201_CREATED)
+

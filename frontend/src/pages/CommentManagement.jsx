@@ -4,7 +4,8 @@ import { adminAPI, commentsAPI } from '../services/api';
 import { 
   FiTrash2, FiSearch, FiCalendar, FiFilter, FiActivity, 
   FiCheckCircle, FiXCircle, FiRefreshCw, FiEdit3, FiEye, 
-  FiCornerDownRight, FiHeart, FiAlertTriangle 
+  FiCornerDownRight, FiHeart, FiAlertTriangle, FiDownload, 
+  FiFileText, FiChevronLeft, FiChevronRight, FiGrid 
 } from 'react-icons/fi';
 
 const CommentManagement = () => {
@@ -15,38 +16,44 @@ const CommentManagement = () => {
   const [success, setSuccess] = useState('');
 
   // Filters state
-  const [searchUser, setSearchUser] = useState('');
-  const [searchPost, setSearchPost] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterReported, setFilterReported] = useState('all');
-  const [filterDate, setFilterDate] = useState('');
+  
+  // Sorting and Pagination
+  const [sortBy, setSortBy] = useState('-created_at');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Modals state
   const [viewingComment, setViewingComment] = useState(null);
   const [editingComment, setEditingComment] = useState(null);
   const [editContent, setEditContent] = useState('');
-  const [deleteTarget, setDeleteTarget] = useState(null); // { id, permanent: boolean }
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
     loadData();
-  }, [searchUser, searchPost, filterStatus, filterReported, filterDate]);
+  }, [page, filterStatus, filterReported, sortBy]);
 
   const loadData = async () => {
     setLoading(true);
     setError('');
     try {
-      // 1. Fetch Comments
-      const params = {};
-      if (searchUser.trim()) params.user = searchUser.trim();
-      if (searchPost.trim()) params.post = searchPost.trim();
+      const params = {
+        page,
+        page_size: 15,
+        sort_by: sortBy
+      };
+      if (searchQuery.trim()) params.q = searchQuery.trim();
       if (filterStatus !== 'all') params.status = filterStatus;
       if (filterReported === 'reported') params.reported = 'true';
-      if (filterDate) params.date = filterDate;
 
       const commentsRes = await adminAPI.getComments(params);
-      setComments(commentsRes.data);
+      setComments(commentsRes.data.results);
+      setTotalCount(commentsRes.data.total_count);
+      setTotalPages(Math.ceil(commentsRes.data.total_count / 15) || 1);
 
-      // 2. Fetch Stats
       const statsRes = await adminAPI.getStats();
       setStats(statsRes.data.comments);
     } catch (err) {
@@ -54,6 +61,12 @@ const CommentManagement = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setPage(1);
+    loadData();
   };
 
   const handleEditComment = async () => {
@@ -109,17 +122,110 @@ const CommentManagement = () => {
       setComments(prev => prev.filter(c => c.id !== id));
       setSuccess("Comment permanently deleted.");
       setDeleteTarget(null);
+      setPage(1);
+      loadData();
     } catch (err) {
       setError("Failed to permanently delete comment.");
     }
   };
 
   const handleResetFilters = () => {
-    setSearchUser('');
-    setSearchPost('');
+    setSearchQuery('');
     setFilterStatus('all');
     setFilterReported('all');
-    setFilterDate('');
+    setSortBy('-created_at');
+    setPage(1);
+    setTimeout(() => loadData(), 100);
+  };
+
+  const handleExportCSV = () => {
+    const headers = ["Comment ID", "Post ID", "Author Username", "Content", "Created Date", "Likes", "Reports Count", "Status"];
+    const rows = comments.map(c => [
+      c.id,
+      c.post_id,
+      c.username,
+      (c.content || '').replace(/"/g, '""'),
+      c.created_at ? new Date(c.created_at).toLocaleDateString() : '',
+      c.likes_count,
+      c.reports_count || 0,
+      c.is_deleted ? 'Deleted' : 'Active'
+    ]);
+    
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + [headers.join(","), ...rows.map(e => e.map(val => `"${val}"`).join(","))].join("\n");
+      
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "mits_comments_export.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportPDF = () => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>MITS News - Comments Database Export</title>
+          <style>
+            body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #1e293b; }
+            h1 { font-size: 20px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em; color: #4f46e5; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px; }
+            th { background: #f8fafc; border-bottom: 2px solid #e2e8f0; font-weight: bold; color: #475569; text-align: left; padding: 12px 10px; text-transform: uppercase; }
+            td { border-bottom: 1px solid #f1f5f9; padding: 10px; color: #334155; }
+            .badge { display: inline-block; padding: 3px 8px; border-radius: 9999px; font-size: 9px; font-weight: bold; text-transform: uppercase; }
+            .badge-active { background: #dcfce7; color: #15803d; }
+            .badge-deleted { background: #fee2e2; color: #b91c1c; }
+            .footer { margin-top: 30px; font-size: 9px; text-align: center; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 15px; }
+          </style>
+        </head>
+        <body>
+          <h1>Comments Moderation Log (${new Date().toLocaleDateString()})</h1>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Post ID</th>
+                <th>Author</th>
+                <th>Comment Text</th>
+                <th>Likes</th>
+                <th>Reports</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${comments.map(c => `
+                <tr>
+                  <td>#${c.id}</td>
+                  <td>Post #${c.post_id}</td>
+                  <td>@${c.username}</td>
+                  <td>${c.content}</td>
+                  <td>${c.likes_count}</td>
+                  <td>${c.reports_count || 0}</td>
+                  <td>
+                    <span class="badge badge-${c.is_deleted ? 'deleted' : 'active'}">
+                      ${c.is_deleted ? 'deleted' : 'active'}
+                    </span>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div class="footer">
+            Generated by MITS Newspaper Admin Console. Private and Confidential.
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              window.close();
+            }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   return (
@@ -169,49 +275,41 @@ const CommentManagement = () => {
 
         {/* Searching and Filtering panel */}
         <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-border/60 pb-3">
-            <h3 className="text-xs font-black uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
-              <FiFilter /> Filters & Searches
-            </h3>
-            <button 
-              onClick={handleResetFilters}
-              className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
-            >
-              Reset Filters
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
-            {/* Search by User */}
-            <div className="relative">
-              <FiSearch className="absolute left-3 top-3.5 text-gray-400 text-xs" />
+          <form onSubmit={handleSearchSubmit} className="flex flex-col md:flex-row gap-3">
+            <div className="relative flex-grow">
+              <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search user..."
-                value={searchUser}
-                onChange={(e) => setSearchUser(e.target.value)}
-                className="w-full pl-8 pr-3.5 py-2.5 text-xs rounded-xl bg-bg border border-border focus:outline-none focus:ring-1 focus:ring-primary text-text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by user or content text..."
+                className="w-full bg-bg border border-border pl-10 pr-4 py-2 rounded-xl text-xs text-text focus:outline-none focus:border-primary font-semibold"
               />
             </div>
-
-            {/* Search by Post ID */}
-            <div className="relative">
-              <FiSearch className="absolute left-3 top-3.5 text-gray-400 text-xs" />
-              <input
-                type="text"
-                placeholder="Search Post ID..."
-                value={searchPost}
-                onChange={(e) => setSearchPost(e.target.value)}
-                className="w-full pl-8 pr-3.5 py-2.5 text-xs rounded-xl bg-bg border border-border focus:outline-none focus:ring-1 focus:ring-primary text-text"
-              />
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/95 transition flex items-center gap-1.5"
+              >
+                <FiSearch /> Search
+              </button>
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="px-3.5 py-2 border border-border text-gray-500 hover:bg-bg rounded-xl text-xs font-bold transition"
+              >
+                Reset
+              </button>
             </div>
+          </form>
 
-            {/* Select Status */}
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 border-t border-border/60 pt-3">
+            <div className="space-y-1">
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1"><FiFilter /> Select Status</span>
               <select
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-bg border border-border focus:outline-none focus:ring-1 focus:ring-primary text-text font-semibold"
+                onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+                className="w-full bg-bg border border-border px-3 py-2 rounded-xl text-xs text-text focus:outline-none focus:border-primary font-semibold"
               >
                 <option value="all">All Statuses</option>
                 <option value="active">Active Comments</option>
@@ -222,27 +320,47 @@ const CommentManagement = () => {
               </select>
             </div>
 
-            {/* Select Reported status */}
-            <div>
+            <div className="space-y-1">
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1"><FiFilter /> Reported Status</span>
               <select
                 value={filterReported}
-                onChange={(e) => setFilterReported(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-bg border border-border focus:outline-none focus:ring-1 focus:ring-primary text-text font-semibold"
+                onChange={(e) => { setFilterReported(e.target.value); setPage(1); }}
+                className="w-full bg-bg border border-border px-3 py-2 rounded-xl text-xs text-text focus:outline-none focus:border-primary font-semibold"
               >
                 <option value="all">All Comments</option>
                 <option value="reported">Reported Comments Only</option>
               </select>
             </div>
 
-            {/* Select Date */}
-            <div className="relative">
-              <FiCalendar className="absolute left-3 top-3.5 text-gray-400 text-xs" />
-              <input
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-                className="w-full pl-8 pr-3.5 py-2 text-xs rounded-xl bg-bg border border-border focus:outline-none focus:ring-1 focus:ring-primary text-text font-semibold"
-              />
+            <div className="space-y-1">
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1"><FiGrid /> Sort By</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full bg-bg border border-border px-3 py-2 rounded-xl text-xs text-text focus:outline-none focus:border-primary font-semibold"
+              >
+                <option value="-created_at">Publish Date: Newest</option>
+                <option value="created_at">Publish Date: Oldest</option>
+                <option value="-likes_count">Most Liked</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center border-t border-border/60 pt-3">
+            <span className="text-[10px] text-gray-400 font-bold">Total: {totalCount} comments found</span>
+            <div className="flex gap-2">
+              <button
+                onClick={handleExportCSV}
+                className="px-3 py-1.5 border border-border rounded-xl text-xs font-bold hover:bg-bg flex items-center gap-1 transition"
+              >
+                <FiDownload /> CSV
+              </button>
+              <button
+                onClick={handleExportPDF}
+                className="px-3 py-1.5 border border-border rounded-xl text-xs font-bold hover:bg-bg flex items-center gap-1 transition"
+              >
+                <FiFileText /> PDF
+              </button>
             </div>
           </div>
         </div>
@@ -284,7 +402,7 @@ const CommentManagement = () => {
                         <span className="text-[10px] text-gray-400 block font-normal">@{c.username}</span>
                       </td>
                       <td className="px-5 py-4 max-w-[200px] truncate font-medium">
-                        {c.content}
+                        {c.is_deleted ? <span className="italic text-gray-400">This comment was deleted.</span> : c.content}
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap text-gray-400 font-semibold">
                         {c.parent_comment_id ? (
@@ -385,6 +503,27 @@ const CommentManagement = () => {
             </div>
           )}
         </div>
+
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center bg-card border border-border p-4 rounded-2xl shadow-sm">
+            <button
+              onClick={() => setPage(prev => Math.max(1, prev - 1))}
+              disabled={page === 1}
+              className="px-3.5 py-1.5 border border-border rounded-xl text-xs font-bold hover:bg-bg disabled:opacity-50 transition flex items-center gap-1 text-gray-500"
+            >
+              <FiChevronLeft /> Previous
+            </button>
+            <span className="text-xs font-bold text-gray-500">Page {page} of {totalPages}</span>
+            <button
+              onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={page === totalPages}
+              className="px-3.5 py-1.5 border border-border rounded-xl text-xs font-bold hover:bg-bg disabled:opacity-50 transition flex items-center gap-1 text-gray-500"
+            >
+              Next <FiChevronRight />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* View Comment Modal */}
@@ -393,7 +532,7 @@ const CommentManagement = () => {
           <div className="bg-card border border-border p-6 rounded-2xl max-w-lg w-full mx-4 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-border/60 pb-2">
               <h3 className="text-sm font-extrabold text-text">Comment Detail Details</h3>
-              <button onClick={() => setViewingComment(null)} className="text-gray-400 hover:text-text"><FiXCircle /></button>
+              <button onClick={() => setViewingComment(null)} className="text-gray-400 hover:text-text font-semibold text-lg">&times;</button>
             </div>
             <div className="space-y-2 text-xs text-text">
               <div className="grid grid-cols-3 gap-1">
@@ -459,7 +598,7 @@ const CommentManagement = () => {
           <div className="bg-card border border-border p-6 rounded-2xl max-w-md w-full mx-4 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-border/60 pb-2">
               <h3 className="text-sm font-extrabold text-text">Edit Comment #{editingComment.id}</h3>
-              <button onClick={() => setEditingComment(null)} className="text-gray-400 hover:text-text"><FiXCircle /></button>
+              <button onClick={() => setEditingComment(null)} className="text-gray-400 hover:text-text font-semibold text-lg">&times;</button>
             </div>
             <div className="space-y-2">
               <span className="text-[10px] text-gray-400 font-bold uppercase">Comment Content</span>

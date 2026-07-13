@@ -122,3 +122,31 @@ class Follower(models.Model):
         self.following.profile.followers_count = Follower.objects.filter(following=self.following).count()
         self.following.profile.save()
 
+
+class LoginLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='login_logs')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} logged in at {self.created_at}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        from db_connection import login_logs_col
+        login_logs_col.update_one(
+            {"_id": str(self.id)},
+            {"$set": {
+                "id": str(self.id),
+                "user_id": str(self.user.id),
+                "username": self.user.username,
+                "created_at": self.created_at.isoformat() if self.created_at else None
+            }},
+            upsert=True
+        )
+
+    def delete(self, *args, **kwargs):
+        from db_connection import login_logs_col
+        login_logs_col.delete_one({"_id": str(self.id)})
+        super().delete(*args, **kwargs)
+
+

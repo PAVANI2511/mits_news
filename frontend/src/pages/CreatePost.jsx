@@ -250,8 +250,8 @@ const CreatePost = () => {
               <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                 <FiMusic className="text-xl text-gray-400 mb-1" />
                 <span className="text-[10px] font-semibold text-text">Audio</span>
-                <span className="text-[8px] text-gray-400 mt-0.5">(MP3, WAV, M4A, OGG)</span>
-                <input type="file" name="audio" accept="audio/*, .mp3, .wav, .m4a, .ogg" onChange={handleFileChange} className="hidden" />
+                <span className="text-[8px] text-gray-400 mt-0.5">(MP3, WAV, M4A, OGG, MPEG)</span>
+                <input type="file" name="audio" accept="audio/*, .mp3, .wav, .m4a, .ogg, .mpeg" onChange={handleFileChange} className="hidden" />
               </label>
 
               {/* PDF Input */}

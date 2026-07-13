@@ -61,6 +61,7 @@ export const authAPI = {
   searchUsers: (params) => api.get('/auth/search/', { params }),
   deleteAccount: () => api.post('/auth/delete/'),
   getSuggestions: () => api.get('/auth/suggestions/'),
+  reportProfile: (username, data) => api.post(`/auth/profile/${username}/report/`, data),
 };
 
 export const postsAPI = {
@@ -83,6 +84,7 @@ export const postsAPI = {
   getTrends: () => api.get('/posts/trends/'),
   getFollowingFeed: (params) => api.get('/posts/following/', { params }),
   getExplore: (params) => api.get('/posts/explore/', { params }),
+  report: (id, data) => api.post(`/posts/${id}/report/`, data),
 };
 
 export const commentsAPI = {
@@ -118,20 +120,23 @@ export const themesAPI = {
 
 export const adminAPI = {
   getStats: () => api.get('/admin/stats/'),
-  getUsers: () => api.get('/admin/users/'),
+  getUsers: (params) => api.get('/admin/users/', { params }),
   toggleBlockUser: (id) => api.post(`/admin/users/${id}/`),
   deleteUser: (id) => api.delete(`/admin/users/${id}/`),
-  getPosts: () => api.get('/admin/posts/'),
+  getPosts: (params) => api.get('/admin/posts/', { params }),
   toggleBlockPost: (id) => api.post(`/admin/posts/${id}/`),
   deletePost: (id) => api.delete(`/admin/posts/${id}/`),
-  getReports: () => api.get('/admin/reports/'),
+  getReports: (params) => api.get('/admin/reports/', { params }),
   resolveReport: (id) => api.post(`/admin/reports/${id}/resolve/`),
+  updateReport: (id, data) => api.put(`/admin/reports/${id}/`, data),
+  getReportDetail: (id) => api.get(`/admin/reports/${id}/`),
   getAnnouncements: () => api.get('/admin/announcement/'),
   createAnnouncement: (data) => api.post('/admin/announcement/', data),
-  getAnalytics: () => api.get('/admin/analytics/'),
+  getAnalytics: (params) => api.get('/admin/analytics/', { params }),
   getComments: (params) => api.get('/admin/comments/', { params }),
   getFollows: () => api.get('/admin/follows/'),
   deleteFollow: (id) => api.delete(`/admin/follows/${id}/`),
 };
+
 
 export default api;

@@ -41,6 +41,10 @@ notifications_col = db["notifications"]
 themes_col = db["themes"]
 reports_col = db["reports"]
 announcements_col = db["announcements"]
+moderation_logs_col = db["moderation_logs"]
+login_logs_col = db["login_logs"]
+share_logs_col = db["share_logs"]
 
 def get_db():
     return db
+
