@@ -266,7 +266,7 @@ const Register = () => {
               <input
                 type="text"
                 name="username"
-                placeholder="21691a05xx"
+                placeholder="e.g. chinni@25"
                 value={formData.username}
                 onChange={handleChange}
                 className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all ${
