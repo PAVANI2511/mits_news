@@ -92,44 +92,44 @@ const Navbar = () => {
 
           {/* Navigation Links */}
           <div className="hidden lg:flex items-center space-x-4">
-            <Link to="/feed" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition">
-              <FiHome /> Home
+            <Link to="/feed" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition" title="Home">
+              <FiHome /> <span className="hidden xl:inline">Home</span>
             </Link>
-            <Link to="/following" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition">
-              <FiUsers /> Following
+            <Link to="/following" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition" title="Following">
+              <FiUsers /> <span className="hidden xl:inline">Following</span>
             </Link>
-            <Link to="/explore" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition">
-              <FiTrendingUp /> Explore
+            <Link to="/explore" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition" title="Explore">
+              <FiTrendingUp /> <span className="hidden xl:inline">Explore</span>
             </Link>
 
             {isAuthenticated ? (
               <>
-                <Link to="/create-post" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition">
-                  <FiPlusSquare /> Post
+                <Link to="/create-post" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition" title="Post">
+                  <FiPlusSquare /> <span className="hidden xl:inline">Post</span>
                 </Link>
-                <Link to="/notifications" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition relative">
-                  <FiBell /> Alerts
+                <Link to="/notifications" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition relative" title="Alerts">
+                  <FiBell /> <span className="hidden xl:inline">Alerts</span>
                   {unreadCount > 0 && (
                     <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white leading-none shadow-sm animate-pulse">
                       {unreadCount}
                     </span>
                   )}
                 </Link>
-                <Link to="/saved" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition">
-                  <FiBookmark /> Saved
+                <Link to="/saved" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition" title="Saved">
+                  <FiBookmark /> <span className="hidden xl:inline">Saved</span>
                 </Link>
-                <Link to={`/profile/${user?.username}`} className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition">
-                  <FiUser /> Profile
+                <Link to={`/profile/${user?.username}`} className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition" title="Profile">
+                  <FiUser /> <span className="hidden xl:inline">Profile</span>
                 </Link>
 
                 {user?.is_staff && (
-                  <Link to="/admin/dashboard" className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary/10 text-primary hover:bg-primary/20 text-sm font-semibold transition">
-                    <FiActivity /> Admin
+                  <Link to="/admin/dashboard" className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-primary/10 text-primary hover:bg-primary/20 text-sm font-semibold transition" title="Admin">
+                    <FiActivity /> <span className="hidden xl:inline">Admin</span>
                   </Link>
                 )}
 
-                <Link to="/settings" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition">
-                  <FiSettings /> Settings
+                <Link to="/settings" className="flex items-center gap-1.5 px-3 py-2 rounded-md hover:bg-bg text-sm font-medium transition" title="Settings">
+                  <FiSettings /> <span className="hidden xl:inline">Settings</span>
                 </Link>
               </>
             ) : (
