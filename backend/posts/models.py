@@ -1,5 +1,17 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.conf import settings
+
+# Determine storage classes conditionally for Cloudinary deployments
+if hasattr(settings, 'CLOUDINARY_STORAGE') and settings.CLOUDINARY_STORAGE:
+    from cloudinary_storage.storage import VideoMediaCloudinaryStorage, RawMediaCloudinaryStorage
+    video_storage = VideoMediaCloudinaryStorage()
+    audio_storage = VideoMediaCloudinaryStorage()
+    pdf_storage = RawMediaCloudinaryStorage()
+else:
+    video_storage = None
+    audio_storage = None
+    pdf_storage = None
 
 class Post(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
@@ -12,10 +24,10 @@ class Post(models.Model):
     is_blocked = models.BooleanField(default=False)
 
     image = models.FileField(upload_to='posts/images/', blank=True, null=True)
-    video = models.FileField(upload_to='posts/videos/', blank=True, null=True)
-    audio = models.FileField(upload_to='posts/audio/', blank=True, null=True)
+    video = models.FileField(upload_to='posts/videos/', storage=video_storage, blank=True, null=True)
+    audio = models.FileField(upload_to='posts/audio/', storage=audio_storage, blank=True, null=True)
     poster = models.FileField(upload_to='posts/posters/', blank=True, null=True)
-    pdf = models.FileField(upload_to='posts/pdfs/', blank=True, null=True)
+    pdf = models.FileField(upload_to='posts/pdfs/', storage=pdf_storage, blank=True, null=True)
     external_url = models.URLField(max_length=500, blank=True, default='')
     share_count = models.PositiveIntegerField(default=0)
     last_shared_at = models.DateTimeField(blank=True, null=True)
