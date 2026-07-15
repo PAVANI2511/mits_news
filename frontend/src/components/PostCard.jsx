@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { 
   FiHeart, FiMessageSquare, FiBookmark, FiDownload, 
   FiShare2, FiMapPin, FiMusic, FiFileText, FiUserCheck, FiUserPlus,
-  FiLink, FiExternalLink
+  FiLink, FiExternalLink, FiVolume2, FiVolumeX
 } from 'react-icons/fi';
 import { 
   FaWhatsapp, FaFacebook, FaLinkedin, FaTelegram, FaTwitter 
@@ -15,6 +15,16 @@ import CommentSection from './CommentSection';
 const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useSelector((state) => state.auth);
+
+  const [audioMuted, setAudioMuted] = useState(true);
+  const audioRef = useRef(null);
+
+  const toggleMute = () => {
+    if (audioRef.current) {
+      audioRef.current.muted = !audioRef.current.muted;
+      setAudioMuted(audioRef.current.muted);
+    }
+  };
 
 
 
@@ -394,15 +404,25 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
 
       {/* Background Music Banner (Playing uploaded Audio file) */}
       {post.audio && (
-        <div className="px-4 py-2 bg-gradient-to-r from-primary/5 to-secondary/5 border-b border-border flex justify-end">
+        <div className="px-4 py-1.5 bg-gradient-to-r from-primary/5 to-secondary/5 border-b border-border flex justify-end items-center">
           <audio
+            ref={audioRef}
             src={getMediaUrl(post.audio)}
             autoPlay
             loop
             muted
-            controls
-            className="h-8 max-w-full"
           />
+          <button
+            onClick={toggleMute}
+            className="p-1.5 rounded-lg hover:bg-black/5 text-gray-500 hover:text-text transition-all focus:outline-none flex items-center justify-center border border-border bg-card shadow-sm"
+            title={audioMuted ? "Unmute Music" : "Mute Music"}
+          >
+            {audioMuted ? (
+              <FiVolumeX className="text-base text-red-500" />
+            ) : (
+              <FiVolume2 className="text-base text-green-500 animate-pulse" />
+            )}
+          </button>
         </div>
       )}
 
