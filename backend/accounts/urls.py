@@ -15,10 +15,12 @@ from .views import (
     UserFollowersListView,
     UserFollowingListView,
     SuggestedUsersView,
-    ReportUserProfileView
+    ReportUserProfileView,
+    debug_cloudinary_settings
 )
 
 urlpatterns = [
+    path('debug-cloudinary/', debug_cloudinary_settings, name='debug_cloudinary'),
     path('suggestions/', SuggestedUsersView.as_view(), name='suggested_users'),
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', CustomTokenObtainPairView.as_view(), name='login'),

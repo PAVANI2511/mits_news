@@ -524,3 +524,17 @@ class ReportUserProfileView(views.APIView):
 
 
 # reload views password validation changes
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def debug_cloudinary_settings(request):
+    import os
+    from django.conf import settings
+    return Response({
+        "CLOUDINARY_CLOUD_NAME": os.environ.get('CLOUDINARY_CLOUD_NAME'),
+        "CLOUDINARY_API_KEY": os.environ.get('CLOUDINARY_API_KEY'),
+        "CLOUDINARY_API_SECRET": os.environ.get('CLOUDINARY_API_SECRET') is not None,
+        "DEFAULT_FILE_STORAGE": getattr(settings, 'DEFAULT_FILE_STORAGE', None),
+    })
