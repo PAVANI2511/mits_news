@@ -21,8 +21,16 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
 
   const toggleMute = () => {
     if (audioRef.current) {
-      audioRef.current.muted = !audioRef.current.muted;
-      setAudioMuted(audioRef.current.muted);
+      const newMuted = !audioRef.current.muted;
+      audioRef.current.muted = newMuted;
+      setAudioMuted(newMuted);
+      if (!newMuted) {
+        audioRef.current.play().catch((err) => {
+          console.log("Playback failed or blocked by autoplay policy:", err);
+        });
+      } else {
+        audioRef.current.pause();
+      }
     }
   };
 
