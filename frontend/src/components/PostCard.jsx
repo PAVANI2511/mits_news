@@ -16,7 +16,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useSelector((state) => state.auth);
 
-  const [audioMuted, setAudioMuted] = useState(true);
+  const [audioMuted, setAudioMuted] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -33,6 +33,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   const playMedia = () => {
     const isMuted = audioMutedRef.current;
     if (post.video && videoRef.current) {
+      videoRef.current.currentTime = 0; // Play from starting
       videoRef.current.muted = isMuted;
       videoRef.current.play().catch((err) => {
         console.log("Video playback blocked by browser policies:", err);
@@ -40,6 +41,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
       setIsPlaying(true);
     }
     if (post.audio && audioRef.current) {
+      audioRef.current.currentTime = 0; // Play from starting
       audioRef.current.muted = isMuted;
       if (!isMuted) {
         audioRef.current.play().catch((err) => {
