@@ -8,7 +8,6 @@ from .models import Comment, CommentReaction
 from .serializers import CommentSerializer
 from posts.models import Post
 from notifications.models import Notification
-from db_connection import comments_col
 
 class CommentCreateView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
