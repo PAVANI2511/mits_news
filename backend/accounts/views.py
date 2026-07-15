@@ -220,26 +220,10 @@ class ForgotPasswordView(views.APIView):
         profile.reset_otp_expiry = expiry
         profile.save()
         
-        # Send Email
+        # Send Email asynchronously
         from django.conf import settings
         is_console = getattr(settings, 'EMAIL_BACKEND', '') == 'django.core.mail.backends.console.EmailBackend'
-        try:
-            send_mail(
-                subject="MITS Newspaper - Password Reset Code",
-                message=f"Hello,\n\nYour password reset verification code is: {otp}\n\nThis code will expire in 10 minutes.",
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@mits.ac.in'),
-                recipient_list=[email],
-                fail_silently=False,
-            )
-        except Exception as e:
-            print(f"\n==================================================")
-            print(f"SMTP Error: {e}. Outputting OTP to log console: {otp}")
-            print(f"==================================================\n")
-            return Response(
-                {"error": f"Failed to send email due to SMTP error: {str(e)}."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-            
+        
         if is_console:
             print(f"\n==================================================")
             print(f"DEVELOPMENT RESET OTP FOR {email}: {otp}")
@@ -247,6 +231,33 @@ class ForgotPasswordView(views.APIView):
             return Response({
                 "message": "Development mode: Verification OTP has been printed to the server terminal console."
             }, status=status.HTTP_200_OK)
+
+        def send_email_async(subject, message, from_email, recipient_list, otp_code):
+            try:
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=from_email,
+                    recipient_list=recipient_list,
+                    fail_silently=False,
+                )
+                print(f"Password reset email sent successfully to {recipient_list}")
+            except Exception as e:
+                print(f"\n==================================================")
+                print(f"Background SMTP Error: {e}. Outputting OTP to log console: {otp_code}")
+                print(f"==================================================\n")
+
+        import threading
+        threading.Thread(
+            target=send_email_async,
+            args=(
+                "MITS Newspaper - Password Reset Code",
+                f"Hello,\n\nYour password reset verification code is: {otp}\n\nThis code will expire in 10 minutes.",
+                getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@mits.ac.in'),
+                [email],
+                otp
+            )
+        ).start()
             
         return Response({"message": "Verification OTP sent to your college email address."}, status=status.HTTP_200_OK)
 

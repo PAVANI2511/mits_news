@@ -45,7 +45,7 @@ body {
 
 /* Custom styles for Glassmorphism effects */
 .glass {
-  background: rgba(var(--color-card), 0.7);
+  background: color-mix(in srgb, var(--color-card) 70%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
