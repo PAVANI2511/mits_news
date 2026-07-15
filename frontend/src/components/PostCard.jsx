@@ -394,11 +394,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
 
       {/* Background Music Banner (Playing uploaded Audio file) */}
       {post.audio && (
-        <div className="px-4 py-2 bg-gradient-to-r from-primary/5 to-secondary/5 border-b border-border flex items-center justify-between text-xs text-primary font-medium">
-          <span className="flex items-center gap-1.5">
-            <FiMusic className="animate-spin text-sm" style={{ animationDuration: '6s' }} />
-            Background Music: <span className="italic">Playing attached audio track</span>
-          </span>
+        <div className="px-4 py-2 bg-gradient-to-r from-primary/5 to-secondary/5 border-b border-border flex justify-end">
           <audio
             src={getMediaUrl(post.audio)}
             autoPlay
