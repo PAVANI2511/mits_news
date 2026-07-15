@@ -401,7 +401,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
             loop
             muted
             controls
-            className="h-6 w-32 scale-90"
+            className="h-8 max-w-full"
           />
         </div>
       )}
