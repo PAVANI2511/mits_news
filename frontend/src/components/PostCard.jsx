@@ -17,22 +17,170 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
 
   const [audioMuted, setAudioMuted] = useState(true);
+  const [isActive, setIsActive] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const containerRef = useRef(null);
+  const videoRef = useRef(null);
   const audioRef = useRef(null);
 
-  const toggleMute = () => {
-    if (audioRef.current) {
-      const newMuted = !audioRef.current.muted;
-      audioRef.current.muted = newMuted;
-      setAudioMuted(newMuted);
-      if (!newMuted) {
+  const audioMutedRef = useRef(audioMuted);
+  useEffect(() => {
+    audioMutedRef.current = audioMuted;
+  }, [audioMuted]);
+
+  // Play / Pause helper functions
+  const playMedia = () => {
+    const isMuted = audioMutedRef.current;
+    if (post.video && videoRef.current) {
+      videoRef.current.muted = isMuted;
+      videoRef.current.play().catch((err) => {
+        console.log("Video playback blocked by browser policies:", err);
+      });
+      setIsPlaying(true);
+    }
+    if (post.audio && audioRef.current) {
+      audioRef.current.muted = isMuted;
+      if (!isMuted) {
         audioRef.current.play().catch((err) => {
-          console.log("Playback failed or blocked by autoplay policy:", err);
+          console.log("Audio playback blocked by browser policies:", err);
         });
+        setIsPlaying(true);
       } else {
         audioRef.current.pause();
+        setIsPlaying(false);
       }
     }
   };
+
+  const pauseMedia = () => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    setIsPlaying(false);
+  };
+
+  // Sync video element muted property with audioMuted state
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = audioMuted;
+    }
+  }, [audioMuted]);
+
+  // Handle toggleMute explicitly
+  const toggleMute = () => {
+    const newMuted = !audioMuted;
+    setAudioMuted(newMuted);
+    
+    // Broadcast mute state globally so all posts stay synced
+    window.dispatchEvent(new CustomEvent('global-mute-toggle', { detail: { muted: newMuted } }));
+
+    // Update local media state immediately
+    if (videoRef.current) {
+      videoRef.current.muted = newMuted;
+    }
+    
+    if (post.audio && audioRef.current) {
+      audioRef.current.muted = newMuted;
+      if (!newMuted && isActive) {
+        audioRef.current.play().catch(err => console.log("Play failed:", err));
+        setIsPlaying(true);
+      } else {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    }
+  };
+
+  // Sync mute state globally
+  useEffect(() => {
+    const handleGlobalMute = (e) => {
+      setAudioMuted(e.detail.muted);
+      if (videoRef.current) {
+        videoRef.current.muted = e.detail.muted;
+      }
+      if (audioRef.current) {
+        audioRef.current.muted = e.detail.muted;
+        if (e.detail.muted) {
+          audioRef.current.pause();
+          setIsPlaying(false);
+        } else if (isActive) {
+          audioRef.current.play().catch(err => console.log("Play failed:", err));
+          setIsPlaying(true);
+        }
+      }
+    };
+    window.addEventListener('global-mute-toggle', handleGlobalMute);
+    return () => {
+      window.removeEventListener('global-mute-toggle', handleGlobalMute);
+    };
+  }, [post.id, isActive]);
+
+  // Set up Intersection Observer to trigger autoplay at >= 60% visibility
+  useEffect(() => {
+    const observerOptions = {
+      root: null, // viewport
+      threshold: 0.6 // 60% visibility
+    };
+
+    const observerCallback = (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+          // Tell other cards to pause, and flag this card as active
+          window.dispatchEvent(new CustomEvent('post-media-visible', { detail: { postId: post.id } }));
+        } else {
+          setIsActive(false);
+          pauseMedia();
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [post.id]);
+
+  // Listen to other posts playing, and browser tab visibility / window focus loss
+  useEffect(() => {
+    const handleMediaVisible = (e) => {
+      if (e.detail.postId === post.id) {
+        setIsActive(true);
+        playMedia();
+      } else {
+        setIsActive(false);
+        pauseMedia();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        pauseMedia();
+      }
+    };
+
+    const handleBlur = () => {
+      pauseMedia();
+    };
+
+    window.addEventListener('post-media-visible', handleMediaVisible);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      window.removeEventListener('post-media-visible', handleMediaVisible);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
+      pauseMedia(); // Pause immediately when navigating away / unmounting
+    };
+  }, [post.id]);
 
 
 
@@ -257,7 +405,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   }) : '';
 
   return (
-    <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden transition-colors duration-300">
+    <div ref={containerRef} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden transition-colors duration-300">
       {/* Header */}
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -369,8 +517,10 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
       {post.video && (
         <div className="border-t border-b border-border bg-black flex justify-center max-h-[500px]">
           <video
+            ref={videoRef}
             src={getMediaUrl(post.video)}
             controls
+            muted={audioMuted}
             className="w-full max-h-[500px]"
           />
         </div>
@@ -416,9 +566,8 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
           <audio
             ref={audioRef}
             src={getMediaUrl(post.audio)}
-            autoPlay
             loop
-            muted
+            muted={audioMuted}
           />
           <button
             onClick={toggleMute}
