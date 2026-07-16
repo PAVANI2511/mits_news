@@ -295,9 +295,9 @@ const PostManagement = () => {
                 <tbody className="bg-card divide-y divide-border/60 text-xs text-text">
                   {posts.map((p) => (
                     <tr key={p.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-normal max-w-[150px] break-all">
                         <span className="font-bold block">@{p.username}</span>
-                        <span className="text-[10px] text-gray-400">{p.email}</span>
+                        <span className="text-[10px] text-gray-400 block">{p.email}</span>
                       </td>
                       <td className="px-6 py-4 max-w-xs truncate">
                         <span className="font-semibold block truncate">{p.caption || 'No Caption'}</span>
@@ -306,8 +306,12 @@ const PostManagement = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-gray-400 font-semibold">
                         {p.created_at ? new Date(p.created_at).toLocaleDateString() : ''}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-500">
-                        {p.likes_count} likes • {p.comments_count} comments • {p.share_count || 0} shares
+                      <td className="px-6 py-4 font-semibold text-gray-500 whitespace-normal">
+                        <div className="flex flex-col text-[11px] leading-snug">
+                          <span>{p.likes_count} likes</span>
+                          <span>{p.comments_count} comments</span>
+                          <span>{p.share_count || 0} shares</span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {p.is_blocked ? (
