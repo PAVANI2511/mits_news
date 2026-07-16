@@ -248,6 +248,10 @@ class AdminUsersListView(views.APIView):
                 "is_blocked": profile.is_blocked if profile else False,
                 "department": profile.department if profile else '',
                 "year": profile.year if profile else '',
+                "role_type": profile.role_type if profile else 'student',
+                "teacher_role": profile.teacher_role if profile else '',
+                "designation": profile.designation if profile else '',
+                "roll_number": profile.roll_number if profile else '',
                 "bio": profile.bio if profile else '',
                 "profile_pic": profile.profile_pic.url if profile and profile.profile_pic else '',
                 "cover_photo": profile.cover_photo.url if profile and profile.cover_photo else ''

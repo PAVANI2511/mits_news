@@ -90,17 +90,17 @@ const UserManagement = () => {
   };
 
   const handleExportCSV = () => {
-    const headers = ["User ID", "Username", "Name", "Email", "Date Joined", "Role", "Status", "Department", "Year"];
+    const headers = ["User ID", "Username", "Name", "Email", "Date Joined", "Role", "Status", "Department", "Year / Role"];
     const rows = users.map(u => [
       u.id,
       u.username,
       u.name,
       u.email,
       u.date_joined ? new Date(u.date_joined).toLocaleDateString() : '',
-      u.is_staff ? 'Admin' : 'Student/Teacher',
+      u.is_staff ? 'Admin' : (u.role_type === 'teacher' ? 'Teacher' : 'Student'),
       u.is_blocked ? 'Blocked' : 'Active',
       u.department || '',
-      u.year || ''
+      u.role_type === 'teacher' ? (u.teacher_role || 'Teacher') : (u.year || '')
     ]);
     
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -120,7 +120,7 @@ const UserManagement = () => {
     printWindow.document.write(`
       <html>
         <head>
-          <title>MITS News - Student Directory Export</title>
+          <title>MITS News - User Directory Export</title>
           <style>
             body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #1e293b; }
             h1 { font-size: 20px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em; color: #4f46e5; }
@@ -134,7 +134,7 @@ const UserManagement = () => {
           </style>
         </head>
         <body>
-          <h1>Student Directories Summary (${new Date().toLocaleDateString()})</h1>
+          <h1>User Directories Summary (${new Date().toLocaleDateString()})</h1>
           <table>
             <thead>
               <tr>
@@ -142,7 +142,7 @@ const UserManagement = () => {
                 <th>Full Name</th>
                 <th>Email</th>
                 <th>Department</th>
-                <th>Year</th>
+                <th>Year / Role</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -153,7 +153,7 @@ const UserManagement = () => {
                   <td>${u.name}</td>
                   <td>${u.email}</td>
                   <td>${u.department || 'N/A'}</td>
-                  <td>${u.year || 'N/A'}</td>
+                  <td>${u.role_type === 'teacher' ? (u.teacher_role || 'Teacher') : (u.year || 'N/A')}</td>
                   <td>
                     <span class="badge badge-${u.is_blocked ? 'blocked' : 'active'}">
                       ${u.is_blocked ? 'blocked' : 'active'}
@@ -298,16 +298,16 @@ const UserManagement = () => {
           {loading ? (
             <div className="py-20 text-center text-gray-500 flex flex-col items-center">
               <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin mb-2" />
-              <span className="text-xs">Loading student directories...</span>
+              <span className="text-xs">Loading user directories...</span>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-border">
                 <thead className="bg-bg/40">
                   <tr>
-                    <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Student</th>
+                    <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Name</th>
                     <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Department & Year</th>
+                    <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Department & Year/Role</th>
                     <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Role</th>
                     <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-4 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Actions</th>
@@ -333,10 +333,14 @@ const UserManagement = () => {
                         {u.email}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap font-semibold text-primary">
-                        {u.department ? `${u.department} • ${u.year}` : 'N/A'}
+                        {u.department ? (
+                          u.role_type === 'teacher'
+                            ? `${u.department} • ${u.teacher_role || 'Teacher'}`
+                            : `${u.department} • ${u.year}`
+                        ) : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap font-bold text-gray-500 uppercase tracking-wide text-[10px]">
-                        {u.is_staff ? 'Admin' : 'Student'}
+                        {u.is_staff ? 'Admin' : (u.role_type === 'teacher' ? 'Teacher' : 'Student')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {u.is_blocked ? (
@@ -353,7 +357,7 @@ const UserManagement = () => {
                         {!u.is_staff && (
                           <>
                             <button
-                              onClick={() => handleToggleBlock(u.id)}
+                               onClick={() => handleToggleBlock(u.id)}
                               className={`p-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 inline-flex ${
                                 u.is_blocked 
                                   ? 'bg-green-100 hover:bg-green-200 text-green-700' 
@@ -376,7 +380,7 @@ const UserManagement = () => {
                   ))}
                   {users.length === 0 && (
                     <tr>
-                      <td colSpan="6" className="text-center py-6 text-gray-400 italic">No student profiles found matching filters.</td>
+                      <td colSpan="6" className="text-center py-6 text-gray-400 italic">No user profiles found matching filters.</td>
                     </tr>
                   )}
                 </tbody>
@@ -413,7 +417,7 @@ const UserManagement = () => {
             <div className="text-center space-y-2">
               <h3 className="text-lg font-extrabold text-text">Delete Account?</h3>
               <p className="text-xs text-gray-500">
-                Are you sure you want to permanently delete student account <span className="font-bold text-red-500">@{deleteTarget.username}</span>? This action is irreversible.
+                Are you sure you want to permanently delete user account <span className="font-bold text-red-500">@{deleteTarget.username}</span>? This action is irreversible.
               </p>
             </div>
             <div className="flex gap-3">
