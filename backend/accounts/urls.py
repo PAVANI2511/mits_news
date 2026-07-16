@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     RegisterView,
@@ -28,7 +29,7 @@ urlpatterns = [
     path('forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),
     path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
     path('reset-password/', ResetPasswordView.as_view(), name='reset_password'),
-    path('profile/update/', UpdateProfileView.as_view(), name='profile_update'),
+    path('profile/update/', csrf_exempt(UpdateProfileView.as_view()), name='profile_update'),
     path('profile/<str:username>/', UserProfileView.as_view(), name='profile_detail'),
     path('profile/<str:username>/followers/', UserFollowersListView.as_view(), name='user_followers'),
     path('profile/<str:username>/following/', UserFollowingListView.as_view(), name='user_following'),

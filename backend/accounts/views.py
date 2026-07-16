@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import StudentProfile, Follower
 from .serializers import RegisterSerializer, UserSerializer, ProfileSerializer
@@ -12,17 +13,24 @@ from notifications.models import Notification
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
-        username = attrs.get('username', '')
+        username = attrs.get('username', '').strip()
+        user = None
         if '@' in username:
-            user = User.objects.filter(email=username).first()
-            if user:
-                attrs['username'] = user.username
+            user = User.objects.filter(email__iexact=username).first()
+        else:
+            user = User.objects.filter(username__iexact=username).first()
+            
+        if user:
+            attrs['username'] = user.username
                 
         data = super().validate(attrs)
         if self.user.profile.is_blocked:
             raise serializers.ValidationError("Your account has been blocked by the admin.")
         
-        user_serializer = UserSerializer(self.user, context={'request': self.context.get('request')})
+        user_serializer = UserSerializer(self.user, context={
+            'request': self.context.get('request'),
+            'is_self': True
+        })
         data['user'] = user_serializer.data
 
         # Log successful login
@@ -124,6 +132,7 @@ class UserFollowingListView(views.APIView):
 
 class UpdateProfileView(generics.UpdateAPIView):
     serializer_class = ProfileSerializer
+    authentication_classes = [JWTAuthentication]
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
@@ -133,6 +142,32 @@ class UpdateProfileView(generics.UpdateAPIView):
     def update(self, request, *args, **kwargs):
         profile = self.get_object()
         
+        # Get target role_type, roll_number, email
+        role_type = request.data.get('role_type', profile.role_type)
+        roll_number = request.data.get('roll_number', profile.roll_number)
+        email = request.data.get('email', request.user.email)
+        
+        # Normalize and strip if present
+        import re
+        if email:
+            email = email.strip().lower()
+        if roll_number:
+            roll_number = roll_number.strip().lower()
+
+        # If student, validate roll number format and email prefix match case-insensitively
+        if role_type == 'student':
+            if not roll_number:
+                return Response({"roll_number": "Roll number is required for students."}, status=status.HTTP_400_BAD_REQUEST)
+            if len(roll_number) != 10 or not re.match(r'^[a-zA-Z0-9]+$', roll_number):
+                return Response({"roll_number": "Roll number must be exactly 10 alphanumeric characters."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Email prefix check
+            email_prefix = email.split('@')[0].strip().lower() if email else ''
+            if email_prefix != roll_number:
+                return Response({
+                    "email": f"For students, the email prefix must match the roll number (e.g. {roll_number}@mits.ac.in)."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
         # Extract fields to update in user object if provided
         name = request.data.get('name')
         if name is not None:
@@ -142,14 +177,22 @@ class UpdateProfileView(generics.UpdateAPIView):
             request.user.save()
 
         # Update email if provided (restricted to @mits.ac.in check if updated)
-        email = request.data.get('email')
-        if email is not None and email != request.user.email:
-            if not email.endswith('@mits.ac.in'):
-                return Response({"email": "Only @mits.ac.in emails are allowed."}, status=status.HTTP_400_BAD_REQUEST)
-            request.user.email = email
-            request.user.save()
+        email_val = request.data.get('email')
+        if email_val is not None:
+            email_val = email_val.strip().lower()
+            if email_val != request.user.email:
+                if not email_val.endswith('@mits.ac.in'):
+                    return Response({"email": "Only @mits.ac.in emails are allowed."}, status=status.HTTP_400_BAD_REQUEST)
+                if User.objects.filter(email__iexact=email_val).exclude(pk=request.user.pk).exists():
+                    return Response({"email": "An account with this email address already exists."}, status=status.HTTP_400_BAD_REQUEST)
+                request.user.email = email_val
+                request.user.save()
 
-        return super().update(request, *args, **kwargs)
+        serializer = self.get_serializer(profile, data=request.data, partial=True)
+        serializer.context['is_self'] = True
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class FollowUserView(views.APIView):

@@ -21,12 +21,54 @@ class ProfileSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         
         is_admin = request and request.user and (request.user.is_staff or request.user.is_superuser)
-        is_self = request and request.user and request.user.is_authenticated and (instance.user == request.user)
+        is_self = self.context.get('is_self', False) or (
+            request and request.user and request.user.is_authenticated and (instance.user == request.user)
+        )
         
         if not (is_admin or is_self):
             rep.pop('mobile_number', None)
             
         return rep
+
+    def validate(self, attrs):
+        role_type = attrs.get('role_type', self.instance.role_type if self.instance else 'student')
+        
+        # 1. Roll number validation and normalization
+        if role_type == 'student':
+            roll_number = attrs.get('roll_number')
+            if roll_number is not None:
+                roll_number = roll_number.strip().lower()
+                attrs['roll_number'] = roll_number
+                
+                # Check format
+                if roll_number and (len(roll_number) != 10 or not re.match(r'^[a-zA-Z0-9]+$', roll_number)):
+                    raise serializers.ValidationError({"roll_number": "Roll number must be exactly 10 alphanumeric characters."})
+                
+                # Check uniqueness (excluding current user's profile)
+                if roll_number:
+                    exists = StudentProfile.objects.filter(roll_number__iexact=roll_number)
+                    if self.instance:
+                        exists = exists.exclude(pk=self.instance.pk)
+                    if exists.exists():
+                        raise serializers.ValidationError({"roll_number": "An account with this roll number already exists."})
+                        
+        # 2. Mobile number validation if provided during update
+        mobile_number = attrs.get('mobile_number')
+        if mobile_number is not None:
+            mobile_number = mobile_number.strip()
+            attrs['mobile_number'] = mobile_number
+            if not mobile_number:
+                raise serializers.ValidationError({"mobile_number": "Mobile number is required."})
+            if not re.match(r'^\d{10}$', mobile_number):
+                raise serializers.ValidationError({"mobile_number": "Mobile number must be exactly 10 digits."})
+            
+            exists = StudentProfile.objects.filter(mobile_number=mobile_number)
+            if self.instance:
+                exists = exists.exclude(pk=self.instance.pk)
+            if exists.exists():
+                raise serializers.ValidationError({"mobile_number": "An account with this mobile number already exists."})
+
+        return attrs
 
 
 class UserSerializer(serializers.ModelSerializer):
