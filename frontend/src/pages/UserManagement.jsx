@@ -332,11 +332,14 @@ const UserManagement = () => {
                       <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-500">
                         {u.email}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap font-semibold text-primary">
+                      <td className="px-6 py-4 font-semibold text-primary max-w-[250px] whitespace-normal">
                         {u.department ? (
-                          u.role_type === 'teacher'
-                            ? `${u.department} • ${u.teacher_role || 'Teacher'}`
-                            : `${u.department} • ${u.year}`
+                          <div className="flex flex-col">
+                            <span className="block leading-tight text-xs font-semibold">{u.department}</span>
+                            <span className="block text-[10px] text-gray-400 font-bold tracking-wide uppercase mt-1">
+                              {u.role_type === 'teacher' ? (u.teacher_role || 'Teacher') : u.year}
+                            </span>
+                          </div>
                         ) : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap font-bold text-gray-500 uppercase tracking-wide text-[10px]">
