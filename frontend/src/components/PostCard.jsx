@@ -376,7 +376,22 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      const filename = mediaUrl.split('/').pop() || `download.${mediaType}`;
+      
+      let filename = mediaUrl.split('/').pop() || `download.${mediaType}`;
+      const ext = filename.includes('.') ? filename.split('.').pop().toLowerCase() : '';
+      const validExtensions = {
+        pdf: ['pdf'],
+        audio: ['mp3', 'wav', 'ogg', 'm4a', 'aac'],
+        video: ['mp4', 'webm', 'ogg', 'mov', 'avi'],
+        image: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
+        poster: ['jpg', 'jpeg', 'png', 'webp']
+      };
+      
+      const allowed = validExtensions[mediaType] || [mediaType];
+      if (!allowed.includes(ext)) {
+        filename = `${filename}.${allowed[0]}`;
+      }
+      
       link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
