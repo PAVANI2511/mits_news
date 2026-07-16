@@ -170,8 +170,12 @@ class LikePostView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
+        from django.db import IntegrityError
         post = get_object_or_404(Post, pk=pk)
-        like_rel, created = Like.objects.get_or_create(post=post, user=request.user)
+        try:
+            like_rel, created = Like.objects.get_or_create(post=post, user=request.user)
+        except IntegrityError:
+            created = False
         
         if created:
             # Notifications
@@ -183,8 +187,13 @@ class LikePostView(views.APIView):
                     post=post,
                     message=f"{request.user.first_name or request.user.username} liked your post."
                 )
-            return Response({"message": "Post liked successfully."}, status=status.HTTP_201_CREATED)
-        return Response({"message": "Post already liked."}, status=status.HTTP_200_OK)
+        
+        likes_count = Like.objects.filter(post=post).count()
+        return Response({
+            "message": "Post liked successfully.",
+            "likes_count": likes_count,
+            "is_liked": True
+        }, status=status.HTTP_200_OK)
 
 
 class UnlikePostView(views.APIView):
@@ -194,10 +203,15 @@ class UnlikePostView(views.APIView):
         post = get_object_or_404(Post, pk=pk)
         like_rel = Like.objects.filter(post=post, user=request.user)
         if like_rel.exists():
-            for l in like_rel:
-                l.delete()
-            return Response({"message": "Post unliked successfully."}, status=status.HTTP_200_OK)
-        return Response({"error": "Post not liked yet."}, status=status.HTTP_400_BAD_REQUEST)
+            like_rel.delete()
+            
+        likes_count = Like.objects.filter(post=post).count()
+        return Response({
+            "message": "Post unliked successfully.",
+            "likes_count": likes_count,
+            "is_liked": False
+        }, status=status.HTTP_200_OK)
+
 
 
 class SavePostView(views.APIView):

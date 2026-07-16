@@ -188,6 +188,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
 
   const [liked, setLiked] = useState(post.is_liked || false);
   const [likesCount, setLikesCount] = useState(post.likes_count || 0);
+  const [isLiking, setIsLiking] = useState(false);
   const [saved, setSaved] = useState(post.is_saved || false);
   const [savedCount, setSavedCount] = useState(post.saved_count || 0);
   const [sharesCount, setSharesCount] = useState(post.share_count || 0);
@@ -250,18 +251,37 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
       setErrorMessage("Please log in to like posts.");
       return;
     }
+    if (isLiking) return;
+
+    const prevLiked = liked;
+    const prevLikesCount = likesCount;
+
+    // Optimistic update
+    setLiked(!prevLiked);
+    setLikesCount(prev => prevLiked ? Math.max(0, prev - 1) : prev + 1);
+    setIsLiking(true);
+    setErrorMessage('');
+
     try {
-      if (liked) {
-        await postsAPI.unlike(post.id);
-        setLiked(false);
-        setLikesCount(prev => Math.max(0, prev - 1));
+      let response;
+      if (prevLiked) {
+        response = await postsAPI.unlike(post.id);
       } else {
-        await postsAPI.like(post.id);
-        setLiked(true);
-        setLikesCount(prev => prev + 1);
+        response = await postsAPI.like(post.id);
+      }
+
+      if (response && response.data) {
+        setLiked(response.data.is_liked);
+        setLikesCount(response.data.likes_count);
       }
     } catch (err) {
       console.error(err);
+      // Revert optimistic update
+      setLiked(prevLiked);
+      setLikesCount(prevLikesCount);
+      setErrorMessage(err.response?.data?.error || err.response?.data?.message || "Failed to update like status.");
+    } finally {
+      setIsLiking(false);
     }
   };
 
@@ -642,9 +662,10 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
         <div className="flex items-center gap-4">
           <button
             onClick={handleLike}
+            disabled={isLiking}
             className={`flex items-center gap-1 text-sm font-bold transition ${
               liked ? 'text-red-500 scale-105' : 'text-gray-500 hover:text-red-500'
-            }`}
+            } ${isLiking ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <FiHeart className={liked ? 'fill-current' : ''} />
             <span>{likesCount}</span>
