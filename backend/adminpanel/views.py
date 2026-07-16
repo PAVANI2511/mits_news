@@ -163,7 +163,7 @@ class AdminCommentsListView(views.APIView):
                 "user_id": comment.user_id,
                 "username": comment.user.username,
                 "user_name": f"{comment.user.first_name} {comment.user.last_name}".strip() or comment.user.username,
-                "content": comment.content,
+                "content": "" if comment.is_deleted else comment.content,
                 "parent_comment_id": comment.parent_comment_id,
                 "created_at": comment.created_at.isoformat() if comment.created_at else None,
                 "updated_at": comment.updated_at.isoformat() if comment.updated_at else None,

@@ -92,7 +92,7 @@ const CommentManagement = () => {
     try {
       const res = await commentsAPI.delete(id);
       setComments(prev => 
-        prev.map(c => c.id === id ? { ...c, is_deleted: true, content: "This comment was deleted.", deleted_at: res.data.comment.deleted_at } : c)
+        prev.map(c => c.id === id ? { ...c, is_deleted: true, content: "", deleted_at: res.data.comment.deleted_at } : c)
       );
       setSuccess("Comment soft-deleted successfully.");
     } catch (err) {
@@ -402,7 +402,7 @@ const CommentManagement = () => {
                         <span className="text-[10px] text-gray-400 block font-normal">@{c.username}</span>
                       </td>
                       <td className="px-5 py-4 max-w-[200px] truncate font-medium">
-                        {c.is_deleted ? <span className="italic text-gray-400">This comment was deleted.</span> : c.content}
+                        {c.is_deleted ? "" : c.content}
                       </td>
                       <td className="px-5 py-4 whitespace-nowrap text-gray-400 font-semibold">
                         {c.parent_comment_id ? (
@@ -577,7 +577,7 @@ const CommentManagement = () => {
               </div>
               <div className="border-t border-border/60 pt-3 mt-2">
                 <span className="font-bold text-gray-400 block mb-1">Comment Content:</span>
-                <p className="bg-bg/60 p-3 rounded-lg border border-border font-medium whitespace-pre-wrap">{viewingComment.content}</p>
+                <p className="bg-bg/60 p-3 rounded-lg border border-border font-medium whitespace-pre-wrap">{viewingComment.is_deleted ? "" : viewingComment.content}</p>
               </div>
             </div>
             <div className="flex justify-end pt-2">
