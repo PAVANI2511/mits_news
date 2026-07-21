@@ -8,6 +8,11 @@ export const useWebSocket = (onMessageReceived) => {
   const reconnectTimeoutRef = useRef(null);
   const pollingIntervalRef = useRef(null);
   const seenNotificationIds = useRef(new Set());
+  const onMessageReceivedRef = useRef(onMessageReceived);
+
+  useEffect(() => {
+    onMessageReceivedRef.current = onMessageReceived;
+  }, [onMessageReceived]);
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
@@ -55,8 +60,8 @@ export const useWebSocket = (onMessageReceived) => {
           [...list].reverse().forEach(n => {
             if (!seenNotificationIds.current.has(n.id)) {
               seenNotificationIds.current.add(n.id);
-              if (onMessageReceived) {
-                onMessageReceived(n);
+              if (onMessageReceivedRef.current) {
+                onMessageReceivedRef.current(n);
               }
             }
           });
@@ -93,8 +98,8 @@ export const useWebSocket = (onMessageReceived) => {
           if (data && data.id) {
             seenNotificationIds.current.add(data.id);
           }
-          if (onMessageReceived) {
-            onMessageReceived(data);
+          if (onMessageReceivedRef.current) {
+            onMessageReceivedRef.current(data);
           }
         } catch (err) {
           console.error("Failed to parse WebSocket JSON payload:", err);
@@ -136,7 +141,7 @@ export const useWebSocket = (onMessageReceived) => {
         pollingIntervalRef.current = null;
       }
     };
-  }, [isAuthenticated, token, onMessageReceived]);
+  }, [isAuthenticated, token]);
 
   return wsRef;
 };

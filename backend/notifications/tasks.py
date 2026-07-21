@@ -47,26 +47,31 @@ def send_daily_reminders_task():
                 days_to_last_date = (post.last_date.date() - today).days
             
             should_send = False
+            send_days_to_event = days_to_event
+            send_days_to_last = days_to_last_date
             
-            # 3, 2, 1 days before registration deadline
-            if days_to_last_date == 3 and not interest.reminder_sent_3d:
-                should_send = True
-                interest.reminder_sent_3d = True
-            elif days_to_last_date == 2 and not interest.reminder_sent_2d:
-                should_send = True
-                interest.reminder_sent_2d = True
-            elif days_to_last_date == 1 and not interest.reminder_sent_1d:
-                should_send = True
-                interest.reminder_sent_1d = True
-                
-            # Event conduction day reminder (starts today)
+            # Event conduction day reminder (starts today - highest priority)
             if days_to_event == 0 and not interest.event_day_reminder_sent:
                 should_send = True
                 interest.event_day_reminder_sent = True
+                send_days_to_last = None  # Ensure event-day template is selected
+            # 3, 2, 1 days before registration deadline
+            elif days_to_last_date == 3 and not interest.reminder_sent_3d:
+                should_send = True
+                interest.reminder_sent_3d = True
+                send_days_to_event = None
+            elif days_to_last_date == 2 and not interest.reminder_sent_2d:
+                should_send = True
+                interest.reminder_sent_2d = True
+                send_days_to_event = None
+            elif days_to_last_date == 1 and not interest.reminder_sent_1d:
+                should_send = True
+                interest.reminder_sent_1d = True
+                send_days_to_event = None
                 
             # Send the email alert and persist tracking state
             if should_send:
-                send_event_reminder_email_sync(user.id, post.id, days_to_event, days_to_last_date)
+                send_event_reminder_email_sync(user.id, post.id, send_days_to_event, send_days_to_last)
                 interest.save()
 
 

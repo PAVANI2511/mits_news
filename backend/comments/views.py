@@ -14,9 +14,7 @@ class CommentCreateView(views.APIView):
 
     def post(self, request, post_id):
         post = get_object_or_404(Post, pk=post_id)
-        content = request.data.get('content', '').strip()
-        if not content:
-            content = request.data.get('text', '').strip()
+        content = (request.data.get('content') or request.data.get('text') or '').strip()
         if not content:
             return Response({"error": "Comment content cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -63,9 +61,7 @@ class CommentDetailView(views.APIView):
         if comment.user != request.user and not request.user.is_staff and not request.user.is_superuser:
             return Response({"error": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
         
-        content = request.data.get('content', '').strip()
-        if not content:
-            content = request.data.get('text', '').strip()
+        content = (request.data.get('content') or request.data.get('text') or '').strip()
         if not content:
             return Response({"error": "Comment content cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -125,9 +121,7 @@ class ReplyCreateView(views.APIView):
 
     def post(self, request, comment_id):
         parent_comment = get_object_or_404(Comment, pk=comment_id)
-        content = request.data.get('content', '').strip()
-        if not content:
-            content = request.data.get('text', '').strip()
+        content = (request.data.get('content') or request.data.get('text') or '').strip()
         if not content:
             return Response({"error": "Reply content cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)
 

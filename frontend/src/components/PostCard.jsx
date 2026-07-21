@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { 
   FiHeart, FiMessageSquare, FiBookmark, FiDownload, 
-  FiShare2, FiMapPin, FiMusic, FiFileText, FiUserCheck, FiUserPlus,
+  FiShare2, FiMapPin, FiFileText, FiUserCheck, FiUserPlus,
   FiLink, FiExternalLink, FiVolume2, FiVolumeX
 } from 'react-icons/fi';
 import { 
@@ -18,7 +18,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
 
   const [audioMuted, setAudioMuted] = useState(false);
   const [isActive, setIsActive] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [_isPlaying, setIsPlaying] = useState(false);
 
   const containerRef = useRef(null);
   const videoRef = useRef(null);
@@ -30,7 +30,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   }, [audioMuted]);
 
   // Play / Pause helper functions
-  const playMedia = () => {
+  const playMedia = useCallback(() => {
     const isMuted = audioMutedRef.current;
     if (post.video && videoRef.current) {
       videoRef.current.currentTime = 0; // Play from starting
@@ -53,9 +53,9 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
         setIsPlaying(false);
       }
     }
-  };
+  }, [post.video, post.audio]);
 
-  const pauseMedia = () => {
+  const pauseMedia = useCallback(() => {
     if (videoRef.current) {
       videoRef.current.pause();
     }
@@ -63,7 +63,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
       audioRef.current.pause();
     }
     setIsPlaying(false);
-  };
+  }, []);
 
   // Sync video element muted property with audioMuted state
   useEffect(() => {
@@ -148,7 +148,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
     return () => {
       observer.disconnect();
     };
-  }, [post.id]);
+  }, [post.id, pauseMedia]);
 
   // Listen to other posts playing, and browser tab visibility / window focus loss
   useEffect(() => {
@@ -182,7 +182,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
       window.removeEventListener('blur', handleBlur);
       pauseMedia(); // Pause immediately when navigating away / unmounting
     };
-  }, [post.id]);
+  }, [post.id, playMedia, pauseMedia]);
 
 
 
@@ -467,7 +467,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } catch (err) {
+    } catch (_err) {
       // Fallback
       window.open(mediaUrl, '_blank');
     }

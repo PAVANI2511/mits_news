@@ -118,9 +118,9 @@ const Register = () => {
       newErrors.username = "Username must contain at least one letter.";
     } else if (!/[0-9]/.test(username)) {
       newErrors.username = "Username must contain at least one number.";
-    } else if (!/[@\.\+\-_]/.test(username)) {
+    } else if (!/[@.+-]/.test(username)) {
       newErrors.username = "Username must contain at least one allowed special character (@, ., +, -, _).";
-    } else if (/[^a-zA-Z0-9@\.\+\-_]/.test(username)) {
+    } else if (/[^a-zA-Z0-9@.+-]/.test(username)) {
       newErrors.username = "Username can only contain letters, numbers, and @, ., +, -, _ characters.";
     }
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import Sidebar from '../components/Sidebar';
@@ -13,22 +13,22 @@ const PostDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    loadPost();
-  }, [id]);
-
-  const loadPost = async () => {
+  const loadPost = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const res = await postsAPI.getDetail(id);
       setPost(res.data);
-    } catch (err) {
+    } catch (_err) {
       setError("Article not found or blocked.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    loadPost();
+  }, [loadPost]);
 
   return (
     <MainLayout sidebar={<Sidebar />}>

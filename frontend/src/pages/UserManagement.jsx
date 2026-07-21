@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../layouts/AdminLayout';
 import { adminAPI, getMediaUrl } from '../services/api';
 import { 
-  FiTrash2, FiUserCheck, FiUserX, FiLock, FiUnlock, 
+  FiTrash2, FiLock, FiUnlock, 
   FiSearch, FiFilter, FiDownload, FiFileText, 
   FiChevronLeft, FiChevronRight, FiGrid 
 } from 'react-icons/fi';
@@ -24,11 +24,7 @@ const UserManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  useEffect(() => {
-    loadUsers();
-  }, [page, statusFilter, roleFilter, sortBy]);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -45,12 +41,16 @@ const UserManagement = () => {
       setUsers(res.data.results);
       setTotalCount(res.data.total_count);
       setTotalPages(Math.ceil(res.data.total_count / 15) || 1);
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to load user directories.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, sortBy, searchVal, statusFilter, roleFilter]);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();

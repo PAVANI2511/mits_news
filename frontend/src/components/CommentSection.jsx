@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { commentsAPI, getMediaUrl } from '../services/api';
-import { FiCornerDownRight, FiTrash2, FiSend, FiEdit2, FiHeart, FiX, FiCheck, FiThumbsUp } from 'react-icons/fi';
+import { FiTrash2, FiSend, FiEdit2, FiX, FiCheck, FiThumbsUp } from 'react-icons/fi';
 
 const reactionEmojis = {
   like: '👍',
@@ -52,6 +52,8 @@ const CommentNode = ({
   handleHideComment,
   depth = 0
 }) => {
+  const [showPopover, setShowPopover] = useState(false);
+
   const isMyComment = user && String(comment.user?.id || comment.user_id) === String(user.id);
   const canDeleteComment = isMyComment || isPostOwner || user?.is_staff || user?.is_superuser;
   const canEditComment = isMyComment || user?.is_staff || user?.is_superuser;
@@ -94,7 +96,6 @@ const CommentNode = ({
     );
   }
 
-  const [showPopover, setShowPopover] = useState(false);
   let hoverTimeout = null;
 
   const handleMouseEnter = () => {
@@ -109,7 +110,7 @@ const CommentNode = ({
   };
 
   const activeEmojis = Object.entries(comment.reactions_summary || {})
-    .filter(([type, count]) => count > 0)
+    .filter(([_type, count]) => count > 0)
     .map(([type]) => reactionEmojis[type]);
 
   const currentEmoji = comment.my_reaction ? reactionEmojis[comment.my_reaction] : null;
@@ -383,18 +384,18 @@ const CommentSection = ({ postId, postOwnerUsername, onCommentAdded, onCommentDe
 
   const isPostOwner = user && String(postOwnerUsername) === String(user.username);
 
-  useEffect(() => {
-    loadComments();
-  }, [postId]);
-
-  const loadComments = async () => {
+  const loadComments = useCallback(async () => {
     try {
       const res = await commentsAPI.getList(postId);
       setComments(res.data);
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [postId]);
+
+  useEffect(() => {
+    loadComments();
+  }, [loadComments]);
 
   const handleAddComment = async (e) => {
     e.preventDefault();
@@ -410,7 +411,7 @@ const CommentSection = ({ postId, postOwnerUsername, onCommentAdded, onCommentDe
       setError('');
       loadComments();
       if (onCommentAdded) onCommentAdded();
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to post comment.");
     }
   };
@@ -429,7 +430,7 @@ const CommentSection = ({ postId, postOwnerUsername, onCommentAdded, onCommentDe
       setActiveReplyBox(null);
       setError('');
       loadComments();
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to post reply.");
     }
   };
@@ -453,7 +454,7 @@ const CommentSection = ({ postId, postOwnerUsername, onCommentAdded, onCommentDe
       setComments(prev => updateTree(prev));
       setEditingCommentId(null);
       setEditText('');
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to edit comment.");
     }
   };

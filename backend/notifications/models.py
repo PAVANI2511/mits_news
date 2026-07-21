@@ -29,7 +29,7 @@ def create_mention_notifications(text, sender, post=None, comment=None):
     if not text:
         return
     # Find all words starting with @ and containing allowed username characters
-    raw_usernames = re.findall(r'@([a-zA-Z0-9_\.\+\-@]+)', text)
+    raw_usernames = re.findall(r'@([a-zA-Z0-9_\.\+\-]+)', text)
     usernames = set()
     for u in raw_usernames:
         u = u.strip()
@@ -37,7 +37,7 @@ def create_mention_notifications(text, sender, post=None, comment=None):
             continue
         usernames.add(u)
         # Fallback for trailing punctuation like a period at the end of a sentence
-        if len(u) > 1 and u[-1] in ['.', '-', '+', '_', '@']:
+        if len(u) > 1 and u[-1] in ['.', '-', '+', '_']:
             usernames.add(u[:-1])
 
     for username in usernames:

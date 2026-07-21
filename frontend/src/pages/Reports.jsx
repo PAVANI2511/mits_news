@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../layouts/AdminLayout';
 import { adminAPI } from '../services/api';
 import { 
   FiCheck, FiAlertCircle, FiSearch, FiFilter, FiDownload, 
   FiChevronLeft, FiChevronRight, FiEye, FiActivity, FiUserX, 
-  FiTrash2, FiFileText, FiRefreshCw, FiAlertOctagon, FiClock
+  FiTrash2, FiFileText, FiAlertOctagon, FiClock
 } from 'react-icons/fi';
 
 const Reports = () => {
@@ -35,11 +35,7 @@ const Reports = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  useEffect(() => {
-    loadReports();
-  }, [page, typeFilter, reasonFilter, statusFilter, sortBy]);
-
-  const loadReports = async () => {
+  const loadReports = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -60,12 +56,16 @@ const Reports = () => {
       if (res.data.summary) {
         setSummary(res.data.summary);
       }
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to load moderation reports database.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, sortBy, searchVal, typeFilter, reasonFilter, statusFilter]);
+
+  useEffect(() => {
+    loadReports();
+  }, [loadReports]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -107,15 +107,13 @@ const Reports = () => {
       setSuccess(res.data.message);
       
       const updatedStatus = res.data.report?.status || newStatus;
-      const updatedNotes = res.data.report?.admin_notes || adminNotes;
-
       setNewStatus(updatedStatus);
 
       // Refresh detailed report view
       try {
         const freshRes = await adminAPI.getReportDetail(activeReportId);
         setDetailedReport(freshRes.data);
-      } catch (err) {
+      } catch (_err) {
         // If report target detail is gone or deleted, clear it safely
         setActiveReportId(null);
         setDetailedReport(null);

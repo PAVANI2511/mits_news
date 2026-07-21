@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import AdminLayout from '../layouts/AdminLayout';
 import { adminAPI } from '../services/api';
 import { 
-  FiUsers, FiFileText, FiAlertTriangle, FiCheckCircle, 
-  FiHeart, FiShare2, FiBookmark, FiMessageSquare, FiTrendingUp 
+  FiUsers, FiFileText, FiCheckCircle, 
+  FiHeart, FiMessageSquare, FiTrendingUp 
 } from 'react-icons/fi';
 import DateRangePicker from '../components/DateRangePicker';
 
@@ -19,20 +19,7 @@ const AdminDashboard = () => {
   const [endDate, setEndDate] = useState('');
   const [selectedDept, setSelectedDept] = useState('');
 
-  // Refresh data when filters change
-  useEffect(() => {
-    loadDashboardData();
-  }, [period, startDate, endDate, selectedDept]);
-
-  // Periodic Auto-refresh (keeps selected filters)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      loadDashboardData(true);
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [period, startDate, endDate, selectedDept]);
-
-  const loadDashboardData = async (showSilent = false) => {
+  const loadDashboardData = useCallback(async (showSilent = false) => {
     if (!showSilent) {
       setLoading(true);
     }
@@ -54,7 +41,7 @@ const AdminDashboard = () => {
 
       const analyticsRes = await adminAPI.getAnalytics(params);
       setAnalytics(analyticsRes.data);
-    } catch (err) {
+    } catch (_err) {
       if (!showSilent) {
         setError("Failed to load admin dashboard statistics. Please ensure admin session is active.");
       }
@@ -63,7 +50,20 @@ const AdminDashboard = () => {
         setLoading(false);
       }
     }
-  };
+  }, [period, startDate, endDate, selectedDept]);
+
+  // Refresh data when filters change
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
+
+  // Periodic Auto-refresh (keeps selected filters)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadDashboardData(true);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [loadDashboardData]);
 
   const handleExportCSV = async () => {
     try {
@@ -101,7 +101,7 @@ const AdminDashboard = () => {
     try {
       const d = new Date(isoStr);
       return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch (e) {
+    } catch (_e) {
       return '';
     }
   };

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import MainLayout from '../layouts/MainLayout';
@@ -6,7 +6,7 @@ import Sidebar from '../components/Sidebar';
 import { postsAPI, getMediaUrl } from '../services/api';
 import { 
   FiFileText, FiImage, FiVideo, FiMusic, 
-  FiMapPin, FiPaperclip, FiSend, FiX, FiInfo 
+  FiMapPin, FiPaperclip, FiX 
 } from 'react-icons/fi';
 
 const EditPost = () => {
@@ -54,17 +54,7 @@ const EditPost = () => {
     }
   }, [isAuthenticated]);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadPost();
-    }
-  }, [id, isAuthenticated]);
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  const loadPost = async () => {
+  const loadPost = useCallback(async () => {
     setFetching(true);
     try {
       const res = await postsAPI.getDetail(id);
@@ -91,12 +81,22 @@ const EditPost = () => {
         audio: post.audio || '',
         pdf: post.pdf || '',
       });
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to fetch post details. It might have been deleted.");
     } finally {
       setFetching(false);
     }
-  };
+  }, [id, user?.username, user?.is_staff]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadPost();
+    }
+  }, [isAuthenticated, loadPost]);
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));

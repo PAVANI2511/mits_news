@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import AdminLayout from '../layouts/AdminLayout';
 import { adminAPI, commentsAPI } from '../services/api';
 import { 
@@ -32,11 +32,7 @@ const CommentManagement = () => {
   const [editContent, setEditContent] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  useEffect(() => {
-    loadData();
-  }, [page, filterStatus, filterReported, sortBy]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -56,12 +52,16 @@ const CommentManagement = () => {
 
       const statsRes = await adminAPI.getStats();
       setStats(statsRes.data.comments);
-    } catch (err) {
-      setError("Failed to fetch comment list or statistics.");
+    } catch (_err) {
+      setError("Failed to load comments moderation data.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, sortBy, searchQuery, filterStatus, filterReported]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -109,7 +109,7 @@ const CommentManagement = () => {
         prev.map(c => c.id === id ? { ...c, is_deleted: false, content: res.data.content, deleted_at: null } : c)
       );
       setSuccess("Comment restored successfully.");
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to restore comment.");
     }
   };
@@ -124,7 +124,7 @@ const CommentManagement = () => {
       setDeleteTarget(null);
       setPage(1);
       loadData();
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to permanently delete comment.");
     }
   };

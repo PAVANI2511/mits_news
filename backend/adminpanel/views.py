@@ -929,7 +929,7 @@ class AdminAnalyticsView(views.APIView):
         thirty_days_ago = now - timedelta(days=30)
         fastest_growing = StudentProfile.objects.filter(user__date_joined__gte=thirty_days_ago).order_by('-followers_count')[:5]
         fastest_growing_data = [
-            {"username": p.user.username, "name": f"{p.user.first_name} {p.user.last_name}".strip() or u.username if 'u' in locals() else f"{p.user.first_name} {p.user.last_name}".strip() or p.user.username, "followers": p.followers_count}
+            {"username": p.user.username, "name": f"{p.user.first_name} {p.user.last_name}".strip() or p.user.username, "followers": p.followers_count}
             for p in fastest_growing
         ]
         
@@ -1030,7 +1030,7 @@ class AdminAnalyticsExportCSVView(views.APIView):
             while current < end_dt:
                 day_end = timezone.make_aware(datetime(current.year, current.month, current.day, 23, 59, 59))
                 if day_end > end_dt:
-                    day_end = day_end
+                    day_end = end_dt
                 label = current.strftime('%Y-%m-%d')
                 intervals.append((current, day_end, label))
                 current += timedelta(days=1)

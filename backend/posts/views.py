@@ -72,8 +72,10 @@ class PostDetailView(views.APIView):
             return Response({"error": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
 
         # Basic fields update and validation
-        caption = request.data.get('caption', post.caption).strip()
-        text = request.data.get('text', post.text).strip()
+        raw_caption = request.data.get('caption')
+        raw_text = request.data.get('text')
+        caption = (raw_caption if raw_caption is not None else post.caption or '').strip()
+        text = (raw_text if raw_text is not None else post.text or '').strip()
 
         if not caption or not text:
             return Response({"detail": "Headline/Caption and Article details are required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -409,30 +411,22 @@ class ExploreFeedView(views.APIView):
         page = int(request.query_params.get('page', 1))
         page_size = int(request.query_params.get('page_size', 10))
         
-        queryset = Post.objects.filter(is_blocked=False)
-        posts_list = list(queryset)
+        from django.db.models import Count, F, Q
+        queryset = Post.objects.filter(is_blocked=False).annotate(
+            num_likes=Count('likes', distinct=True),
+            num_comments=Count('comments_sql', filter=Q(comments_sql__is_deleted=False), distinct=True)
+        ).annotate(
+            popularity=(F('num_likes') * 2) + F('num_comments')
+        ).order_by('-popularity', '-created_at')
         
-        # We need to compute (likes_count * 2) + comments_count to sort them
-        # Let's serialize the posts first to get their precomputed likes_count and comments_count
-        serializer = PostSerializer(posts_list, many=True, context={'request': request})
-        serialized_data = serializer.data
-        
-        # Sort by popularity: (likes_count * 2) + comments_count DESC, then created_at DESC
-        serialized_data.sort(
-            key=lambda x: (
-                (x.get("likes_count", 0) * 2) + x.get("comments_count", 0), 
-                x.get("created_at", "")
-            ), 
-            reverse=True
-        )
-        
-        total_count = len(serialized_data)
+        total_count = queryset.count()
         skipped = (page - 1) * page_size
-        paginated_data = serialized_data[skipped : skipped + page_size]
+        page_items = queryset[skipped:skipped + page_size]
         
+        serializer = PostSerializer(page_items, many=True, context={'request': request})
         has_next = (skipped + page_size) < total_count
         return Response({
-            "results": paginated_data,
+            "results": serializer.data,
             "page": page,
             "has_next": has_next,
             "total_count": total_count
@@ -623,12 +617,12 @@ class PostSearchView(views.APIView):
 
         # 3. Smart query classification matching
         # e.g., "tech paper presentation"
-        q_words = q.lower().split()
+        q_lower = q.lower()
         inferred_tech = None
-        if 'tech' in q_words and 'non-tech' not in q_words and 'non_tech' not in q_words:
-            inferred_tech = True
-        elif 'non-tech' in q_words or 'non_tech' in q_words:
+        if 'non-tech' in q_lower or 'non_tech' in q_lower or 'non tech' in q_lower:
             inferred_tech = False
+        elif 'tech' in q_lower:
+            inferred_tech = True
 
         if category_filter:
             is_tech_val = (category_filter == 'tech')
@@ -645,7 +639,8 @@ class PostSearchView(views.APIView):
         # 4. Keyword filtering
         cleaned_q = q
         if inferred_tech is not None:
-            cleaned_q = " ".join([w for w in q_words if w not in ['tech', 'non-tech', 'non_tech']])
+            q_words = q.split()
+            cleaned_q = " ".join([w for w in q_words if w.lower() not in ['tech', 'non-tech', 'non_tech', 'non']])
 
         if cleaned_q:
             queryset = queryset.filter(

@@ -24,7 +24,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             attrs['username'] = user.username
                 
         data = super().validate(attrs)
-        if self.user.profile.is_blocked:
+        profile = getattr(self.user, 'profile', None)
+        if profile and profile.is_blocked:
             raise serializers.ValidationError("Your account has been blocked by the admin.")
         
         user_serializer = UserSerializer(self.user, context={

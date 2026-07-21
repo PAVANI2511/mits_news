@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import MainLayout from '../layouts/MainLayout';
@@ -6,7 +6,7 @@ import Sidebar from '../components/Sidebar';
 import PostCard from '../components/PostCard';
 import { ProfileSkeleton } from '../components/LoadingSkeleton';
 import { authAPI, postsAPI, getMediaUrl } from '../services/api';
-import { FiBook, FiBookmark, FiMapPin, FiAward, FiSettings } from 'react-icons/fi';
+import { FiBook, FiBookmark, FiSettings } from 'react-icons/fi';
 
 const UserProfile = () => {
   const { username } = useParams();
@@ -63,9 +63,34 @@ const UserProfile = () => {
 
   const isOwnProfile = currentUser?.username === username;
 
+  const loadProfile = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      // Get user profile
+      const profileRes = await authAPI.getProfile(username);
+      setProfile(profileRes.data);
+      setIsFollowing(profileRes.data.is_following);
+
+      // Get user's published posts
+      const postsRes = await postsAPI.getFeed({ username: username });
+      setUserPosts(postsRes.data.results);
+
+      // If own profile, load saved posts too
+      if (currentUser?.username === username) {
+        const savedRes = await postsAPI.getSaved();
+        setSavedPosts(savedRes.data);
+      }
+    } catch (_err) {
+      setError("User profile not found or blocked.");
+    } finally {
+      setLoading(false);
+    }
+  }, [username, currentUser?.username]);
+
   useEffect(() => {
     loadProfile();
-  }, [username]);
+  }, [loadProfile]);
 
   const handleOpenConnections = async (type) => {
     setShowConnectionsModal(type);
@@ -105,31 +130,6 @@ const UserProfile = () => {
       window.removeEventListener('user-follow-toggled', handleFollowToggle);
     };
   }, [username]);
-
-  const loadProfile = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      // Get user profile
-      const profileRes = await authAPI.getProfile(username);
-      setProfile(profileRes.data);
-      setIsFollowing(profileRes.data.is_following);
-
-      // Get user's published posts
-      const postsRes = await postsAPI.getFeed({ username: username });
-      setUserPosts(postsRes.data.results);
-
-      // If own profile, load saved posts too
-      if (currentUser?.username === username) {
-        const savedRes = await postsAPI.getSaved();
-        setSavedPosts(savedRes.data);
-      }
-    } catch (err) {
-      setError("User profile not found or blocked.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleFollow = async () => {
     if (!isAuthenticated) {

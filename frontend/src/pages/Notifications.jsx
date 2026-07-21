@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import MainLayout from '../layouts/MainLayout';
 import Sidebar from '../components/Sidebar';
@@ -47,7 +46,7 @@ const Notifications = () => {
     try {
       const res = await notificationsAPI.getList();
       setNotifications(res.data);
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to load notifications.");
     } finally {
       setLoading(false);

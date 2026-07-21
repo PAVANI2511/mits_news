@@ -48,18 +48,20 @@ def send_event_reminder_email_sync(user_id, post_id, days_to_event, days_to_last
         countdown_message = ""
         subject = ""
         
+        # Event conduction TODAY has top priority
+        if days_to_event is not None and days_to_event == 0:
+            subject = f"🎉 TODAY: Event Happening Now - {post.caption[:30]}"
+            countdown_message = "The event you are interested in is being conducted TODAY! Get ready to join."
+            
         # Registration Closes 1, 2, or 3 days reminder
-        if days_to_last_date is not None and days_to_last_date in [1, 2, 3]:
+        elif days_to_last_date is not None and days_to_last_date in [1, 2, 3]:
             days = days_to_last_date
             unit = "day" if days == 1 else "days"
             time_str = "tomorrow" if days == 1 else f"in {days} days"
             subject = f"🔔 LAST CALL: Registration Closes {time_str} for {post.caption[:30]}"
             countdown_message = f"Registration for this event closes {time_str} ({days} {unit} left)! Don't forget to register."
             
-        # Event conduction reminders: Today or Tomorrow
-        elif days_to_event is not None and days_to_event == 0:
-            subject = f"🎉 TODAY: Event Happening Now - {post.caption[:30]}"
-            countdown_message = "The event you are interested in is being conducted TODAY! Get ready to join."
+        # Event conduction reminders: Tomorrow or 2-3 days
         elif days_to_event is not None and days_to_event == 1:
             subject = f"🔥 TOMORROW: Event conduction - {post.caption[:30]}"
             countdown_message = "The event you are interested in is starting TOMORROW! Make sure you don't miss it."

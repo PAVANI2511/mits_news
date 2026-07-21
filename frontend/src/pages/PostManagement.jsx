@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import AdminLayout from '../layouts/AdminLayout';
 import { adminAPI } from '../services/api';
 import { 
@@ -20,11 +20,7 @@ const PostManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  useEffect(() => {
-    loadPosts();
-  }, [page, statusFilter, sortBy]);
-
-  const loadPosts = async () => {
+  const loadPosts = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -40,12 +36,16 @@ const PostManagement = () => {
       setPosts(res.data.results);
       setTotalCount(res.data.total_count);
       setTotalPages(Math.ceil(res.data.total_count / 15) || 1);
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to load posts database.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, sortBy, searchVal, statusFilter]);
+
+  useEffect(() => {
+    loadPosts();
+  }, [loadPosts]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -62,7 +62,7 @@ const PostManagement = () => {
         prev.map(p => p.id === String(id) ? { ...p, is_blocked: res.data.is_blocked } : p)
       );
       setSuccess(res.data.message);
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to toggle block status.");
     }
   };
@@ -77,7 +77,7 @@ const PostManagement = () => {
         setSuccess(res.data.message);
         setPage(1);
         loadPosts();
-      } catch (err) {
+      } catch (_err) {
         setError("Failed to delete post.");
       }
     }

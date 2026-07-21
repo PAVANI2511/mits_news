@@ -9,7 +9,7 @@ export const getMediaUrl = (path) => {
   try {
     const urlObj = new URL(API_BASE_URL);
     return `${urlObj.origin}${path}`;
-  } catch (e) {
+  } catch (_e) {
     return `http://127.0.0.1:8000${path}`;
   }
 };
