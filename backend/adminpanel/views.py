@@ -748,102 +748,178 @@ class AdminAnalyticsView(views.APIView):
 
     def get(self, request):
         now = timezone.now()
-        filter_range = request.query_params.get('range', '7_days').strip()
-        intervals = []
-
-        if filter_range == 'today':
-            for i in range(23, -1, -1):
-                start_dt = now - timedelta(hours=i+1)
-                end_dt = now - timedelta(hours=i)
-                label = end_dt.strftime('%H:%M')
-                intervals.append((start_dt, end_dt, label))
-        elif filter_range == '7_days':
-            for i in range(6, -1, -1):
-                day = now - timedelta(days=i)
-                start_dt = timezone.make_aware(timezone.datetime(day.year, day.month, day.day, 0, 0, 0))
-                end_dt = timezone.make_aware(timezone.datetime(day.year, day.month, day.day, 23, 59, 59))
-                label = day.strftime('%b %d')
-                intervals.append((start_dt, end_dt, label))
-        elif filter_range == '30_days':
-            for i in range(29, -1, -1):
-                day = now - timedelta(days=i)
-                start_dt = timezone.make_aware(timezone.datetime(day.year, day.month, day.day, 0, 0, 0))
-                end_dt = timezone.make_aware(timezone.datetime(day.year, day.month, day.day, 23, 59, 59))
-                label = day.strftime('%b %d')
-                intervals.append((start_dt, end_dt, label))
-        elif filter_range == '6_months':
-            current_year = now.year
-            current_month = now.month
-            for i in range(5, -1, -1):
-                month_offset = current_month - i
-                year_offset = current_year
-                while month_offset <= 0:
-                    month_offset += 12
-                    year_offset -= 1
-                start_dt = timezone.make_aware(timezone.datetime(year_offset, month_offset, 1, 0, 0, 0))
-                next_m = month_offset + 1
-                next_y = year_offset
-                if next_m > 12:
-                    next_m = 1
-                    next_y += 1
-                end_dt = timezone.make_aware(timezone.datetime(next_y, next_m, 1, 0, 0, 0)) - timedelta(seconds=1)
-                label = start_dt.strftime('%b %Y')
-                intervals.append((start_dt, end_dt, label))
-        elif filter_range == 'custom':
-            start_str = request.query_params.get('start_date', '').strip()
-            end_str = request.query_params.get('end_date', '').strip()
-            try:
-                start_date = timezone.datetime.strptime(start_str, '%Y-%m-%d').date()
-                end_date = timezone.datetime.strptime(end_str, '%Y-%m-%d').date()
-            except ValueError:
-                start_date = (now - timedelta(days=6)).date()
-                end_date = now.date()
-
-            diff_days = (end_date - start_date).days
-            for i in range(diff_days + 1):
-                day = start_date + timedelta(days=i)
-                start_dt = timezone.make_aware(timezone.datetime(day.year, day.month, day.day, 0, 0, 0))
-                end_dt = timezone.make_aware(timezone.datetime(day.year, day.month, day.day, 23, 59, 59))
-                label = day.strftime('%b %d')
-                intervals.append((start_dt, end_dt, label))
-
-        chart_data = []
-        for start_dt, end_dt, label in intervals:
-            user_growth = User.objects.filter(date_joined__lte=end_dt).count()
-            new_users = User.objects.filter(date_joined__range=(start_dt, end_dt)).count()
-            posts = Post.objects.filter(created_at__range=(start_dt, end_dt)).count()
-            comments = Comment.objects.filter(created_at__range=(start_dt, end_dt)).count()
-            likes = Like.objects.filter(created_at__range=(start_dt, end_dt)).count()
-            
-            from posts.models import ShareLog
-            from accounts.models import LoginLog
-            shares = ShareLog.objects.filter(created_at__range=(start_dt, end_dt)).count()
-            reports = Report.objects.filter(created_at__range=(start_dt, end_dt)).count()
-            dau = LoginLog.objects.filter(created_at__range=(start_dt, end_dt)).values('user_id').distinct().count()
-
-            chart_data.append({
-                "date": label,
-                "user_growth": user_growth,
-                "new_users": new_users,
-                "posts": posts,
-                "comments": comments,
-                "likes": likes,
-                "shares": shares,
-                "reports": reports,
-                "dau": dau
-            })
-
-        # Top active departments
-        dept_data = StudentProfile.objects.values('department').annotate(
-            count=Count('id')
-        ).order_by('-count')[:5]
+        today = now.date()
         
-        departments = [
-            {"name": item["department"] or "Unknown", "value": item["count"]}
-            for item in dept_data
+        start_date_str = request.query_params.get('start_date', '').strip()
+        end_date_str = request.query_params.get('end_date', '').strip()
+        period = request.query_params.get('period', 'daily').strip().lower()
+        dept_filter = request.query_params.get('department', '').strip()
+
+        # Caching Layer Check
+        from django.core.cache import cache
+        
+        cache_key = f"admin_analytics_{period}_{start_date_str}_{end_date_str}_{dept_filter}"
+        
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response(cached_data, status=status.HTTP_200_OK)
+
+        from datetime import datetime, date
+        import calendar
+
+        start_dt = None
+        end_dt = None
+        is_custom_dates = False
+
+        if start_date_str and end_date_str:
+            try:
+                s_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                e_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                start_dt = timezone.make_aware(datetime.combine(s_date, datetime.min.time()))
+                end_dt = timezone.make_aware(datetime.combine(e_date, datetime.max.time()))
+                is_custom_dates = True
+            except ValueError:
+                pass
+
+        if not is_custom_dates:
+            if period == 'daily':
+                start_dt = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+                end_dt = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+            elif period == 'weekly':
+                s_date = today - timedelta(days=6)
+                start_dt = timezone.make_aware(datetime.combine(s_date, datetime.min.time()))
+                end_dt = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+            elif period == 'monthly':
+                s_date = today - timedelta(days=29)
+                start_dt = timezone.make_aware(datetime.combine(s_date, datetime.min.time()))
+                end_dt = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+            elif period == 'semester':
+                if today.month >= 7:
+                    s_date = date(today.year, 7, 1)
+                    e_date = date(today.year, 12, 31)
+                else:
+                    s_date = date(today.year, 1, 1)
+                    e_date = date(today.year, 6, 30)
+                start_dt = timezone.make_aware(datetime.combine(s_date, datetime.min.time()))
+                end_dt = timezone.make_aware(datetime.combine(e_date, datetime.max.time()))
+            else:
+                # Default fallback: daily (today)
+                start_dt = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+                end_dt = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+
+        intervals = []
+        if is_custom_dates or period == 'daily' or not period:
+            current = start_dt
+            while current < end_dt:
+                day_end = timezone.make_aware(datetime(current.year, current.month, current.day, 23, 59, 59))
+                if day_end > end_dt:
+                    day_end = end_dt
+                label = current.strftime('%Y-%m-%d')
+                intervals.append((current, day_end, label))
+                current += timedelta(days=1)
+                current = timezone.make_aware(datetime(current.year, current.month, current.day, 0, 0, 0))
+        elif period == 'weekly':
+            current_start = start_dt
+            while current_start < end_dt:
+                current_end = min(current_start + timedelta(days=6, hours=23, minutes=59, seconds=59), end_dt)
+                week_num = current_start.isocalendar()[1]
+                label = f"Week {week_num}"
+                intervals.append((current_start, current_end, label))
+                current_start += timedelta(days=7)
+        elif period == 'monthly':
+            current_start = start_dt
+            while current_start < end_dt:
+                y = current_start.year
+                m = current_start.month
+                last_day = calendar.monthrange(y, m)[1]
+                current_end = timezone.make_aware(datetime(y, m, last_day, 23, 59, 59))
+                if current_end > end_dt:
+                    current_end = end_dt
+                label = current_start.strftime('%B %Y')
+                intervals.append((current_start, current_end, label))
+                m += 1
+                if m > 12:
+                    m = 1
+                    y += 1
+                current_start = timezone.make_aware(datetime(y, m, 1, 0, 0, 0))
+        elif period == 'semester':
+            current_start = start_dt
+            while current_start < end_dt:
+                y = current_start.year
+                m = current_start.month
+                last_day = calendar.monthrange(y, m)[1]
+                current_end = timezone.make_aware(datetime(y, m, last_day, 23, 59, 59))
+                if current_end > end_dt:
+                    current_end = end_dt
+                label = current_start.strftime('%b')
+                intervals.append((current_start, current_end, label))
+                m += 1
+                if m > 12:
+                    m = 1
+                    y += 1
+                current_start = timezone.make_aware(datetime(y, m, 1, 0, 0, 0))
+
+        # Query posts matching filters
+        posts_qs = Post.objects.filter(is_blocked=False)
+        if dept_filter:
+            posts_qs = posts_qs.filter(department__iexact=dept_filter)
+
+        range_posts = posts_qs.filter(created_at__range=(start_dt, end_dt))
+        total_posts = range_posts.count()
+
+        # Dynamic Growth Rate
+        range_len_days = max(1, (end_dt.date() - start_dt.date()).days + 1)
+        prev_start_dt = start_dt - timedelta(days=range_len_days)
+        prev_end_dt = start_dt - timedelta(seconds=1)
+        prev_count = posts_qs.filter(created_at__range=(prev_start_dt, prev_end_dt)).count()
+        if prev_count > 0:
+            growth_rate = round(((total_posts - prev_count) / prev_count) * 100, 1)
+        else:
+            growth_rate = 100.0 if total_posts > 0 else 0.0
+
+        # Peak Day
+        day_counts = {}
+        for p in range_posts:
+            d_str = p.created_at.strftime('%Y-%m-%d')
+            day_counts[d_str] = day_counts.get(d_str, 0) + 1
+        peak_day_str = max(day_counts, key=day_counts.get) if day_counts else "N/A"
+        peak_day_count = day_counts[peak_day_str] if day_counts else 0
+        peak_day = {"date": peak_day_str, "count": peak_day_count}
+
+        # Top Department & Top 3 Departments
+        top_dept_query = range_posts.exclude(department='').values('department').annotate(count=Count('id')).order_by('-count')
+        top_department = top_dept_query[0]['department'] if top_dept_query.exists() else "None"
+        
+        top_departments_query = top_dept_query[:3]
+        top_departments = [
+            {"department": item["department"], "count": item["count"]}
+            for item in top_departments_query
         ]
 
-        # Followers/Creators analytics
+        # Department Breakdown
+        dept_breakdown_qs = range_posts.values('department').annotate(count=Count('id')).order_by('-count')
+        department_breakdown = [
+            {"department": item["department"] or "General / Campus", "count": item["count"]}
+            for item in dept_breakdown_qs
+        ]
+
+        chart_data = []
+        for s_dt, e_dt, label in intervals:
+            interval_count = posts_qs.filter(created_at__range=(s_dt, e_dt)).count()
+            chart_data.append({
+                "label": label,
+                "posts": interval_count
+            })
+
+        # Followers/Creators metadata (for retro-compatibility with other dashboard cards)
+        dept_data_legacy = StudentProfile.objects.values('department').annotate(
+            count=Count('id')
+        ).order_by('-count')[:5]
+        departments_legacy = [
+            {"name": item["department"] or "Unknown", "value": item["count"]}
+            for item in dept_data_legacy
+        ]
+
         most_followed = StudentProfile.objects.order_by('-followers_count')[:5]
         most_followed_data = [
             {"username": p.user.username, "name": f"{p.user.first_name} {p.user.last_name}".strip() or p.user.username, "followers": p.followers_count}
@@ -853,7 +929,7 @@ class AdminAnalyticsView(views.APIView):
         thirty_days_ago = now - timedelta(days=30)
         fastest_growing = StudentProfile.objects.filter(user__date_joined__gte=thirty_days_ago).order_by('-followers_count')[:5]
         fastest_growing_data = [
-            {"username": p.user.username, "name": f"{p.user.first_name} {p.user.last_name}".strip() or p.user.username, "followers": p.followers_count}
+            {"username": p.user.username, "name": f"{p.user.first_name} {p.user.last_name}".strip() or u.username if 'u' in locals() else f"{p.user.first_name} {p.user.last_name}".strip() or p.user.username, "followers": p.followers_count}
             for p in fastest_growing
         ]
         
@@ -863,13 +939,164 @@ class AdminAnalyticsView(views.APIView):
             for u in creators
         ]
 
-        return Response({
+        # Calculate trend direction
+        if growth_rate > 5.0:
+            trend = "Increasing"
+        elif growth_rate < -5.0:
+            trend = "Decreasing"
+        else:
+            trend = "Stable"
+
+        response_dict = {
+            "total_posts": total_posts,
+            "growth_rate": growth_rate,
+            "trend": trend,
+            "last_updated": timezone.now().isoformat(),
+            "peak_day": peak_day,
+            "top_department": top_department,
+            "top_departments": top_departments,
+            "department_breakdown": department_breakdown,
             "chart_data": chart_data,
-            "departments": departments,
+            "departments": departments_legacy,
             "most_followed": most_followed_data,
             "fastest_growing": fastest_growing_data,
             "top_creators": top_creators_data
-        }, status=status.HTTP_200_OK)
+        }
+
+        # Cache results for 5 minutes (300 seconds)
+        cache.set(cache_key, response_dict, 300)
+
+        return Response(response_dict, status=status.HTTP_200_OK)
+
+
+class AdminAnalyticsExportCSVView(views.APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        now = timezone.now()
+        today = now.date()
+        
+        start_date_str = request.query_params.get('start_date', '').strip()
+        end_date_str = request.query_params.get('end_date', '').strip()
+        period = request.query_params.get('period', 'daily').strip().lower()
+        dept_filter = request.query_params.get('department', '').strip()
+
+        from datetime import datetime, date
+        import calendar
+
+        start_dt = None
+        end_dt = None
+        is_custom_dates = False
+
+        if start_date_str and end_date_str:
+            try:
+                s_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                e_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                start_dt = timezone.make_aware(datetime.combine(s_date, datetime.min.time()))
+                end_dt = timezone.make_aware(datetime.combine(e_date, datetime.max.time()))
+                is_custom_dates = True
+            except ValueError:
+                pass
+
+        if not is_custom_dates:
+            if period == 'daily':
+                start_dt = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+                end_dt = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+            elif period == 'weekly':
+                s_date = today - timedelta(days=6)
+                start_dt = timezone.make_aware(datetime.combine(s_date, datetime.min.time()))
+                end_dt = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+            elif period == 'monthly':
+                s_date = today - timedelta(days=29)
+                start_dt = timezone.make_aware(datetime.combine(s_date, datetime.min.time()))
+                end_dt = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+            elif period == 'semester':
+                if today.month >= 7:
+                    s_date = date(today.year, 7, 1)
+                    e_date = date(today.year, 12, 31)
+                else:
+                    s_date = date(today.year, 1, 1)
+                    e_date = date(today.year, 6, 30)
+                start_dt = timezone.make_aware(datetime.combine(s_date, datetime.min.time()))
+                end_dt = timezone.make_aware(datetime.combine(e_date, datetime.max.time()))
+            else:
+                # Default fallback: daily (today)
+                start_dt = timezone.make_aware(datetime.combine(today, datetime.min.time()))
+                end_dt = timezone.make_aware(datetime.combine(today, datetime.max.time()))
+
+        intervals = []
+        if is_custom_dates or period == 'daily' or not period:
+            current = start_dt
+            while current < end_dt:
+                day_end = timezone.make_aware(datetime(current.year, current.month, current.day, 23, 59, 59))
+                if day_end > end_dt:
+                    day_end = day_end
+                label = current.strftime('%Y-%m-%d')
+                intervals.append((current, day_end, label))
+                current += timedelta(days=1)
+                current = timezone.make_aware(datetime(current.year, current.month, current.day, 0, 0, 0))
+        elif period == 'weekly':
+            current_start = start_dt
+            while current_start < end_dt:
+                current_end = min(current_start + timedelta(days=6, hours=23, minutes=59, seconds=59), end_dt)
+                week_num = current_start.isocalendar()[1]
+                label = f"Week {week_num}"
+                intervals.append((current_start, current_end, label))
+                current_start += timedelta(days=7)
+        elif period == 'monthly':
+            current_start = start_dt
+            while current_start < end_dt:
+                y = current_start.year
+                m = current_start.month
+                last_day = calendar.monthrange(y, m)[1]
+                current_end = timezone.make_aware(datetime(y, m, last_day, 23, 59, 59))
+                if current_end > end_dt:
+                    current_end = end_dt
+                label = current_start.strftime('%B %Y')
+                intervals.append((current_start, current_end, label))
+                m += 1
+                if m > 12:
+                    m = 1
+                    y += 1
+                current_start = timezone.make_aware(datetime(y, m, 1, 0, 0, 0))
+        elif period == 'semester':
+            current_start = start_dt
+            while current_start < end_dt:
+                y = current_start.year
+                m = current_start.month
+                last_day = calendar.monthrange(y, m)[1]
+                current_end = timezone.make_aware(datetime(y, m, last_day, 23, 59, 59))
+                if current_end > end_dt:
+                    current_end = end_dt
+                label = current_start.strftime('%b')
+                intervals.append((current_start, current_end, label))
+                m += 1
+                if m > 12:
+                    m = 1
+                    y += 1
+                current_start = timezone.make_aware(datetime(y, m, 1, 0, 0, 0))
+
+        # Query posts matching filters
+        posts_qs = Post.objects.filter(is_blocked=False)
+        if dept_filter:
+            posts_qs = posts_qs.filter(department__iexact=dept_filter)
+
+        import csv
+        from django.http import HttpResponse
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="analytics_report.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['Report Generated', timezone.now().strftime('%Y-%m-%d %H:%M:%S')])
+        writer.writerow(['Period Filter', period.capitalize()])
+        writer.writerow(['Department Filter', dept_filter or 'All Departments'])
+        writer.writerow([])
+        writer.writerow(['Date / Interval', 'Posts Published'])
+        for s_dt, e_dt, label in intervals:
+            interval_count = posts_qs.filter(created_at__range=(s_dt, e_dt)).count()
+            writer.writerow([label, interval_count])
+        return response
 
 
 

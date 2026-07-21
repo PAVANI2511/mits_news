@@ -1,7 +1,20 @@
 from rest_framework import serializers
-from .models import Post, Like, SavedPost
+from .models import Post, Like, SavedPost, Category, CategoryFollow, UserInterest
 from comments.models import Comment
 from accounts.models import Follower
+
+class CategorySerializer(serializers.ModelSerializer):
+    is_followed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'slug', 'description', 'is_followed']
+
+    def get_is_followed(self, obj):
+        request = self.context.get('request')
+        if request and request.user and request.user.is_authenticated:
+            return CategoryFollow.objects.filter(user=request.user, category=obj).exists()
+        return False
 
 class PostSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
@@ -15,6 +28,15 @@ class PostSerializer(serializers.ModelSerializer):
     is_saved = serializers.SerializerMethodField()
     is_following = serializers.SerializerMethodField()
     hashtags = serializers.SerializerMethodField()
+    relevance_score = serializers.IntegerField(required=False, read_only=True)
+    priority = serializers.CharField(required=False, read_only=True)
+    
+    category = CategorySerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(), source='category', write_only=True, required=False, allow_null=True
+    )
+    interest_status = serializers.SerializerMethodField()
+    interested_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -23,7 +45,9 @@ class PostSerializer(serializers.ModelSerializer):
             'hashtags', 'location', 'music_url', 'created_at', 'is_blocked', 
             'image', 'video', 'audio', 'poster', 'pdf', 'external_url', 
             'share_count', 'likes_count', 'comments_count', 'saved_count', 
-            'is_liked', 'is_saved', 'is_following'
+            'is_liked', 'is_saved', 'is_following', 'category', 'category_id',
+            'event_date', 'last_date', 'interest_status', 'interested_count',
+            'event_type', 'department', 'relevance_score', 'priority'
         ]
         read_only_fields = ['is_blocked', 'created_at', 'share_count']
 
@@ -73,3 +97,13 @@ class PostSerializer(serializers.ModelSerializer):
         import re
         tokens = re.split(r'[\s,]+', obj.hashtags)
         return [t.lstrip("#") for t in tokens if t.strip()]
+
+    def get_interest_status(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            interest = UserInterest.objects.filter(post=obj, user=request.user).first()
+            return interest.status if interest else None
+        return None
+
+    def get_interested_count(self, obj):
+        return UserInterest.objects.filter(post=obj, status='interested').count()

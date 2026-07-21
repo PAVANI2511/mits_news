@@ -6,8 +6,8 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 import os
 
-from .models import Post, Like, SavedPost
-from .serializers import PostSerializer
+from .models import Post, Like, SavedPost, Category, CategoryFollow, UserInterest
+from .serializers import PostSerializer, CategorySerializer
 from notifications.models import Notification
 
 import threading
@@ -149,11 +149,51 @@ class HomeFeedView(views.APIView):
         if username:
             queryset = queryset.filter(user__username=username)
 
-        queryset = queryset.order_by('-created_at')
+        # Rank posts dynamically
+        posts_list = list(queryset)
+        if request.user.is_authenticated:
+            try:
+                profile = request.user.profile
+                user_dept = profile.department
+                
+                followed_cat_ids = set(CategoryFollow.objects.filter(user=request.user).values_list('category_id', flat=True))
+                tech_score = profile.tech_score
+                non_tech_score = profile.non_tech_score
+                
+                def calculate_rank(post):
+                    score = 0
+                    
+                    # 1. Followed Categories (highest priority)
+                    if post.category_id in followed_cat_ids:
+                        score += 100
+                        
+                    # 2. Same Department
+                    post_author_profile = getattr(post.user, 'profile', None)
+                    if post_author_profile and user_dept and post_author_profile.department == user_dept:
+                        score += 50
+                        
+                    # 3. User Interest Alignment
+                    if post.category:
+                        if post.category.is_tech:
+                            score += tech_score * 2
+                        else:
+                            score += non_tech_score * 2
+                            
+                    # 4. Recency Time-Decay
+                    from django.utils import timezone
+                    time_diff = timezone.now() - post.created_at
+                    hours_ago = time_diff.total_seconds() / 3600.0
+                    score -= hours_ago * 0.5
+                    
+                    return score
+                
+                posts_list.sort(key=calculate_rank, reverse=True)
+            except Exception as e:
+                print(f"Error sorting feed dynamically: {e}")
 
-        total_count = queryset.count()
+        total_count = len(posts_list)
         skipped = (page - 1) * page_size
-        page_items = queryset[skipped:skipped + page_size]
+        page_items = posts_list[skipped:skipped + page_size]
 
         serializer = PostSerializer(page_items, many=True, context={'request': request})
         has_next = (skipped + page_size) < total_count
@@ -178,6 +218,15 @@ class LikePostView(views.APIView):
             created = False
         
         if created:
+            # Increment user's behavioral interest score based on category type
+            profile = getattr(request.user, 'profile', None)
+            if profile and post.category:
+                if post.category.is_tech:
+                    profile.tech_score += 1
+                else:
+                    profile.non_tech_score += 1
+                profile.save()
+
             # Notifications
             if post.user != request.user:
                 Notification.objects.create(
@@ -438,4 +487,328 @@ class ReportPostView(views.APIView):
             "message": "Post reported successfully.",
             "report_id": report.id
         }, status=status.HTTP_201_CREATED)
+
+
+class PostInterestView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        post_obj = get_object_or_404(Post, pk=pk)
+        status_val = request.data.get('status', '').strip().lower()
+
+        if status_val not in ['interested', 'not_interested', '']:
+            return Response({"error": "Invalid status. Allowed values: 'interested', 'not_interested', or empty string to clear."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if status_val == '':
+            UserInterest.objects.filter(post=post_obj, user=request.user).delete()
+            msg = "Interest removed."
+        else:
+            interest, created = UserInterest.objects.update_or_create(
+                post=post_obj,
+                user=request.user,
+                defaults={'status': status_val}
+            )
+            msg = f"Post interest status set to '{status_val}'."
+            
+            # Increment user's behavioral interest score based on category type
+            if status_val == 'interested':
+                profile = getattr(request.user, 'profile', None)
+                if profile and post_obj.category:
+                    if post_obj.category.is_tech:
+                        profile.tech_score += 2
+                    else:
+                        profile.non_tech_score += 2
+                    profile.save()
+            
+            # Send immediate confirmation email if status set to interested
+            if status_val == 'interested':
+                import sys
+                is_testing = 'test' in sys.argv
+                
+                # Check user profile notification setting
+                profile = getattr(request.user, 'profile', None)
+                if profile and getattr(profile, 'email_notifications_enabled', True):
+                    if is_testing:
+                        from notifications.emails import send_interest_confirmation_email_sync
+                        try:
+                            send_interest_confirmation_email_sync(request.user.id, post_obj.id)
+                        except Exception:
+                            pass
+                    else:
+                        from notifications.tasks import send_interest_confirmation_email_task
+                        try:
+                            send_interest_confirmation_email_task.delay(request.user.id, post_obj.id)
+                        except Exception:
+                            # Fallback: send in a background thread if Celery is offline
+                            import threading
+                            from notifications.emails import send_interest_confirmation_email_sync
+                            threading.Thread(target=send_interest_confirmation_email_sync, args=(request.user.id, post_obj.id)).start()
+
+        interested_count = UserInterest.objects.filter(post=post_obj, status='interested').count()
+        return Response({
+            "message": msg,
+            "interest_status": status_val or None,
+            "interested_count": interested_count
+        }, status=status.HTTP_200_OK)
+
+
+class CategoryListView(generics.ListAPIView):
+    queryset = Category.objects.all().order_by('name')
+    serializer_class = CategorySerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+
+class CategoryFollowView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        category = get_object_or_404(Category, pk=pk)
+        relation, created = CategoryFollow.objects.get_or_create(user=request.user, category=category)
+        if created:
+            return Response({"message": f"Successfully followed category '{category.name}'."}, status=status.HTTP_201_CREATED)
+        return Response({"message": f"You already follow category '{category.name}'."}, status=status.HTTP_200_OK)
+
+
+class CategoryUnfollowView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        category = get_object_or_404(Category, pk=pk)
+        deleted, _ = CategoryFollow.objects.filter(user=request.user, category=category).delete()
+        if deleted:
+            return Response({"message": f"Successfully unfollowed category '{category.name}'."}, status=status.HTTP_200_OK)
+        return Response({"error": f"You do not follow category '{category.name}'."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FollowedCategoriesListView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        follows = CategoryFollow.objects.filter(user=request.user).select_related('category')
+        categories = [f.category for f in follows]
+        serializer = CategorySerializer(categories, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class PostSearchView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        q = request.query_params.get('q', '').strip()
+        category_filter = request.query_params.get('category', '').strip().lower()
+        event_type_filter = request.query_params.get('event_type', '').strip().lower()
+        dept_filter = request.query_params.get('department', '').strip().lower()
+        show_expired = request.query_params.get('show_expired', 'false').strip().lower() == 'true'
+        hide_closed = request.query_params.get('hide_closed', 'false').strip().lower() == 'true'
+
+        from django.utils import timezone
+        from django.db.models import Q
+        today = timezone.now()
+
+        queryset = Post.objects.filter(is_blocked=False)
+
+        # 1. Date Filtering (exclude expired)
+        if not show_expired:
+            queryset = queryset.filter(
+                Q(event_date__isnull=True) | Q(event_date__gte=today)
+            ).filter(
+                Q(last_date__isnull=True) | Q(last_date__gte=today)
+            )
+
+        # 2. Hide closed registration
+        if hide_closed:
+            queryset = queryset.filter(
+                Q(last_date__isnull=True) | Q(last_date__gte=today)
+            )
+
+        # 3. Smart query classification matching
+        # e.g., "tech paper presentation"
+        q_words = q.lower().split()
+        inferred_tech = None
+        if 'tech' in q_words and 'non-tech' not in q_words and 'non_tech' not in q_words:
+            inferred_tech = True
+        elif 'non-tech' in q_words or 'non_tech' in q_words:
+            inferred_tech = False
+
+        if category_filter:
+            is_tech_val = (category_filter == 'tech')
+            queryset = queryset.filter(category__is_tech=is_tech_val)
+        elif inferred_tech is not None:
+            queryset = queryset.filter(category__is_tech=inferred_tech)
+
+        if event_type_filter:
+            queryset = queryset.filter(event_type__icontains=event_type_filter)
+
+        if dept_filter:
+            queryset = queryset.filter(department__icontains=dept_filter)
+
+        # 4. Keyword filtering
+        cleaned_q = q
+        if inferred_tech is not None:
+            cleaned_q = " ".join([w for w in q_words if w not in ['tech', 'non-tech', 'non_tech']])
+
+        if cleaned_q:
+            queryset = queryset.filter(
+                Q(caption__icontains=cleaned_q) |
+                Q(text__icontains=cleaned_q) |
+                Q(event_type__icontains=cleaned_q) |
+                Q(hashtags__icontains=cleaned_q)
+            )
+
+        posts_list = list(queryset)
+        is_exact = True
+
+        # Fallback UX: If no exact matches found, show related events
+        if not posts_list:
+            is_exact = False
+            fallback_qs = Post.objects.filter(is_blocked=False)
+            if not show_expired:
+                fallback_qs = fallback_qs.filter(
+                    Q(event_date__isnull=True) | Q(event_date__gte=today)
+                )
+            # Take top 10 most recent posts as fallback
+            posts_list = list(fallback_qs.order_by('-created_at')[:10])
+
+        # Get requesting user metadata
+        user = request.user
+        is_auth = user.is_authenticated
+        user_dept = ''
+        followed_cat_ids = set()
+        tech_score = 0
+        non_tech_score = 0
+
+        if is_auth:
+            try:
+                profile = user.profile
+                user_dept = profile.department.lower() if profile.department else ''
+                followed_cat_ids = set(CategoryFollow.objects.filter(user=user).values_list('category_id', flat=True))
+                tech_score = profile.tech_score
+                non_tech_score = profile.non_tech_score
+            except Exception:
+                pass
+
+        # 5. Personalized Ranking Scores
+        for post in posts_list:
+            score = 0
+            
+            # Match search keyword -> +100
+            if cleaned_q:
+                q_lower = cleaned_q.lower()
+                if q_lower in post.caption.lower() or q_lower in post.text.lower():
+                    score += 100
+            
+            # Matching category classification (tech / non-tech) -> +50
+            if post.category:
+                if category_filter:
+                    is_tech_val = (category_filter == 'tech')
+                    if post.category.is_tech == is_tech_val:
+                        score += 50
+                elif inferred_tech is not None:
+                    if post.category.is_tech == inferred_tech:
+                        score += 50
+            
+            # Matching event type -> +80
+            if event_type_filter and post.event_type and event_type_filter in post.event_type.lower():
+                score += 80
+            elif cleaned_q and post.event_type and post.event_type.lower() in cleaned_q.lower():
+                score += 80
+
+            if is_auth:
+                # Followed category -> +40
+                if post.category_id in followed_cat_ids:
+                    score += 40
+                # Same department -> +30
+                if post.department and user_dept and post.department.lower() == user_dept:
+                    score += 30
+                # User interest alignment score * 2
+                if post.category:
+                    if post.category.is_tech:
+                        score += tech_score * 2
+                    else:
+                        score += non_tech_score * 2
+
+            # Recency decay penalty -> -0.5 per hour
+            time_diff = timezone.now() - post.created_at
+            hours_ago = time_diff.total_seconds() / 3600.0
+            score -= hours_ago * 0.5
+            
+            post.relevance_score = int(score)
+
+            # Map dynamically assigned Priority field
+            prio = 'low'
+            if post.event_date or post.last_date:
+                days_to_event = None
+                days_to_last_date = None
+                
+                if post.event_date:
+                    days_to_event = (post.event_date.date() - today.date()).days
+                if post.last_date:
+                    days_to_last_date = (post.last_date.date() - today.date()).days
+                    
+                if (days_to_event is not None and days_to_event == 0) or (days_to_last_date is not None and days_to_last_date == 0):
+                    prio = 'high'
+                elif (days_to_event is not None and days_to_event in [1, 2, 3]) or (days_to_last_date is not None and days_to_last_date in [1, 2, 3]):
+                    prio = 'medium'
+            
+            post.priority = prio
+
+        # Sort results descending by score
+        posts_list.sort(key=lambda x: x.relevance_score, reverse=True)
+
+        # Paginate results
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 10))
+        total_count = len(posts_list)
+        skipped = (page - 1) * page_size
+        paginated_data = posts_list[skipped:skipped + page_size]
+
+        serializer = PostSerializer(paginated_data, many=True, context={'request': request})
+        
+        response_data = {
+            "results": serializer.data,
+            "page": page,
+            "has_next": (skipped + page_size) < total_count,
+            "total_count": total_count,
+            "is_exact_match": is_exact,
+        }
+        if not is_exact:
+            response_data["message"] = "No exact matches found. Showing related events."
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+class AutocompleteSuggestionsView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        q = request.query_params.get('q', '').strip().lower()
+        if not q:
+            return Response([], status=status.HTTP_200_OK)
+
+        suggestions = []
+
+        # Suggest matching categories
+        categories = Category.objects.all()
+        for cat in categories:
+            if q in cat.name.lower():
+                suggestions.append({
+                    "type": "category",
+                    "value": cat.name,
+                    "slug": cat.slug,
+                    "is_tech": cat.is_tech
+                })
+
+        # Suggest matching event types
+        event_types = Post.objects.filter(is_blocked=False).exclude(event_type='').values_list('event_type', flat=True).distinct()
+        preset_event_types = ["Paper Presentation", "Workshop", "Hackathon", "Seminar", "Guest Lecture"]
+        all_event_types = set(list(event_types) + preset_event_types)
+
+        for et in all_event_types:
+            if q in et.lower():
+                suggestions.append({
+                    "type": "event_type",
+                    "value": et
+                })
+
+        return Response(suggestions[:8], status=status.HTTP_200_OK)
 

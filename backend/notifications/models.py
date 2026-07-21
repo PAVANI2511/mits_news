@@ -11,6 +11,7 @@ class Notification(models.Model):
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE, null=True, blank=True)
     message = models.TextField()
     is_read = models.BooleanField(default=False)
+    priority = models.CharField(max_length=10, choices=(('low', 'Low'), ('medium', 'Medium'), ('high', 'High')), default='low')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

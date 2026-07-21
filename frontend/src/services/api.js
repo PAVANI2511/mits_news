@@ -91,6 +91,11 @@ export const postsAPI = {
   getFollowingFeed: (params) => api.get('/posts/following/', { params }),
   getExplore: (params) => api.get('/posts/explore/', { params }),
   report: (id, data) => api.post(`/posts/${id}/report/`, data),
+  setInterest: (id, status) => api.post(`/posts/${id}/interest/`, { status }),
+  getCategories: () => api.get('/posts/categories/'),
+  followCategory: (id) => api.post(`/posts/categories/${id}/follow/`),
+  unfollowCategory: (id) => api.post(`/posts/categories/${id}/unfollow/`),
+  getFollowedCategories: () => api.get('/posts/categories/followed/'),
 };
 
 export const commentsAPI = {
@@ -139,6 +144,7 @@ export const adminAPI = {
   getAnnouncements: () => api.get('/admin/announcement/'),
   createAnnouncement: (data) => api.post('/admin/announcement/', data),
   getAnalytics: (params) => api.get('/admin/analytics/', { params }),
+  exportAnalyticsCSV: (params) => api.get('/admin/analytics/export/csv/', { params, responseType: 'blob' }),
   getComments: (params) => api.get('/admin/comments/', { params }),
   getFollows: () => api.get('/admin/follows/'),
   deleteFollow: (id) => api.delete(`/admin/follows/${id}/`),

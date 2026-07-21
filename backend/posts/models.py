@@ -13,8 +13,37 @@ else:
     audio_storage = None
     pdf_storage = None
 
+class Category(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=120, unique=True, blank=True)
+    description = models.TextField(blank=True, default='')
+    is_tech = models.BooleanField(default=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
+
+class CategoryFollow(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='followed_categories')
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='followers')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'category')
+
+    def __str__(self):
+        return f"{self.user.username} follows category {self.category.name}"
+
+
 class Post(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='posts')
     caption = models.TextField(blank=True, default='')
     text = models.TextField(blank=True, default='')
     hashtags = models.CharField(max_length=255, blank=True, default='')
@@ -22,6 +51,10 @@ class Post(models.Model):
     music_url = models.CharField(max_length=255, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     is_blocked = models.BooleanField(default=False)
+    event_date = models.DateTimeField(null=True, blank=True)
+    last_date = models.DateTimeField(null=True, blank=True)
+    event_type = models.CharField(max_length=100, blank=True, default='')
+    department = models.CharField(max_length=100, blank=True, default='')
 
     image = models.FileField(upload_to='posts/images/', blank=True, null=True)
     video = models.FileField(upload_to='posts/videos/', storage=video_storage, blank=True, null=True)
@@ -92,4 +125,37 @@ class ShareLog(models.Model):
 
     def delete(self, *args, **kwargs):
         super().delete(*args, **kwargs)
+
+
+class UserInterest(models.Model):
+    STATUS_CHOICES = (
+        ('interested', 'Interested'),
+        ('not_interested', 'Not Interested'),
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='interests')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='interests')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    created_at = models.DateTimeField(auto_now=True)
+    
+    # Flags to prevent duplicate emails
+    reminder_sent_3d = models.BooleanField(default=False)
+    reminder_sent_2d = models.BooleanField(default=False)
+    reminder_sent_1d = models.BooleanField(default=False)
+    event_day_reminder_sent = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('user', 'post')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.post.id} - {self.status}"
+
+
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+from django.core.cache import cache
+
+@receiver(post_save, sender=Post)
+@receiver(post_delete, sender=Post)
+def clear_analytics_cache(sender, **kwargs):
+    cache.clear()
 

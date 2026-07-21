@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../redux/authSlice';
 import { changeTheme } from '../redux/themeSlice';
-import { themesAPI, notificationsAPI } from '../services/api';
+import { themesAPI, notificationsAPI, getMediaUrl } from '../services/api';
+import { useWebSocket } from '../hooks/useWebSocket';
 import { 
   FiSearch, FiLogOut, FiSettings, FiBell, FiPlusSquare, 
   FiHome, FiUser, FiActivity, FiMenu, FiX, FiCheck, FiBookmark, FiUsers, FiTrendingUp
@@ -19,25 +20,70 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [recentNotifications, setRecentNotifications] = useState([]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  const fetchUnreadCount = async () => {
+  const fetchNotificationsData = async () => {
     try {
       const res = await notificationsAPI.getUnreadCount();
       setUnreadCount(res.data.unread_count);
+
+      const listRes = await notificationsAPI.getList();
+      setRecentNotifications(listRes.data.slice(0, 5));
     } catch (err) {
-      console.error("Failed to load unread count:", err);
+      console.error("Failed to load notifications:", err);
     }
   };
 
   React.useEffect(() => {
     if (isAuthenticated) {
-      fetchUnreadCount();
-      const interval = setInterval(fetchUnreadCount, 8000);
+      fetchNotificationsData();
+      const interval = setInterval(fetchNotificationsData, 8000);
       return () => clearInterval(interval);
     } else {
       setUnreadCount(0);
+      setRecentNotifications([]);
     }
   }, [isAuthenticated]);
+
+  const handleNewWebSocketNotification = React.useCallback((data) => {
+    console.log("WebSocket notification received in Navbar:", data);
+    setUnreadCount(prev => prev + 1);
+    setRecentNotifications(prev => [data, ...prev].slice(0, 5));
+    window.dispatchEvent(new CustomEvent('new-websocket-notification', { detail: data }));
+  }, []);
+
+  useWebSocket(handleNewWebSocketNotification);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationsAPI.markAllRead();
+      setUnreadCount(0);
+      setRecentNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    } catch (err) {
+      console.error("Failed to mark all as read:", err);
+    }
+  };
+
+  const handleNotificationClick = async (n) => {
+    setNotificationsOpen(false);
+    if (!n.is_read) {
+      try {
+        await notificationsAPI.markRead(n.id);
+        setUnreadCount(prev => Math.max(0, prev - 1));
+        setRecentNotifications(prev => 
+          prev.map(item => item.id === n.id ? { ...item, is_read: true } : item)
+        );
+      } catch (err) {
+        console.error("Failed to mark notification read:", err);
+      }
+    }
+    if (n.post_id) {
+      navigate(`/posts/${n.post_id}`);
+    } else {
+      navigate('/notifications');
+    }
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -111,15 +157,87 @@ const Navbar = () => {
                   <FiPlusSquare className="text-lg" />
                   <span className="text-[10px] font-medium mt-0.5">Post</span>
                 </Link>
-                <Link to="/notifications" className="flex flex-col items-center justify-center px-2 py-1 rounded-md hover:bg-bg transition text-center relative" title="Alerts">
-                  <FiBell className="text-lg" />
-                  <span className="text-[10px] font-medium mt-0.5">Alerts</span>
-                  {unreadCount > 0 && (
-                    <span className="absolute top-0.5 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white leading-none shadow-sm animate-pulse">
-                      {unreadCount}
-                    </span>
+                {/* Bell Dropdown */}
+                <div className="relative flex flex-col items-center justify-center">
+                  <button
+                    onClick={() => setNotificationsOpen(!notificationsOpen)}
+                    className="flex flex-col items-center justify-center px-2 py-1 rounded-md hover:bg-bg transition text-center relative"
+                    title="Alerts"
+                  >
+                    <FiBell className="text-lg" />
+                    <span className="text-[10px] font-medium mt-0.5">Alerts</span>
+                    {unreadCount > 0 && (
+                      <span className="absolute top-0.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white leading-none shadow-sm animate-pulse">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {notificationsOpen && (
+                    <div className="absolute right-0 top-full mt-1.5 w-80 rounded-2xl bg-card border border-border shadow-xl py-2 z-50 animate-fadeIn">
+                      <div className="px-4 py-2 border-b border-border flex items-center justify-between">
+                        <span className="text-xs font-black uppercase tracking-wider text-text">Recent Alerts</span>
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={handleMarkAllRead}
+                            className="text-[10px] font-bold text-primary hover:underline"
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-64 overflow-y-auto">
+                        {recentNotifications.length > 0 ? (
+                          recentNotifications.map((n) => (
+                            <div
+                              key={n.id}
+                              onClick={() => handleNotificationClick(n)}
+                              className={`px-4 py-3 hover:bg-bg/40 cursor-pointer flex gap-3 border-b border-border/40 transition-colors ${
+                                !n.is_read ? 'bg-primary/5' : ''
+                              }`}
+                            >
+                              {n.sender_profile_pic ? (
+                                <img
+                                  src={getMediaUrl(n.sender_profile_pic)}
+                                  alt=""
+                                  className="h-8 w-8 rounded-full object-cover border border-border/60"
+                                />
+                              ) : (
+                                <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold uppercase">
+                                  {n.sender_username.substring(0, 2)}
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-text leading-snug font-medium">
+                                  {n.message}
+                                </p>
+                                <span className="text-[9px] text-gray-400 mt-1 block">
+                                  {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                              {!n.is_read && (
+                                <span className="h-2 w-2 rounded-full bg-primary mt-1.5 shrink-0" />
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="py-8 text-center text-xs text-gray-500">
+                            No recent alerts
+                          </div>
+                        )}
+                      </div>
+                      <div className="px-4 py-2 text-center border-t border-border/85 bg-bg/10">
+                        <Link
+                          to="/notifications"
+                          onClick={() => setNotificationsOpen(false)}
+                          className="text-xs font-bold text-primary hover:underline"
+                        >
+                          View All Notifications
+                        </Link>
+                      </div>
+                    </div>
                   )}
-                </Link>
+                </div>
                 <Link to="/saved" className="flex flex-col items-center justify-center px-2 py-1 rounded-md hover:bg-bg transition text-center" title="Saved">
                   <FiBookmark className="text-lg" />
                   <span className="text-[10px] font-medium mt-0.5">Saved</span>

@@ -35,6 +35,7 @@ const Settings = () => {
   const [customTeacherRole, setCustomTeacherRole] = useState(user?.profile?.teacher_role ? (isPresetRole ? '' : user.profile.teacher_role) : '');
   const [mobileNumber, setMobileNumber] = useState(user?.profile?.mobile_number || '');
   const [followedNotificationsEnabled, setFollowedNotificationsEnabled] = useState(user?.profile?.followed_notifications_enabled ?? true);
+  const [inAppNotificationsEnabled, setInAppNotificationsEnabled] = useState(user?.profile?.in_app_notifications_enabled ?? true);
   
   const [profilePic, setProfilePic] = useState(null);
   const [coverPhoto, setCoverPhoto] = useState(null);
@@ -160,6 +161,8 @@ const Settings = () => {
       submitData.append('mobile_number', mobileNumber);
 
       submitData.append('followed_notifications_enabled', followedNotificationsEnabled);
+      submitData.append('in_app_notifications_enabled', inAppNotificationsEnabled);
+      submitData.append('email_notifications_enabled', emailNotificationsEnabled);
 
       if (profilePic) {
         submitData.append('profile_pic', profilePic);
@@ -170,7 +173,6 @@ const Settings = () => {
         submitData.append('profile_pic', file);
       }
       if (coverPhoto) submitData.append('cover_photo', coverPhoto);
-      submitData.append('email_notifications_enabled', emailNotificationsEnabled);
 
       const res = await authAPI.updateProfile(submitData);
       dispatch(updateProfile(res.data));
@@ -541,7 +543,41 @@ const Settings = () => {
               </div>
 
               {/* Notifications Subscription Toggles */}
-              <div className="space-y-3 p-4 rounded-2xl bg-bg/50 border border-border/80">
+              <div className="space-y-4 p-4 rounded-2xl bg-bg/50 border border-border/80">
+                <span className="block text-xs font-black uppercase tracking-wider text-gray-500 mb-1">Notification Preferences</span>
+                
+                <div className="flex items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    id="in_app_notifications_enabled"
+                    checked={inAppNotificationsEnabled}
+                    onChange={(e) => setInAppNotificationsEnabled(e.target.checked)}
+                    className="h-4.5 w-4.5 rounded-lg text-primary focus:ring-primary border-border bg-bg cursor-pointer"
+                  />
+                  <label 
+                    htmlFor="in_app_notifications_enabled" 
+                    className="text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer select-none animate-fade-in"
+                  >
+                    Receive in-app alerts (live notification dropdown menu)
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    id="email_notifications_enabled"
+                    checked={emailNotificationsEnabled}
+                    onChange={(e) => setEmailNotificationsEnabled(e.target.checked)}
+                    className="h-4.5 w-4.5 rounded-lg text-primary focus:ring-primary border-border bg-bg cursor-pointer"
+                  />
+                  <label 
+                    htmlFor="email_notifications_enabled" 
+                    className="text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer select-none animate-fade-in"
+                  >
+                    Receive email notifications for new posts & countdown reminders
+                  </label>
+                </div>
+
                 <div className="flex items-center gap-2.5">
                   <input
                     type="checkbox"
@@ -552,7 +588,7 @@ const Settings = () => {
                   />
                   <label 
                     htmlFor="followed_notifications_enabled" 
-                    className="text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer select-none"
+                    className="text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer select-none animate-fade-in"
                   >
                     Receive alerts when users you follow publish new posts
                   </label>

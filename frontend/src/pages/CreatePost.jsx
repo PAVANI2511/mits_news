@@ -19,7 +19,12 @@ const CreatePost = () => {
     hashtags: '',
     location: '',
     external_url: '',
+    category_id: '',
+    event_date: '',
+    last_date: '',
   });
+
+  const [categories, setCategories] = useState([]);
 
   const [files, setFiles] = useState({
     image: null,
@@ -40,6 +45,16 @@ const CreatePost = () => {
   useEffect(() => {
     if (!isAuthenticated) {
       window.location.href = '/login';
+    } else {
+      const loadCategories = async () => {
+        try {
+          const res = await postsAPI.getCategories();
+          setCategories(res.data);
+        } catch (err) {
+          console.error("Failed to load categories:", err);
+        }
+      };
+      loadCategories();
     }
   }, [isAuthenticated]);
 
@@ -96,6 +111,9 @@ const CreatePost = () => {
       submitData.append('hashtags', formData.hashtags);
       submitData.append('location', formData.location);
       submitData.append('external_url', formData.external_url);
+      if (formData.category_id) submitData.append('category_id', formData.category_id);
+      if (formData.event_date) submitData.append('event_date', formData.event_date);
+      if (formData.last_date) submitData.append('last_date', formData.last_date);
 
       if (files.image) submitData.append('image', files.image);
       if (files.video) submitData.append('video', files.video);
@@ -177,8 +195,27 @@ const CreatePost = () => {
           </div>
 
           <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+              Category
+            </label>
+            <select
+              name="category_id"
+              value={formData.category_id}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all font-semibold"
+            >
+              <option value="">Select a category...</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-              Reference / Action Link URL (Optional)
+              Reference / Action Link URL
             </label>
             <input
               type="url"
@@ -241,6 +278,35 @@ const CreatePost = () => {
                 />
                 <FiMapPin className="absolute left-3.5 top-3.5 text-gray-400" />
               </div>
+            </div>
+          </div>
+
+          {/* Event Metadata (Optional) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                Event Date & Time
+              </label>
+              <input
+                type="datetime-local"
+                name="event_date"
+                value={formData.event_date}
+                onChange={handleChange}
+                className="w-full px-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all text-gray-500 font-semibold"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                Last Date for Registration
+              </label>
+              <input
+                type="datetime-local"
+                name="last_date"
+                value={formData.last_date}
+                onChange={handleChange}
+                className="w-full px-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all text-gray-500 font-semibold"
+              />
             </div>
           </div>
 

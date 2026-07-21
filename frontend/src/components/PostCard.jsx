@@ -187,6 +187,57 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
 
 
   const [liked, setLiked] = useState(post.is_liked || false);
+  const [currentInterest, setCurrentInterest] = useState(post.interest_status || null);
+  const [categoryFollowed, setCategoryFollowed] = useState(post.category?.is_followed || false);
+
+  const isRegistrationClosed = post.last_date ? new Date(post.last_date) < new Date() : false;
+  const isEventCompleted = post.event_date ? new Date(post.event_date) < new Date() : false;
+  const isExpired = isRegistrationClosed || isEventCompleted;
+
+  const handleCategoryFollowToggle = async (catId) => {
+    if (!isAuthenticated) {
+      setErrorMessage("Please log in to follow categories.");
+      return;
+    }
+
+    const nextState = !categoryFollowed;
+    const previousState = categoryFollowed;
+
+    setCategoryFollowed(nextState);
+
+    try {
+      if (previousState) {
+        await postsAPI.unfollowCategory(catId);
+      } else {
+        await postsAPI.followCategory(catId);
+      }
+    } catch (err) {
+      console.error(err);
+      setCategoryFollowed(previousState);
+      setErrorMessage("Failed to update category follow status.");
+    }
+  };
+
+  const handleInterestSelection = async (status) => {
+    if (!isAuthenticated) {
+      setErrorMessage("Please log in to respond to events.");
+      return;
+    }
+
+    const newStatus = currentInterest === status ? '' : status;
+    const prevStatus = currentInterest;
+
+    setCurrentInterest(newStatus || null);
+
+    try {
+      const res = await postsAPI.setInterest(post.id, newStatus);
+      setCurrentInterest(res.data.interest_status);
+    } catch (err) {
+      console.error(err);
+      setCurrentInterest(prevStatus);
+      setErrorMessage("Failed to update event interest selection.");
+    }
+  };
   const [likesCount, setLikesCount] = useState(post.likes_count || 0);
   const [isLiking, setIsLiking] = useState(false);
   const [saved, setSaved] = useState(post.is_saved || false);
@@ -454,10 +505,30 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
             />
           </Link>
           <div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <Link to={`/profile/${post.username}`} className="text-sm font-bold text-text hover:underline">
                 {post.name || post.username}
               </Link>
+              {post.category && (
+                <div className="flex items-center gap-1 shrink-0 bg-primary/10 pl-1.5 pr-0.5 py-0.5 rounded">
+                  <span className="text-primary text-[9px] font-black uppercase tracking-wide">
+                    {post.category.name}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleCategoryFollowToggle(post.category.id);
+                    }}
+                    className={`text-[8px] font-extrabold px-1 rounded transition-colors uppercase ${
+                      categoryFollowed
+                        ? 'bg-border text-gray-500 hover:bg-border/80'
+                        : 'bg-primary text-white hover:bg-primary/95'
+                    }`}
+                  >
+                    {categoryFollowed ? 'Unfollow' : 'Follow'}
+                  </button>
+                </div>
+              )}
               {post.location && (
                 <span className="text-xs text-gray-400 flex items-center gap-0.5">
                   • <FiMapPin className="inline text-[10px]" /> {post.location}
@@ -640,6 +711,74 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
           >
             <FiExternalLink /> Visit Link
           </a>
+        </div>
+      )}
+
+      {/* Event Schedule Info Panel */}
+      {(post.event_date || post.last_date) && (
+        <div className={`mx-4 mt-3 p-4 rounded-2xl bg-bg/50 border border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 ${isExpired ? 'opacity-75' : ''}`}>
+          <div className="space-y-1.5 flex-1 min-w-0">
+            <div className={`text-[10px] font-black uppercase tracking-wider ${
+              isEventCompleted 
+                ? 'text-gray-500' 
+                : isRegistrationClosed 
+                  ? 'text-orange-500' 
+                  : 'text-primary'
+            }`}>
+              {isEventCompleted 
+                ? 'Event Completed' 
+                : isRegistrationClosed 
+                  ? 'Registration Closed' 
+                  : 'MITS Campus Activity'}
+            </div>
+            {post.event_date && (
+              <div className="text-xs text-text flex items-center gap-1.5">
+                <span className="font-bold text-gray-500">Event Date:</span>
+                <span className="font-semibold text-text">{new Date(post.event_date).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+            )}
+            {post.last_date && (
+              <div className="text-xs text-text flex items-center gap-1.5">
+                <span className="font-bold text-gray-500">Reg. Closes:</span>
+                <span className={isRegistrationClosed ? 'text-gray-500 font-semibold' : 'text-red-500 font-bold'}>
+                  {new Date(post.last_date).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-2 w-full sm:w-auto shrink-0">
+            <button
+              onClick={() => !isExpired && handleInterestSelection('interested')}
+              disabled={isExpired}
+              className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm ${
+                isExpired
+                  ? currentInterest === 'interested'
+                    ? 'bg-green-500/50 text-white cursor-not-allowed'
+                    : 'bg-card border border-border text-gray-400 cursor-not-allowed'
+                  : currentInterest === 'interested'
+                    ? 'bg-green-500 text-white shadow-green-500/10'
+                    : 'bg-card border border-border text-gray-500 hover:text-green-500 hover:bg-green-500/5'
+              }`}
+            >
+              👍 Interested
+            </button>
+            <button
+              onClick={() => !isExpired && handleInterestSelection('not_interested')}
+              disabled={isExpired}
+              className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm ${
+                isExpired
+                  ? currentInterest === 'not_interested'
+                    ? 'bg-gray-500/50 text-white cursor-not-allowed'
+                    : 'bg-card border border-border text-gray-400 cursor-not-allowed'
+                  : currentInterest === 'not_interested'
+                    ? 'bg-gray-500 text-white shadow-sm'
+                    : 'bg-card border border-border text-gray-500 hover:text-red-500 hover:bg-red-500/5'
+              }`}
+            >
+              👎 Not Interested
+            </button>
+          </div>
         </div>
       )}
 

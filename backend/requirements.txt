@@ -8,3 +8,8 @@ psycopg2-binary
 cloudinary
 django-cloudinary-storage
 whitenoise
+daphne
+channels
+channels-redis
+celery
+redis

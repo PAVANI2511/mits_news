@@ -18,9 +18,12 @@ class StudentProfile(models.Model):
     theme_preference = models.CharField(max_length=50, default='light')
     is_blocked = models.BooleanField(default=False)
     email_notifications_enabled = models.BooleanField(default=True)
+    in_app_notifications_enabled = models.BooleanField(default=True)
     followed_notifications_enabled = models.BooleanField(default=True)
     followers_count = models.IntegerField(default=0)
     following_count = models.IntegerField(default=0)
+    tech_score = models.IntegerField(default=0)
+    non_tech_score = models.IntegerField(default=0)
     
     # Password Reset OTP fields
     reset_otp_code = models.CharField(max_length=6, blank=True, default='')

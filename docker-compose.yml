@@ -14,6 +14,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: mits_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
   backend:
     build: ./backend
     container_name: mits_backend
@@ -28,8 +35,48 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
       - DEBUG=True
+      - REDIS_URL=redis://redis:6379/1
     depends_on:
       - db
+      - redis
+    restart: unless-stopped
+
+  celery_worker:
+    build: ./backend
+    container_name: mits_celery_worker
+    command: celery -A mits_news worker -l info
+    volumes:
+      - ./backend:/app
+    environment:
+      - DB_NAME=mits_newspaper
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DEBUG=True
+      - REDIS_URL=redis://redis:6379/1
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  celery_beat:
+    build: ./backend
+    container_name: mits_celery_beat
+    command: celery -A mits_news beat -l info
+    volumes:
+      - ./backend:/app
+    environment:
+      - DB_NAME=mits_newspaper
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DEBUG=True
+      - REDIS_URL=redis://redis:6379/1
+    depends_on:
+      - db
+      - redis
     restart: unless-stopped
 
   frontend:
@@ -48,3 +95,4 @@ services:
 
 volumes:
   postgres_data:
+

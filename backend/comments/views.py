@@ -26,6 +26,15 @@ class CommentCreateView(views.APIView):
             content=content
         )
 
+        # Increment user's behavioral interest score based on category type
+        profile = getattr(request.user, 'profile', None)
+        if profile and post.category:
+            if post.category.is_tech:
+                profile.tech_score += 1
+            else:
+                profile.non_tech_score += 1
+            profile.save()
+
         # Trigger mention notifications
         from notifications.models import create_mention_notifications
         create_mention_notifications(content, request.user, post=post, comment=comment)

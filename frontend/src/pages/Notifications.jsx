@@ -26,6 +26,17 @@ const Notifications = () => {
     }
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    const handleWebSocketAlert = (e) => {
+      const newNotif = e.detail;
+      setNotifications(prev => [newNotif, ...prev]);
+    };
+    window.addEventListener('new-websocket-notification', handleWebSocketAlert);
+    return () => {
+      window.removeEventListener('new-websocket-notification', handleWebSocketAlert);
+    };
+  }, []);
+
   if (!isAuthenticated) {
     return null;
   }

@@ -13,16 +13,30 @@ from .views import (
     TrendingHashtagsView,
     FollowingFeedView,
     ExploreFeedView,
-    ReportPostView
+    ReportPostView,
+    PostInterestView,
+    CategoryListView,
+    CategoryFollowView,
+    CategoryUnfollowView,
+    FollowedCategoriesListView,
+    PostSearchView,
+    AutocompleteSuggestionsView
 )
 
 urlpatterns = [
     path('create/', PostCreateView.as_view(), name='post_create'),
+    path('search/', PostSearchView.as_view(), name='post_search'),
+    path('search/suggestions/', AutocompleteSuggestionsView.as_view(), name='search_suggestions'),
     path('feed/', HomeFeedView.as_view(), name='home_feed'),
     path('following/', FollowingFeedView.as_view(), name='following_feed'),
     path('explore/', ExploreFeedView.as_view(), name='explore_feed'),
     path('saved/', GetSavedPostsView.as_view(), name='saved_posts'),
     path('trends/', TrendingHashtagsView.as_view(), name='trending_hashtags'),
+    path('categories/', CategoryListView.as_view(), name='category_list'),
+    path('categories/followed/', FollowedCategoriesListView.as_view(), name='followed_categories_list'),
+    path('categories/<int:pk>/follow/', CategoryFollowView.as_view(), name='category_follow'),
+    path('categories/<int:pk>/unfollow/', CategoryUnfollowView.as_view(), name='category_unfollow'),
+    path('<int:pk>/interest/', PostInterestView.as_view(), name='post_interest'),
     path('<int:pk>/', PostDetailView.as_view(), name='post_detail'),
     path('<int:pk>/like/', LikePostView.as_view(), name='like_post'),
     path('<int:pk>/unlike/', UnlikePostView.as_view(), name='unlike_post'),
