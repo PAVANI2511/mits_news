@@ -590,35 +590,7 @@ from rest_framework.permissions import AllowAny
 def debug_cloudinary_settings(request):
     import os
     from django.conf import settings
-    
-    email_status = "Not tested"
-    email_error = None
-    target_test_email = request.query_params.get('test_email')
-    
-    if target_test_email:
-        try:
-            from notifications.emails import send_email_via_brevo
-            sent = send_email_via_brevo(
-                subject="Render Test Email (Brevo HTTP API)",
-                recipient_email=target_test_email,
-                text_content="This is a direct test email from Render server via Brevo HTTP API."
-            )
-            if sent:
-                email_status = "Success via Brevo HTTP API (Port 443)"
-            else:
-                email_status = "Failed via Brevo HTTP API (Check BREVO_API_KEY setting)"
-        except Exception as e:
-            email_status = "Failed"
-            email_error = str(e)
-
-    brevo_key = getattr(settings, 'BREVO_API_KEY', None) or os.environ.get('BREVO_API_KEY')
     return Response({
-        "BREVO_API_KEY_PRESENT": bool(brevo_key),
-        "EMAIL_HOST_USER": getattr(settings, 'EMAIL_HOST_USER', None),
-        "EMAIL_BACKEND": getattr(settings, 'EMAIL_BACKEND', None),
-        "DEFAULT_FROM_EMAIL": getattr(settings, 'DEFAULT_FROM_EMAIL', None),
-        "email_status": email_status,
-        "email_error": email_error,
         "CLOUDINARY_CLOUD_NAME": os.environ.get('CLOUDINARY_CLOUD_NAME'),
         "CLOUDINARY_API_KEY": os.environ.get('CLOUDINARY_API_KEY'),
         "CLOUDINARY_API_SECRET": os.environ.get('CLOUDINARY_API_SECRET') is not None,
