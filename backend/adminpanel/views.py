@@ -862,7 +862,12 @@ class AdminAnalyticsView(views.APIView):
         # Query posts matching filters
         posts_qs = Post.objects.filter(is_blocked=False)
         if dept_filter:
-            posts_qs = posts_qs.filter(department__iexact=dept_filter)
+            if dept_filter.lower() in ['all b.tech courses', 'b.tech programs', 'b.tech']:
+                posts_qs = posts_qs.filter(department__icontains='B.Tech')
+            elif dept_filter.lower() in ['all m.tech courses', 'm.tech programs', 'm.tech']:
+                posts_qs = posts_qs.filter(department__icontains='M.Tech')
+            else:
+                posts_qs = posts_qs.filter(department__iexact=dept_filter)
 
         range_posts = posts_qs.filter(created_at__range=(start_dt, end_dt))
         total_posts = range_posts.count()
@@ -1079,7 +1084,12 @@ class AdminAnalyticsExportCSVView(views.APIView):
         # Query posts matching filters
         posts_qs = Post.objects.filter(is_blocked=False)
         if dept_filter:
-            posts_qs = posts_qs.filter(department__iexact=dept_filter)
+            if dept_filter.lower() in ['all b.tech courses', 'b.tech programs', 'b.tech']:
+                posts_qs = posts_qs.filter(department__icontains='B.Tech')
+            elif dept_filter.lower() in ['all m.tech courses', 'm.tech programs', 'm.tech']:
+                posts_qs = posts_qs.filter(department__icontains='M.Tech')
+            else:
+                posts_qs = posts_qs.filter(department__iexact=dept_filter)
 
         import csv
         from django.http import HttpResponse

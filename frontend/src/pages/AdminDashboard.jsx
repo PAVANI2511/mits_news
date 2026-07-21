@@ -17,7 +17,71 @@ const AdminDashboard = () => {
   const [period, setPeriod] = useState('daily');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [selectedProgram, setSelectedProgram] = useState('');
+  const [selectedCourse, setSelectedCourse] = useState('');
   const [selectedDept, setSelectedDept] = useState('');
+
+  const departmentGroups = {
+    'B.Tech Programs': [
+      'All B.Tech courses',
+      'B.Tech - Computer Science & Engineering (CSE)',
+      'B.Tech - Computer Science & Technology (CST)',
+      'B.Tech - Cyber Security (CS)',
+      'B.Tech - Electronics & Communication Engineering (ECE)',
+      'B.Tech - Electrical & Electronics Engineering (EEE)',
+      'B.Tech - Mechanical Engineering (ME)',
+      'B.Tech - Civil Engineering (CE)',
+      'B.Tech - Artificial Intelligence (AI)',
+      'B.Tech - Artificial Intelligence & Machine Learning (AI&ML)',
+      'B.Tech - Computer Networks (CN)',
+      'B.Tech - Data Science (DS)'
+    ],
+    'M.Tech Programs': [
+      'All M.Tech courses',
+      'M.Tech - Computer Science & Engineering (CSE)',
+      'M.Tech - VLSI Design',
+      'M.Tech - Electrical Power Systems (EPS)',
+      'M.Tech - Machine Design',
+      'M.Tech - Structural Engineering'
+    ],
+    'MBA': [
+      'Master of Business Administration (MBA)'
+    ],
+    'MCA': [
+      'Master of Computer Applications (MCA)'
+    ],
+    'Bio Informatics': [
+      'Bio Informatics'
+    ],
+    'Other': [
+      'Other'
+    ]
+  };
+
+  const handleProgramChange = (e) => {
+    const prog = e.target.value;
+    setSelectedProgram(prog);
+    if (!prog) {
+      setSelectedCourse('');
+      setSelectedDept('');
+    } else if (prog === 'B.Tech Programs') {
+      setSelectedCourse('All B.Tech courses');
+      setSelectedDept('All B.Tech courses');
+    } else if (prog === 'M.Tech Programs') {
+      setSelectedCourse('All M.Tech courses');
+      setSelectedDept('All M.Tech courses');
+    } else {
+      const firstCourse = departmentGroups[prog][0];
+      setSelectedCourse(firstCourse);
+      setSelectedDept(firstCourse);
+    }
+  };
+
+  const handleCourseChange = (e) => {
+    const course = e.target.value;
+    setSelectedCourse(course);
+    setSelectedDept(course);
+  };
 
   const loadDashboardData = useCallback(async (showSilent = false) => {
     if (!showSilent) {
@@ -140,11 +204,13 @@ const AdminDashboard = () => {
               >
                 📄 Export PDF / Print
               </button>
-              {(startDate || endDate || selectedDept || period !== 'daily') && (
+              {(startDate || endDate || selectedDept || selectedProgram || period !== 'daily') && (
                 <button
                   onClick={() => {
                     setStartDate('');
                     setEndDate('');
+                    setSelectedProgram('');
+                    setSelectedCourse('');
                     setSelectedDept('');
                     setPeriod('daily');
                   }}
@@ -156,7 +222,7 @@ const AdminDashboard = () => {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             {/* Period Dropdown */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Time Range Period</label>
@@ -193,21 +259,41 @@ const AdminDashboard = () => {
               />
             </div>
 
-            {/* Department Filter */}
+            {/* Program Category Filter */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Limit Department</label>
+              <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Select Program</label>
               <select
-                value={selectedDept}
-                onChange={(e) => setSelectedDept(e.target.value)}
+                value={selectedProgram}
+                onChange={handleProgramChange}
                 className="bg-bg border border-border px-3 py-2 rounded-xl text-xs text-text font-semibold focus:outline-none focus:border-primary cursor-pointer transition-colors"
               >
-                <option value="">All Departments</option>
-                <option value="Computer Science">Computer Science</option>
-                <option value="Mechanical Engineering">Mechanical Engineering</option>
-                <option value="Electrical Engineering">Electrical Engineering</option>
-                <option value="Civil Engineering">Civil Engineering</option>
-                <option value="Electronics & Communication">Electronics & Communication</option>
-                <option value="Information Technology">Information Technology</option>
+                <option value="">All Programs & Departments</option>
+                {Object.keys(departmentGroups).map((progGroup) => (
+                  <option key={progGroup} value={progGroup}>
+                    {progGroup}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Specific Department / Course Filter */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Select Course / Branch</label>
+              <select
+                value={selectedCourse}
+                onChange={handleCourseChange}
+                disabled={!selectedProgram}
+                className="bg-bg border border-border px-3 py-2 rounded-xl text-xs text-text font-semibold focus:outline-none focus:border-primary cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {!selectedProgram ? (
+                  <option value="">(Select Program First)</option>
+                ) : (
+                  departmentGroups[selectedProgram]?.map((courseItem) => (
+                    <option key={courseItem} value={courseItem}>
+                      {courseItem}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
           </div>
