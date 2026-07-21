@@ -605,22 +605,22 @@ def debug_cloudinary_settings(request):
             
             backend = EmailBackend(
                 host='smtp.gmail.com',
-                port=465,
+                port=587,
                 username=from_email,
                 password=password,
-                use_ssl=True,
-                use_tls=False,
+                use_ssl=False,
+                use_tls=True,
                 timeout=15
             )
             msg = EmailMessage(
-                subject="Render Test Email (SSL 465)",
-                body="This is a direct test email from Render server using SSL 465.",
+                subject="Render Test Email (TLS 587 IPv4)",
+                body="This is a direct test email from Render server using TLS 587 IPv4.",
                 from_email=from_email,
                 to=[target_test_email],
                 connection=backend
             )
             res = msg.send(fail_silently=False)
-            email_status = f"Success SSL 465 (result: {res})"
+            email_status = f"Success TLS 587 (result: {res})"
         except Exception as e:
             email_status = "Failed"
             email_error = str(e)
