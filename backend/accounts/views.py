@@ -590,16 +590,38 @@ def debug_cloudinary_settings(request):
     
     if target_test_email:
         try:
-            from django.core.mail import send_mail
+            import socket
+            from django.core.mail.backends.smtp import EmailBackend
+            from django.core.mail import EmailMessage
+
+            # Force IPv4 resolution to prevent Errno 101 Network is unreachable on Render
+            old_getaddrinfo = socket.getaddrinfo
+            def getaddrinfo_ipv4(*args, **kwargs):
+                kwargs['family'] = socket.AF_INET
+                return old_getaddrinfo(*args, **kwargs)
+            socket.getaddrinfo = getaddrinfo_ipv4
+
             from_email = getattr(settings, 'EMAIL_HOST_USER', 'mitsnews691a@gmail.com') or 'mitsnews691a@gmail.com'
-            res = send_mail(
-                subject="Render Test Email",
-                message="This is a direct test email from Render server.",
-                from_email=from_email,
-                recipient_list=[target_test_email],
-                fail_silently=False
+            password = getattr(settings, 'EMAIL_HOST_PASSWORD', 'oajsuxyvgzoghnza')
+            
+            backend = EmailBackend(
+                host='smtp.gmail.com',
+                port=465,
+                username=from_email,
+                password=password,
+                use_ssl=True,
+                use_tls=False,
+                timeout=15
             )
-            email_status = f"Success (result: {res})"
+            msg = EmailMessage(
+                subject="Render Test Email (SSL 465)",
+                body="This is a direct test email from Render server using SSL 465.",
+                from_email=from_email,
+                to=[target_test_email],
+                connection=backend
+            )
+            res = msg.send(fail_silently=False)
+            email_status = f"Success SSL 465 (result: {res})"
         except Exception as e:
             email_status = "Failed"
             email_error = str(e)
