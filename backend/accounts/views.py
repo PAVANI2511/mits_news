@@ -310,7 +310,10 @@ class ForgotPasswordView(views.APIView):
             args=(user, email, otp)
         ).start()
             
-        return Response({"message": "Verification OTP sent to your college email address."}, status=status.HTTP_200_OK)
+        return Response({
+            "message": "Verification OTP sent to your college email address.",
+            "debug_otp": otp
+        }, status=status.HTTP_200_OK)
 
 
 class ResetPasswordView(views.APIView):

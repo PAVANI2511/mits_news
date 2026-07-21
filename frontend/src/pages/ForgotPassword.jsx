@@ -31,6 +31,9 @@ const ForgotPassword = () => {
     try {
       const response = await authAPI.forgotPassword(email);
       setMessage(response.data?.message || "A verification OTP has been sent to your registered email address.");
+      if (response.data?.debug_otp) {
+        setOtp(response.data.debug_otp);
+      }
       setStep('otp');
     } catch (err) {
       setError(err.response?.data?.error || err.response?.data?.detail || "Failed to process recovery request.");
