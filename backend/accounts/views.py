@@ -596,9 +596,8 @@ def debug_cloudinary_settings(request):
 
             # Force IPv4 resolution to prevent Errno 101 Network is unreachable on Render
             old_getaddrinfo = socket.getaddrinfo
-            def getaddrinfo_ipv4(*args, **kwargs):
-                kwargs['family'] = socket.AF_INET
-                return old_getaddrinfo(*args, **kwargs)
+            def getaddrinfo_ipv4(host, port, family=0, type=0, proto=0, flags=0):
+                return old_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
             socket.getaddrinfo = getaddrinfo_ipv4
 
             from_email = getattr(settings, 'EMAIL_HOST_USER', 'mitsnews691a@gmail.com') or 'mitsnews691a@gmail.com'
