@@ -39,13 +39,15 @@ class CommentCreateView(views.APIView):
 
         # Notify post owner
         if post.user != request.user:
+            user_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+            post_title = post.caption[:40] if post.caption else (post.text[:40] if post.text else 'article')
             Notification.objects.create(
                 recipient=post.user,
                 sender=request.user,
                 type='comment',
                 post=post,
                 comment=comment,
-                message=f"{request.user.first_name or request.user.username} commented on your post."
+                message=f"{user_name} commented on your article \"{post_title}\"."
             )
 
         serializer = CommentSerializer(comment, context={'request': request})
@@ -136,19 +138,22 @@ class ReplyCreateView(views.APIView):
         from notifications.models import create_mention_notifications
         create_mention_notifications(content, request.user, post=parent_comment.post, comment=reply)
 
+        user_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+        post = parent_comment.post
+        post_title = post.caption[:40] if post.caption else (post.text[:40] if post.text else 'post')
+
         # Notify parent comment owner
         if parent_comment.user != request.user:
             Notification.objects.create(
                 recipient=parent_comment.user,
                 sender=request.user,
                 type='reply',
-                post=parent_comment.post,
+                post=post,
                 comment=reply,
-                message=f"{request.user.first_name or request.user.username} replied to your comment."
+                message=f"{user_name} replied to your comment on \"{post_title}\"."
             )
 
         # Notify post owner (if not the replier and not already notified as parent owner)
-        post = parent_comment.post
         if post.user != request.user and post.user != parent_comment.user:
             Notification.objects.create(
                 recipient=post.user,
@@ -156,7 +161,7 @@ class ReplyCreateView(views.APIView):
                 type='reply',
                 post=post,
                 comment=reply,
-                message=f"{request.user.first_name or request.user.username} replied to a comment on your post."
+                message=f"{user_name} replied to a comment on your post \"{post_title}\"."
             )
 
         serializer = CommentSerializer(reply, context={'request': request})

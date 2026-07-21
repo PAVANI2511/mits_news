@@ -46,33 +46,49 @@ def post_created_signal(sender, instance, created, **kwargs):
     from notifications.models import Notification
     from notifications.serializers import NotificationSerializer
     from notifications.tasks import send_new_post_email_task
+    from accounts.models import Follower
+
+    author_profile = getattr(author, 'profile', None)
+    author_full_name = f"{author.first_name} {author.last_name}".strip() or author.username
+    post_title = instance.caption[:60] if instance.caption else (instance.text[:60] if instance.text else 'New Post')
+    
+    if instance.event_date or instance.event_type:
+        msg_text = f"{author_full_name} uploaded a new event: \"{post_title}\"."
+    else:
+        msg_text = f"{author_full_name} published a new article \"{post_title}\"."
+
+    post_dept = (instance.department or (author_profile.department if author_profile else '')).strip().lower()
 
     for recipient in recipients:
         recipient_profile = getattr(recipient, 'profile', None)
         in_app_enabled = getattr(recipient_profile, 'in_app_notifications_enabled', True) if recipient_profile else True
         email_enabled = getattr(recipient_profile, 'email_notifications_enabled', True) if recipient_profile else True
+        recipient_dept = (recipient_profile.department if recipient_profile else '').strip().lower()
 
-        # Personalized Relevance Filter
-        is_relevant = False
-        author_profile = getattr(author, 'profile', None)
-        
-        # a) Same department
-        if recipient_profile and author_profile and author_profile.department and recipient_profile.department == author_profile.department:
-            is_relevant = True
-            
-        # b) Category follow
-        if not is_relevant and category:
-            is_relevant = CategoryFollow.objects.filter(user=recipient, category=category).exists()
-            
-        # c) Tech / Non-tech interest alignment
-        if not is_relevant and recipient_profile and category:
+        # 1. Department Check: Must belong to the same department if post or recipient has a department specified
+        if post_dept and recipient_dept and post_dept != recipient_dept:
+            continue
+
+        # 2. Following Check: Receiver follows author OR follows category
+        is_following_author = Follower.objects.filter(follower=recipient, following=author).exists()
+        is_following_category = category and CategoryFollow.objects.filter(user=recipient, category=category).exists()
+        if not (is_following_author or is_following_category):
+            continue
+
+        # 3. Interest Check: Follows category OR has expressed interest OR tech/non-tech score alignment
+        has_interest = is_following_category
+        if not has_interest and category:
+            has_interest = UserInterest.objects.filter(user=recipient, post__category=category, status='interested').exists()
+        if not has_interest and recipient_profile and category:
             is_tech_post = category.is_tech
             dominant_interest_is_tech = recipient_profile.tech_score >= recipient_profile.non_tech_score
             if is_tech_post == dominant_interest_is_tech:
-                is_relevant = True
-                
-        # If the post is not relevant to this recipient, skip them!
-        if not is_relevant:
+                has_interest = True
+        if not has_interest:
+            continue
+
+        # 4. Deduplication Check: Do not create duplicate notification
+        if Notification.objects.filter(recipient=recipient, sender=author, type='new_post', post=instance).exists():
             continue
 
         if in_app_enabled:
@@ -83,7 +99,7 @@ def post_created_signal(sender, instance, created, **kwargs):
                 type='new_post',
                 post=instance,
                 priority=priority,
-                message=f"{author.first_name or author.username} published a new post: {instance.caption[:50]}..."
+                message=msg_text
             )
 
             # Broadcast via WebSockets in real-time
@@ -100,9 +116,8 @@ def post_created_signal(sender, instance, created, **kwargs):
                 except Exception as e:
                     print(f"Error broadcasting WebSocket notification: {e}")
 
-        # Enqueue Celery task to send new post email alert asynchronously
-        # Only send emails immediately for HIGH priority notifications
-        if email_enabled and priority == 'high':
+        # Enqueue task or thread to send new post email alert
+        if email_enabled:
             import sys
             is_testing = 'test' in sys.argv
             

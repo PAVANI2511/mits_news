@@ -16,17 +16,37 @@ def send_new_post_notifications(post, author):
     # 1. Create in-app notifications for followers who have opted in
     from accounts.models import Follower
     try:
+        author_profile = getattr(author, 'profile', None)
+        author_name = f"{author.first_name} {author.last_name}".strip() or author.username
+        post_title = post.caption[:50] if post.caption else (post.text[:50] if post.text else 'post')
+        post_dept = (post.department or (author_profile.department if author_profile else '')).strip().lower()
+
+        if post.event_date or post.event_type:
+            msg = f"{author_name} uploaded a new event: \"{post_title}\"."
+        else:
+            msg = f"{author_name} published a new article \"{post_title}\"."
+
         followers = Follower.objects.filter(following=author).select_related('follower', 'follower__profile')
         for f in followers:
             follower_user = f.follower
             follower_profile = getattr(follower_user, 'profile', None)
+            follower_dept = (follower_profile.department if follower_profile else '').strip().lower()
+
+            # Department filter
+            if post_dept and follower_dept and post_dept != follower_dept:
+                continue
+
+            # Deduplication
+            if Notification.objects.filter(recipient=follower_user, sender=author, type='new_post', post=post).exists():
+                continue
+
             if follower_profile and getattr(follower_profile, 'followed_notifications_enabled', True):
                 Notification.objects.create(
                     recipient=follower_user,
                     sender=author,
                     type='new_post',
                     post=post,
-                    message=f"{author.first_name or author.username} published a new post: {post.caption[:50]}..."
+                    message=msg
                 )
     except Exception as err:
         print(f"Error creating follower in-app notifications: {err}")
@@ -231,13 +251,16 @@ class LikePostView(views.APIView):
 
             # Notifications
             if post.user != request.user:
-                Notification.objects.create(
-                    recipient=post.user,
-                    sender=request.user,
-                    type='like',
-                    post=post,
-                    message=f"{request.user.first_name or request.user.username} liked your post."
-                )
+                user_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+                post_title = post.caption[:40] if post.caption else (post.text[:40] if post.text else 'post')
+                if not Notification.objects.filter(recipient=post.user, sender=request.user, type='like', post=post).exists():
+                    Notification.objects.create(
+                        recipient=post.user,
+                        sender=request.user,
+                        type='like',
+                        post=post,
+                        message=f"{user_name} liked your post \"{post_title}\"."
+                    )
         
         likes_count = Like.objects.filter(post=post).count()
         return Response({

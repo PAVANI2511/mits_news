@@ -40,19 +40,22 @@ def create_mention_notifications(text, sender, post=None, comment=None):
         if len(u) > 1 and u[-1] in ['.', '-', '+', '_']:
             usernames.add(u[:-1])
 
+    sender_name = f"{sender.first_name} {sender.last_name}".strip() or sender.username
+
     for username in usernames:
         if username.lower() == sender.username.lower():
             continue
         try:
             recipient = User.objects.get(username__iexact=username)
-            # Create mention notification
-            Notification.objects.create(
-                recipient=recipient,
-                sender=sender,
-                type='mention',
-                post=post,
-                comment=comment,
-                message=f"{sender.first_name or sender.username} mentioned you in a {'post' if post and not comment else 'comment'}."
-            )
+            if not Notification.objects.filter(recipient=recipient, sender=sender, type='mention', post=post, comment=comment).exists():
+                # Create mention notification
+                Notification.objects.create(
+                    recipient=recipient,
+                    sender=sender,
+                    type='mention',
+                    post=post,
+                    comment=comment,
+                    message=f"{sender_name} mentioned you in a {'post' if post and not comment else 'comment'}."
+                )
         except User.DoesNotExist:
             pass

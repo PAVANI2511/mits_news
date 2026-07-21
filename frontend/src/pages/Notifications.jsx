@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import MainLayout from '../layouts/MainLayout';
 import Sidebar from '../components/Sidebar';
@@ -13,22 +13,32 @@ const Notifications = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const loadNotifications = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await notificationsAPI.getList();
+      setNotifications(res.data);
+    } catch (_err) {
+      setError("Failed to load notifications.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!isAuthenticated) {
       window.location.href = '/login';
-    }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
+    } else {
       loadNotifications();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, loadNotifications]);
 
   useEffect(() => {
     const handleWebSocketAlert = (e) => {
       const newNotif = e.detail;
-      setNotifications(prev => [newNotif, ...prev]);
+      if (!newNotif) return;
+      setNotifications(prev => prev.some(item => item.id === newNotif.id) ? prev : [newNotif, ...prev]);
     };
     window.addEventListener('new-websocket-notification', handleWebSocketAlert);
     return () => {
@@ -40,18 +50,7 @@ const Notifications = () => {
     return null;
   }
 
-  const loadNotifications = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const res = await notificationsAPI.getList();
-      setNotifications(res.data);
-    } catch (_err) {
-      setError("Failed to load notifications.");
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const handleMarkRead = (id) => {
     setNotifications(prev => 

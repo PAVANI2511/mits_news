@@ -210,12 +210,13 @@ class FollowUserView(views.APIView):
         )
 
         if created:
+            user_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
             # Dispatch Notification
             Notification.objects.create(
                 recipient=user_to_follow,
                 sender=request.user,
                 type='follow',
-                message=f"{request.user.first_name or request.user.username} started following you."
+                message=f"{user_name} started following you."
             )
             return Response({"message": f"Successfully followed {username}."}, status=status.HTTP_201_CREATED)
         else:
@@ -276,16 +277,28 @@ class ForgotPasswordView(views.APIView):
                 "message": "Development mode: Verification OTP has been printed to the server terminal console."
             }, status=status.HTTP_200_OK)
 
-        def send_email_async(subject, message, from_email, recipient_list, otp_code):
+        from django.core.mail import EmailMultiAlternatives
+        from django.template.loader import render_to_string
+        from django.utils.html import strip_tags
+
+        def send_email_async(user_obj, recipient_email, otp_code):
             try:
-                send_mail(
-                    subject=subject,
-                    message=message,
-                    from_email=from_email,
-                    recipient_list=recipient_list,
-                    fail_silently=False,
-                )
-                print(f"Password reset email sent successfully to {recipient_list}")
+                subject = "MITS Newspaper - Password Reset Code"
+                from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@mits.ac.in')
+                context = {'user': user_obj, 'otp': otp_code}
+                
+                try:
+                    html_content = render_to_string('emails/password_reset_otp.html', context)
+                    text_content = strip_tags(html_content)
+                except Exception:
+                    text_content = f"Hello,\n\nYour password reset verification code is: {otp_code}\n\nThis code will expire in 10 minutes."
+                    html_content = None
+
+                msg = EmailMultiAlternatives(subject, text_content, from_email, [recipient_email])
+                if html_content:
+                    msg.attach_alternative(html_content, "text/html")
+                msg.send(fail_silently=False)
+                print(f"Password reset email sent successfully to {recipient_email}")
             except Exception as e:
                 print(f"\n==================================================")
                 print(f"Background SMTP Error: {e}. Outputting OTP to log console: {otp_code}")
@@ -294,13 +307,7 @@ class ForgotPasswordView(views.APIView):
         import threading
         threading.Thread(
             target=send_email_async,
-            args=(
-                "MITS Newspaper - Password Reset Code",
-                f"Hello,\n\nYour password reset verification code is: {otp}\n\nThis code will expire in 10 minutes.",
-                getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@mits.ac.in'),
-                [email],
-                otp
-            )
+            args=(user, email, otp)
         ).start()
             
         return Response({"message": "Verification OTP sent to your college email address."}, status=status.HTTP_200_OK)
