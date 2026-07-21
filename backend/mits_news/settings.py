@@ -179,6 +179,7 @@ else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'mitsnews691a@gmail.com')
+BREVO_API_KEY = os.getenv('BREVO_API_KEY')
 # reload settings configurations
 
 # Channels / WebSockets layer configuration

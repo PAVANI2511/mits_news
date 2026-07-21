@@ -284,7 +284,6 @@ class ForgotPasswordView(views.APIView):
         def send_email_async(user_obj, recipient_email, otp_code):
             try:
                 subject = "MITS Newspaper - Password Reset Code"
-                from_email = getattr(settings, 'EMAIL_HOST_USER', 'mitsnews691a@gmail.com') or 'mitsnews691a@gmail.com'
                 context = {'user': user_obj, 'otp': otp_code}
                 
                 try:
@@ -294,14 +293,22 @@ class ForgotPasswordView(views.APIView):
                     text_content = f"Hello,\n\nYour password reset verification code is: {otp_code}\n\nThis code will expire in 10 minutes."
                     html_content = None
 
+                # 1. Try Brevo HTTP API (Port 443 HTTPS - unrestricted on Render Free Tier)
+                from notifications.emails import send_email_via_brevo
+                sent = send_email_via_brevo(subject, recipient_email, html_content=html_content, text_content=text_content)
+                if sent:
+                    return
+
+                # 2. Fallback to standard SMTP
+                from_email = getattr(settings, 'EMAIL_HOST_USER', 'mitsnews691a@gmail.com') or 'mitsnews691a@gmail.com'
                 msg = EmailMultiAlternatives(subject, text_content, from_email, [recipient_email])
                 if html_content:
                     msg.attach_alternative(html_content, "text/html")
                 msg.send(fail_silently=False)
-                print(f"Password reset email sent successfully to {recipient_email}")
+                print(f"Password reset email sent successfully via SMTP to {recipient_email}")
             except Exception as e:
                 print(f"\n==================================================")
-                print(f"Background SMTP Error: {e}. Outputting OTP to log console: {otp_code}")
+                print(f"Background Email Error: {e}. Outputting OTP to log console: {otp_code}")
                 print(f"==================================================\n")
 
         import threading
@@ -590,42 +597,23 @@ def debug_cloudinary_settings(request):
     
     if target_test_email:
         try:
-            import socket
-            from django.core.mail.backends.smtp import EmailBackend
-            from django.core.mail import EmailMessage
-
-            # Force IPv4 resolution to prevent Errno 101 Network is unreachable on Render
-            old_getaddrinfo = socket.getaddrinfo
-            def getaddrinfo_ipv4(host, port, family=0, type=0, proto=0, flags=0):
-                return old_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
-            socket.getaddrinfo = getaddrinfo_ipv4
-
-            from_email = getattr(settings, 'EMAIL_HOST_USER', 'mitsnews691a@gmail.com') or 'mitsnews691a@gmail.com'
-            password = getattr(settings, 'EMAIL_HOST_PASSWORD', 'oajsuxyvgzoghnza')
-            
-            backend = EmailBackend(
-                host='smtp.gmail.com',
-                port=587,
-                username=from_email,
-                password=password,
-                use_ssl=False,
-                use_tls=True,
-                timeout=15
+            from notifications.emails import send_email_via_brevo
+            sent = send_email_via_brevo(
+                subject="Render Test Email (Brevo HTTP API)",
+                recipient_email=target_test_email,
+                text_content="This is a direct test email from Render server via Brevo HTTP API."
             )
-            msg = EmailMessage(
-                subject="Render Test Email (TLS 587 IPv4)",
-                body="This is a direct test email from Render server using TLS 587 IPv4.",
-                from_email=from_email,
-                to=[target_test_email],
-                connection=backend
-            )
-            res = msg.send(fail_silently=False)
-            email_status = f"Success TLS 587 (result: {res})"
+            if sent:
+                email_status = "Success via Brevo HTTP API (Port 443)"
+            else:
+                email_status = "Failed via Brevo HTTP API (Check BREVO_API_KEY setting)"
         except Exception as e:
             email_status = "Failed"
             email_error = str(e)
 
+    brevo_key = getattr(settings, 'BREVO_API_KEY', None) or os.environ.get('BREVO_API_KEY')
     return Response({
+        "BREVO_API_KEY_PRESENT": bool(brevo_key),
         "EMAIL_HOST_USER": getattr(settings, 'EMAIL_HOST_USER', None),
         "EMAIL_BACKEND": getattr(settings, 'EMAIL_BACKEND', None),
         "DEFAULT_FROM_EMAIL": getattr(settings, 'DEFAULT_FROM_EMAIL', None),
