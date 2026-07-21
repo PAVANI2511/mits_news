@@ -259,7 +259,7 @@ class ForgotPasswordView(views.APIView):
         expiry = timezone.now() + timedelta(minutes=10)
         
         # Store OTP in StudentProfile
-        profile = user.profile
+        profile, _ = StudentProfile.objects.get_or_create(user=user)
         profile.reset_otp_code = otp
         profile.reset_otp_expiry = expiry
         profile.save()
@@ -323,7 +323,7 @@ class ResetPasswordView(views.APIView):
         
         from django.utils import timezone
         
-        profile = user.profile
+        profile, _ = StudentProfile.objects.get_or_create(user=user)
         if not profile.reset_otp_code:
             return Response({"error": "No password reset request found. Please request a new verification code."}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -440,7 +440,7 @@ class VerifyOTPView(views.APIView):
             return Response({"error": "User with this email does not exist."}, status=status.HTTP_404_NOT_FOUND)
             
         from django.utils import timezone
-        profile = user.profile
+        profile, _ = StudentProfile.objects.get_or_create(user=user)
         
         if not profile.reset_otp_code:
             return Response({"error": "No password reset request found. Please request a new verification code."}, status=status.HTTP_400_BAD_REQUEST)
