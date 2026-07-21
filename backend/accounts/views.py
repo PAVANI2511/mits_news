@@ -311,12 +311,7 @@ class ForgotPasswordView(views.APIView):
                 print(f"Background Email Error: {e}. Outputting OTP to log console: {otp_code}")
                 print(f"==================================================\n")
 
-        import threading
-        threading.Thread(
-            target=send_email_async,
-            args=(user, email, otp)
-        ).start()
-            
+        send_email_async(user, email, otp)
         return Response({"message": "Verification OTP sent to your college email address."}, status=status.HTTP_200_OK)
 
 
