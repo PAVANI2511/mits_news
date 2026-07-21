@@ -16,7 +16,7 @@ def send_email_via_brevo(subject, recipient_email, html_content=None, text_conte
     if not api_key:
         return False
 
-    sender_email = sender_email or getattr(settings, 'BREVO_SENDER_EMAIL', None) or os.getenv('BREVO_SENDER_EMAIL', 'pavanisandra25@gmail.com')
+    sender_email = sender_email or getattr(settings, 'BREVO_SENDER_EMAIL', None) or os.getenv('BREVO_SENDER_EMAIL', 'mitsnews691a@gmail.com')
 
     url = "https://api.brevo.com/v3/smtp/email"
     headers = {
