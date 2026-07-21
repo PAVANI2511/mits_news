@@ -284,7 +284,7 @@ class ForgotPasswordView(views.APIView):
         def send_email_async(user_obj, recipient_email, otp_code):
             try:
                 subject = "MITS Newspaper - Password Reset Code"
-                from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@mits.ac.in')
+                from_email = getattr(settings, 'EMAIL_HOST_USER', 'mitsnews691a@gmail.com') or 'mitsnews691a@gmail.com'
                 context = {'user': user_obj, 'otp': otp_code}
                 
                 try:

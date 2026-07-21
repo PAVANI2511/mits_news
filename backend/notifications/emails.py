@@ -11,7 +11,7 @@ def send_new_post_email_sync(user_id, post_id):
         post = Post.objects.get(id=post_id)
         
         subject = f"MITS Newspaper - New Post Alert: {post.caption[:50]}"
-        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@mits.ac.in')
+        from_email = getattr(settings, 'EMAIL_HOST_USER', 'mitsnews691a@gmail.com') or 'mitsnews691a@gmail.com'
         to_email = user.email
         
         if not to_email:
@@ -39,7 +39,7 @@ def send_event_reminder_email_sync(user_id, post_id, days_to_event, days_to_last
         user = User.objects.get(id=user_id)
         post = Post.objects.get(id=post_id)
         
-        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'no-reply@mits.ac.in')
+        from_email = getattr(settings, 'EMAIL_HOST_USER', 'mitsnews691a@gmail.com') or 'mitsnews691a@gmail.com'
         to_email = user.email
         
         if not to_email:
