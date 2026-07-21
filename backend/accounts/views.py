@@ -583,9 +583,34 @@ from rest_framework.permissions import AllowAny
 def debug_cloudinary_settings(request):
     import os
     from django.conf import settings
+    
+    email_status = "Not tested"
+    email_error = None
+    target_test_email = request.query_params.get('test_email')
+    
+    if target_test_email:
+        try:
+            from django.core.mail import send_mail
+            from_email = getattr(settings, 'EMAIL_HOST_USER', 'mitsnews691a@gmail.com') or 'mitsnews691a@gmail.com'
+            res = send_mail(
+                subject="Render Test Email",
+                message="This is a direct test email from Render server.",
+                from_email=from_email,
+                recipient_list=[target_test_email],
+                fail_silently=False
+            )
+            email_status = f"Success (result: {res})"
+        except Exception as e:
+            email_status = "Failed"
+            email_error = str(e)
+
     return Response({
+        "EMAIL_HOST_USER": getattr(settings, 'EMAIL_HOST_USER', None),
+        "EMAIL_BACKEND": getattr(settings, 'EMAIL_BACKEND', None),
+        "DEFAULT_FROM_EMAIL": getattr(settings, 'DEFAULT_FROM_EMAIL', None),
+        "email_status": email_status,
+        "email_error": email_error,
         "CLOUDINARY_CLOUD_NAME": os.environ.get('CLOUDINARY_CLOUD_NAME'),
         "CLOUDINARY_API_KEY": os.environ.get('CLOUDINARY_API_KEY'),
         "CLOUDINARY_API_SECRET": os.environ.get('CLOUDINARY_API_SECRET') is not None,
-        "STORAGES": getattr(settings, 'STORAGES', None),
     })
