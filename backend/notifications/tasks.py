@@ -79,3 +79,25 @@ def send_daily_reminders_task():
 def send_interest_confirmation_email_task(user_id, post_id):
     from .emails import send_interest_confirmation_email_sync
     send_interest_confirmation_email_sync(user_id, post_id)
+
+
+@shared_task
+def send_15_days_summary_reports_task():
+    from accounts.models import StudentProfile
+    from .emails import send_periodic_summary_report
+    hods = StudentProfile.objects.filter(teacher_role='HOD', user__is_active=True)
+    for hod in hods:
+        if hod.user.email:
+            name = f"{hod.user.first_name} {hod.user.last_name}".strip() or hod.user.username
+            send_periodic_summary_report(hod.user.email, name, 15)
+
+
+@shared_task
+def send_monthly_summary_reports_task():
+    from accounts.models import StudentProfile
+    from .emails import send_periodic_summary_report
+    hods = StudentProfile.objects.filter(teacher_role='HOD', user__is_active=True)
+    for hod in hods:
+        if hod.user.email:
+            name = f"{hod.user.first_name} {hod.user.last_name}".strip() or hod.user.username
+            send_periodic_summary_report(hod.user.email, name, 30)

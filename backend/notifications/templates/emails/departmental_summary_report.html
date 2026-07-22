@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>MITS Newspaper - Departmental Summary Report</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f7fafc;
+            color: #2d3748;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+        }
+        .header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            padding: 32px;
+            text-align: center;
+            color: #ffffff;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+        }
+        .header p {
+            margin: 8px 0 0 0;
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 32px;
+        }
+        .greeting {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .summary-card {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .summary-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            font-weight: 700;
+        }
+        .summary-value {
+            font-size: 32px;
+            font-weight: 900;
+            color: #0f172a;
+            margin-top: 4px;
+        }
+        .section-title {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #475569;
+            font-weight: 800;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 6px;
+        }
+        .top-dept-list {
+            margin: 0 0 24px 0;
+            padding: 0;
+            list-style: none;
+        }
+        .top-dept-item {
+            padding: 12px 16px;
+            background-color: #f5f3ff;
+            border-left: 4px solid #7c3aed;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #5b21b6;
+            display: flex;
+            justify-content: space-between;
+        }
+        .top-dept-count {
+            background-color: #ddd6fe;
+            color: #6d28d9;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-family: monospace;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+        }
+        tr:hover {
+            background-color: #f8fafc;
+        }
+        .footer {
+            background-color: #f1f5f9;
+            padding: 24px;
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer p {
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MITS Newspaper Portal</h1>
+            <p>Departmental & Campus Activity Report</p>
+        </div>
+        <div class="content">
+            <div class="greeting">Dear {{ recipient_name }},</div>
+            <p>Here is the periodic summary report of departmental publishing activity on the MITS Campus Newspaper for the <strong>past {{ days }} days</strong>.</p>
+            
+            <div class="summary-card">
+                <div>
+                    <div class="summary-title">Total Campus Articles Published</div>
+                    <div class="summary-value">{{ total_posts }}</div>
+                </div>
+            </div>
+            
+            <div class="section-title">🏆 Top Departments</div>
+            <ul class="top-dept-list">
+                {% for dept in top_departments %}
+                    <li class="top-dept-item">
+                        <span>{{ forloop.counter }}. {{ dept.department|default:"General / Campus" }}</span>
+                        <span class="top-dept-count">{{ dept.count }} articles</span>
+                    </li>
+                {% empty %}
+                    <li class="top-dept-item" style="background-color: #f8fafc; border-left-color: #cbd5e1; color: #64748b;">
+                        No departmental posts in this period.
+                    </li>
+                {% endfor %}
+            </ul>
+            
+            <div class="section-title">📊 Department Activity Breakdown</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Department</th>
+                        <th style="text-align: right; width: 100px;">Articles</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dept in department_breakdown %}
+                        <tr>
+                            <td>{{ dept.department|default:"General / Campus" }}</td>
+                            <td style="text-align: right; font-weight: 700;">{{ dept.count }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="2" style="text-align: center; color: #94a3b8; font-style: italic;">No activity recorded.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="footer">
+            <p>You received this official periodic report as a registered member/HOD of MITS Newspaper Portal.</p>
+            <p>&copy; 2026 Madanapalle Institute of Technology & Science. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

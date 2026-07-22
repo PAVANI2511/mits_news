@@ -174,3 +174,90 @@ def send_interest_confirmation_email_sync(user_id, post_id):
         print(f"Interest confirmation email successfully sent via SMTP to {to_email}")
     except Exception as e:
         print(f"Error sending interest confirmation email: {e}")
+
+
+def send_hod_new_post_email_sync(hod_email, department_name, post_id):
+    try:
+        post = Post.objects.get(id=post_id)
+        
+        subject = f"[HOD Notification] New Post in {department_name} by {post.user.first_name or post.user.username}"
+        to_email = hod_email
+        
+        context = {
+            'post': post,
+            'department_name': department_name,
+            'post_url': f"https://mits-news-frontend.onrender.com/posts/{post.id}"
+        }
+        
+        html_content = render_to_string('emails/hod_new_post_alert.html', context)
+        text_content = strip_tags(html_content)
+        
+        # 1. Try Brevo HTTP API
+        sent = send_email_via_brevo(subject, to_email, html_content=html_content, text_content=text_content, sender_name="MITS Department Portal")
+        if sent:
+            return True
+
+        # 2. Fallback to standard SMTP
+        from_email = getattr(settings, 'EMAIL_HOST_USER', 'mitsnews691a@gmail.com') or 'mitsnews691a@gmail.com'
+        msg = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
+        print(f"HOD alert email successfully sent via SMTP to {to_email}")
+        return True
+    except Exception as e:
+        print(f"Error sending HOD alert email: {e}")
+        return False
+
+
+def send_periodic_summary_report(recipient_email, recipient_name, days):
+    try:
+        from django.utils import timezone
+        from datetime import timedelta
+        from django.db.models import Count
+        from posts.models import Post
+        
+        now = timezone.now()
+        start_date = now - timedelta(days=days)
+        
+        # Query posts in range
+        posts_qs = Post.objects.filter(is_blocked=False, created_at__range=(start_date, now))
+        total_posts = posts_qs.count()
+        
+        # Group by department
+        dept_breakdown_qs = posts_qs.values('department').annotate(count=Count('id')).order_by('-count')
+        department_breakdown = [
+            {"department": item["department"] or "General / Campus", "count": item["count"]}
+            for item in dept_breakdown_qs
+        ]
+        
+        top_departments = department_breakdown[:3]
+        
+        subject = f"MITS Newspaper - {days}-Day Departmental Summary Report"
+        to_email = recipient_email
+        
+        context = {
+            'recipient_name': recipient_name,
+            'days': days,
+            'total_posts': total_posts,
+            'top_departments': top_departments,
+            'department_breakdown': department_breakdown
+        }
+        
+        html_content = render_to_string('emails/departmental_summary_report.html', context)
+        text_content = strip_tags(html_content)
+        
+        # 1. Try Brevo HTTP API
+        sent = send_email_via_brevo(subject, to_email, html_content=html_content, text_content=text_content, sender_name="MITS Newspaper Admin")
+        if sent:
+            return True
+
+        # 2. Fallback to standard SMTP
+        from_email = getattr(settings, 'EMAIL_HOST_USER', 'mitsnews691a@gmail.com') or 'mitsnews691a@gmail.com'
+        msg = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
+        msg.attach_alternative(html_content, "text/html")
+        msg.send()
+        print(f"Periodic summary report successfully sent via SMTP to {to_email}")
+        return True
+    except Exception as e:
+        print(f"Error sending periodic summary report: {e}")
+        return False

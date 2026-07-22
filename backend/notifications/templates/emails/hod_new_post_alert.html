@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>MITS Department Portal - HOD Alert</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f7fafc;
+            color: #2d3748;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+        }
+        .header {
+            background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+            padding: 32px;
+            text-align: center;
+            color: #ffffff;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+        }
+        .header p {
+            margin: 8px 0 0 0;
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 32px;
+        }
+        .greeting {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .intro-text {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        .post-card {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .post-meta {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #4f46e5;
+            margin-bottom: 8px;
+        }
+        .post-title {
+            font-size: 18px;
+            font-weight: 750;
+            color: #1a202c;
+            margin: 0 0 12px 0;
+            line-height: 1.3;
+        }
+        .post-author {
+            font-size: 13px;
+            color: #718096;
+            margin-bottom: 16px;
+        }
+        .post-snippet {
+            font-size: 14px;
+            color: #4a5568;
+            line-height: 1.6;
+            margin-bottom: 0;
+            font-style: italic;
+        }
+        .btn-container {
+            text-align: center;
+            margin-top: 32px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #4f46e5;
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 12px 28px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 9999px;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2), 0 2px 4px -1px rgba(79, 70, 229, 0.1);
+            transition: all 0.2s ease-in-out;
+        }
+        .btn:hover {
+            background-color: #4338ca;
+        }
+        .footer {
+            background-color: #f1f5f9;
+            padding: 24px;
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer p {
+            margin: 4px 0;
+        }
+        .badge {
+            display: inline-block;
+            background-color: #ede9fe;
+            color: #6d28d9;
+            font-size: 10px;
+            font-weight: 750;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MITS Department Portal</h1>
+            <p>Departmental Activity & Post Notifications</p>
+        </div>
+        <div class="content">
+            <div class="greeting">Dear Head of Department,</div>
+            <p class="intro-text">This is to notify you that a new article has been published on the MITS Campus Newspaper by a member of your department (<strong>{{ department_name }}</strong>). Please review the summary below:</p>
+            
+            <div class="post-card">
+                <div class="post-meta">
+                    {% if post.category %}
+                        <span class="badge">{{ post.category.name }}</span>
+                    {% endif %}
+                    <span class="badge">{{ department_name }}</span>
+                </div>
+                <h2 class="post-title">{{ post.caption }}</h2>
+                <div class="post-author">By {{ post.user.first_name }} {{ post.user.last_name }} (@{{ post.user.username }})</div>
+                {% if post.text %}
+                    <p class="post-snippet">"{{ post.text|truncatechars:200 }}"</p>
+                {% endif %}
+            </div>
+            
+            <div class="btn-container">
+                <a href="{{ post_url }}" class="btn">View Departmental Post</a>
+            </div>
+        </div>
+        <div class="footer">
+            <p>You received this official notification as the registered HOD of {{ department_name }}.</p>
+            <p>&copy; 2026 Madanapalle Institute of Technology & Science. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

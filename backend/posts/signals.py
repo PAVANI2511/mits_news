@@ -136,3 +136,5 @@ def post_created_signal(sender, instance, created, **kwargs):
                     import threading
                     from notifications.emails import send_new_post_email_sync
                     threading.Thread(target=send_new_post_email_sync, args=(recipient.id, instance.id)).start()
+
+
