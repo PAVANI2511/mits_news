@@ -308,7 +308,7 @@ const AdminDashboard = () => {
           <div className="space-y-6">
             
             {/* Time-Based Report Metrics Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* Total Posts in Range */}
               <div className="bg-card border border-border p-5 rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition">
                 <div>
@@ -333,15 +333,15 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Top 3 Departments */}
+              {/* Top Departments */}
               <div className="bg-card border border-border p-5 rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition">
                 <div className="flex-1 min-w-0">
                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Top Departments</span>
-                  <div className="mt-1 space-y-0.5">
+                  <div className="mt-1 space-y-1">
                     {analytics.top_departments && analytics.top_departments.length > 0 ? (
                       analytics.top_departments.map((dept, i) => (
-                        <div key={dept.department} className="text-[11px] font-black text-text truncate">
-                          {i + 1}. {dept.department} <span className="text-[9px] font-semibold text-gray-400">({dept.count})</span>
+                        <div key={dept.department} className="text-[11px] font-black text-text whitespace-normal break-words leading-tight">
+                          {i + 1}. {dept.department} <span className="text-[10px] font-bold text-primary font-mono ml-0.5">({dept.count} articles)</span>
                         </div>
                       ))
                     ) : (
@@ -349,26 +349,8 @@ const AdminDashboard = () => {
                     )}
                   </div>
                 </div>
-                <div className="p-3.5 bg-purple-500/10 rounded-2xl text-purple-600 text-lg">
+                <div className="p-3.5 bg-purple-500/10 rounded-2xl text-purple-600 text-lg self-start">
                   <FiUsers />
-                </div>
-              </div>
-
-              {/* Growth Rate */}
-              <div className="bg-card border border-border p-5 rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition">
-                <div>
-                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Post Growth Rate</span>
-                  <h3 className={`text-2xl font-black mt-1 ${analytics.growth_rate >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                    {analytics.growth_rate >= 0 ? '🔼 +' : '🔽 '}{analytics.growth_rate}%
-                  </h3>
-                  <div className="text-[9px] text-gray-450 mt-0.5 font-bold uppercase tracking-wide">
-                    Trend: <span className={analytics.trend === 'Increasing' ? 'text-green-500' : analytics.trend === 'Decreasing' ? 'text-red-500' : 'text-yellow-600'}>
-                      {analytics.trend}
-                    </span>
-                  </div>
-                </div>
-                <div className="p-3.5 bg-yellow-500/10 rounded-2xl text-yellow-600 text-lg">
-                  <FiTrendingUp className={analytics.growth_rate >= 0 ? 'text-green-500' : 'text-red-500'} />
                 </div>
               </div>
             </div>

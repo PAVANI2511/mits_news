@@ -37,7 +37,6 @@ const CommentNode = ({
   handleHideComment,
   depth = 0
 }) => {
-  const [showPopover, setShowPopover] = useState(false);
 
   const isMyComment = user && String(comment.user?.id || comment.user_id) === String(user.id);
   const canDeleteComment = isMyComment || isPostOwner || user?.is_staff || user?.is_superuser;
@@ -81,25 +80,7 @@ const CommentNode = ({
     );
   }
 
-  let hoverTimeout = null;
-
-  const handleMouseEnter = () => {
-    if (hoverTimeout) clearTimeout(hoverTimeout);
-    setShowPopover(true);
-  };
-
-  const handleMouseLeave = () => {
-    hoverTimeout = setTimeout(() => {
-      setShowPopover(false);
-    }, 450);
-  };
-
-  const activeEmojis = Object.entries(comment.reactions_summary || {})
-    .filter(([_type, count]) => count > 0)
-    .map(([type]) => reactionEmojis[type]);
-
   const currentEmoji = comment.my_reaction ? reactionEmojis[comment.my_reaction] : null;
-  const currentName = comment.my_reaction ? reactionNames[comment.my_reaction] : 'Like';
   const currentColor = comment.my_reaction ? reactionColors[comment.my_reaction] : 'hover:text-primary';
 
   return (
@@ -179,58 +160,29 @@ const CommentNode = ({
             {/* Sub-actions bar (Reactions, Reply, Edit) */}
             {(!comment.is_deleted || user?.is_staff || user?.is_superuser) && (
               <div className="flex items-center gap-4 mt-1.5 text-gray-400">
-                {isAuthenticated && !comment.is_deleted && (
-                  <div 
-                    className="relative"
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                  >
-                    {/* Reactions Popover */}
-                    {showPopover && (
-                      <div className="absolute bottom-full left-0 mb-2 bg-card border border-border px-3 py-1.5 rounded-full shadow-2xl flex gap-2.5 items-center animate-slideUp z-30 hover:scale-105 transition duration-150">
-                        {Object.entries(reactionEmojis).map(([type, emoji]) => (
-                          <button
-                            key={type}
-                            onClick={() => {
-                              handleReactComment(comment.id, type);
-                              setShowPopover(false);
-                            }}
-                            className="text-base hover:scale-130 transition transform duration-100 origin-bottom"
-                            title={reactionNames[type]}
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    <button
-                      onClick={() => handleReactComment(comment.id, comment.my_reaction || 'love')}
-                      className={`flex items-center gap-1 text-[10px] font-semibold transition ${currentColor}`}
+                <button
+                  onClick={() => isAuthenticated && !comment.is_deleted && handleReactComment(comment.id, comment.my_reaction || 'love')}
+                  disabled={!isAuthenticated || comment.is_deleted}
+                  className={`flex items-center gap-1.5 text-[10px] font-semibold transition ${currentColor} ${!isAuthenticated ? 'cursor-default' : ''}`}
+                >
+                  {currentEmoji ? (
+                    <span>{currentEmoji}</span>
+                  ) : (
+                    <FiHeart />
+                  )}
+                  {comment.total_reactions > 0 && (
+                    <span 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShowReactionsUsersList(comment.id);
+                      }}
+                      className="text-gray-400 font-extrabold ml-0.5 hover:underline cursor-pointer"
+                      title="View who reacted"
                     >
-                      {currentEmoji ? (
-                        <span>{currentEmoji}</span>
-                      ) : (
-                        <FiHeart />
-                      )}
-                      <span>{currentName}</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* Show Reactions Summary list */}
-                {comment.total_reactions > 0 && (
-                  <button
-                    onClick={() => handleShowReactionsUsersList(comment.id)}
-                    className="flex items-center gap-1 text-[10px] text-gray-400 font-bold hover:underline"
-                    title="View who reacted"
-                  >
-                    <span className="flex items-center tracking-tight">
-                      {activeEmojis.slice(0, 3).join('')}
+                      {comment.total_reactions}
                     </span>
-                    <span>{comment.total_reactions}</span>
-                  </button>
-                )}
+                  )}
+                </button>
 
                 {isAuthenticated && !comment.is_deleted && (
                   <button
