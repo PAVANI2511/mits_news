@@ -655,7 +655,9 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
               <FiFileText className="text-2xl" />
             </div>
             <div className="truncate">
-              <div className="text-xs font-bold text-text truncate">College Document (PDF)</div>
+              <div className="text-xs font-bold text-text truncate">
+                {post.pdf ? decodeURIComponent(post.pdf.split('/').pop().split('?')[0]) : 'College Document (PDF)'}
+              </div>
               <div className="text-[10px] text-gray-500 truncate">Click download to read full document</div>
             </div>
           </div>

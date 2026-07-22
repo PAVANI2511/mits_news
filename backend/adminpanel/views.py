@@ -221,6 +221,16 @@ class AdminUsersListView(views.APIView):
         elif role_filter == 'teacher':
             queryset = queryset.filter(profile__role_type='teacher')
 
+        # Filter by Department
+        department_query = request.query_params.get('department', '').strip()
+        if department_query:
+            if department_query == 'All B.Tech courses':
+                queryset = queryset.filter(profile__department__icontains='B.Tech')
+            elif department_query == 'All M.Tech courses':
+                queryset = queryset.filter(profile__department__icontains='M.Tech')
+            else:
+                queryset = queryset.filter(profile__department__iexact=department_query)
+
         # Sort
         sort_by = request.query_params.get('sort_by', '-date_joined').strip()
         if sort_by in ['username', '-username', 'first_name', '-first_name', 'date_joined', '-date_joined', 'email', '-email']:
@@ -324,6 +334,16 @@ class AdminPostsListView(views.APIView):
             queryset = queryset.filter(is_blocked=True)
         elif status_filter == 'active':
             queryset = queryset.filter(is_blocked=False)
+
+        # Filter by Department
+        department_query = request.query_params.get('department', '').strip()
+        if department_query:
+            if department_query == 'All B.Tech courses':
+                queryset = queryset.filter(department__icontains='B.Tech')
+            elif department_query == 'All M.Tech courses':
+                queryset = queryset.filter(department__icontains='M.Tech')
+            else:
+                queryset = queryset.filter(department__iexact=department_query)
 
         # Sort
         sort_by = request.query_params.get('sort_by', '-created_at').strip()

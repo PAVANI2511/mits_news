@@ -24,6 +24,74 @@ const UserManagement = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
+  const [selectedProgram, setSelectedProgram] = useState('');
+  const [selectedCourse, setSelectedCourse] = useState('');
+  const [selectedDept, setSelectedDept] = useState('');
+
+  const departmentGroups = {
+    'B.Tech Programs': [
+      'All B.Tech courses',
+      'B.Tech - Computer Science & Engineering (CSE)',
+      'B.Tech - Computer Science & Technology (CST)',
+      'B.Tech - Cyber Security (CS)',
+      'B.Tech - Electronics & Communication Engineering (ECE)',
+      'B.Tech - Electrical & Electronics Engineering (EEE)',
+      'B.Tech - Mechanical Engineering (ME)',
+      'B.Tech - Civil Engineering (CE)',
+      'B.Tech - Artificial Intelligence (AI)',
+      'B.Tech - Artificial Intelligence & Machine Learning (AI&ML)',
+      'B.Tech - Computer Networks (CN)',
+      'B.Tech - Data Science (DS)'
+    ],
+    'M.Tech Programs': [
+      'All M.Tech courses',
+      'M.Tech - Computer Science & Engineering (CSE)',
+      'M.Tech - VLSI Design',
+      'M.Tech - Electrical Power Systems (EPS)',
+      'M.Tech - Machine Design',
+      'M.Tech - Structural Engineering'
+    ],
+    'MBA': [
+      'Master of Business Administration (MBA)'
+    ],
+    'MCA': [
+      'Master of Computer Applications (MCA)'
+    ],
+    'Bio Informatics': [
+      'Bio Informatics'
+    ],
+    'Other': [
+      'Other'
+    ]
+  };
+
+  const handleProgramChange = (e) => {
+    const prog = e.target.value;
+    setSelectedProgram(prog);
+    setPage(1);
+    if (!prog) {
+      setSelectedCourse('');
+      setSelectedDept('');
+    } else if (prog === 'B.Tech Programs') {
+      setSelectedCourse('All B.Tech courses');
+      setSelectedDept('All B.Tech courses');
+    } else if (prog === 'M.Tech Programs') {
+      setSelectedCourse('All M.Tech courses');
+      setSelectedDept('All M.Tech courses');
+    } else {
+      const firstCourse = departmentGroups[prog][0];
+      setSelectedCourse(firstCourse);
+      setSelectedDept(firstCourse);
+    }
+  };
+
+  const handleCourseChange = (e) => {
+    const course = e.target.value;
+    setSelectedCourse(course);
+    setSelectedDept(course);
+    setPage(1);
+  };
+
   const loadUsers = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -36,6 +104,7 @@ const UserManagement = () => {
       if (searchVal.trim()) params.q = searchVal.trim();
       if (statusFilter) params.status = statusFilter;
       if (roleFilter) params.role = roleFilter;
+      if (selectedDept) params.department = selectedDept;
 
       const res = await adminAPI.getUsers(params);
       setUsers(res.data.results);
@@ -46,7 +115,7 @@ const UserManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, sortBy, searchVal, statusFilter, roleFilter]);
+  }, [page, sortBy, searchVal, statusFilter, roleFilter, selectedDept]);
 
   useEffect(() => {
     loadUsers();
@@ -207,6 +276,9 @@ const UserManagement = () => {
                   setSearchVal('');
                   setStatusFilter('');
                   setRoleFilter('');
+                  setSelectedProgram('');
+                  setSelectedCourse('');
+                  setSelectedDept('');
                   setSortBy('-date_joined');
                   setPage(1);
                   setTimeout(() => loadUsers(), 100);
@@ -218,7 +290,7 @@ const UserManagement = () => {
             </div>
           </form>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 border-t border-border/60 pt-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 border-t border-border/60 pt-3">
             <div className="space-y-1">
               <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1"><FiFilter /> Account Status</span>
               <select
@@ -243,6 +315,42 @@ const UserManagement = () => {
                 <option value="student">Student Profile</option>
                 <option value="teacher">Teacher Profile</option>
                 <option value="admin">Administrator Profile</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1"><FiFilter /> Select Program</span>
+              <select
+                value={selectedProgram}
+                onChange={handleProgramChange}
+                className="w-full bg-bg border border-border px-3 py-2 rounded-xl text-xs text-text focus:outline-none focus:border-primary font-semibold cursor-pointer transition-colors"
+              >
+                <option value="">All Programs & Departments</option>
+                {Object.keys(departmentGroups).map((progGroup) => (
+                  <option key={progGroup} value={progGroup}>
+                    {progGroup}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1"><FiFilter /> Select Course / Branch</span>
+              <select
+                value={selectedCourse}
+                onChange={handleCourseChange}
+                disabled={!selectedProgram}
+                className="w-full bg-bg border border-border px-3 py-2 rounded-xl text-xs text-text focus:outline-none focus:border-primary font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {!selectedProgram ? (
+                  <option value="">(Select Program First)</option>
+                ) : (
+                  departmentGroups[selectedProgram]?.map((courseItem) => (
+                    <option key={courseItem} value={courseItem}>
+                      {courseItem}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
