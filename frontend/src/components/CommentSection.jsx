@@ -1,33 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { commentsAPI, getMediaUrl } from '../services/api';
-import { FiTrash2, FiSend, FiEdit2, FiX, FiCheck, FiThumbsUp } from 'react-icons/fi';
+import { FiTrash2, FiSend, FiEdit2, FiX, FiCheck, FiThumbsUp, FiHeart } from 'react-icons/fi';
 
 const reactionEmojis = {
-  like: '👍',
-  love: '❤️',
-  haha: '😂',
-  wow: '😮',
-  sad: '😢',
-  angry: '😡'
+  love: '❤️'
 };
 
 const reactionNames = {
-  like: 'Like',
-  love: 'Love',
-  haha: 'Haha',
-  wow: 'Wow',
-  sad: 'Sad',
-  angry: 'Angry'
+  love: 'Love'
 };
 
 const reactionColors = {
-  like: 'text-blue-500 font-bold',
-  love: 'text-red-500 font-bold',
-  haha: 'text-yellow-600 font-bold',
-  wow: 'text-yellow-600 font-bold',
-  sad: 'text-yellow-600 font-bold',
-  angry: 'text-orange-600 font-bold'
+  love: 'text-red-500 font-bold'
 };
 
 const CommentNode = ({
@@ -220,13 +205,13 @@ const CommentNode = ({
                     )}
 
                     <button
-                      onClick={() => handleReactComment(comment.id, comment.my_reaction || 'like')}
+                      onClick={() => handleReactComment(comment.id, comment.my_reaction || 'love')}
                       className={`flex items-center gap-1 text-[10px] font-semibold transition ${currentColor}`}
                     >
                       {currentEmoji ? (
                         <span>{currentEmoji}</span>
                       ) : (
-                        <FiThumbsUp />
+                        <FiHeart />
                       )}
                       <span>{currentName}</span>
                     </button>
@@ -558,11 +543,7 @@ const CommentSection = ({ postId, postOwnerUsername, onCommentAdded, onCommentDe
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Discussion</h4>
-        {isPostOwner && (
-          <span className="text-[10px] bg-purple-100 text-purple-700 font-extrabold uppercase px-2 py-0.5 rounded tracking-wider">
-            Comment Moderator
-          </span>
-        )}
+
       </div>
       
       {error && (

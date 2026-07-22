@@ -179,13 +179,19 @@ class HomeFeedView(views.APIView):
                 user_dept = profile.department
                 
                 followed_cat_ids = set(CategoryFollow.objects.filter(user=request.user).values_list('category_id', flat=True))
+                from accounts.models import Follower
+                followed_user_ids = set(Follower.objects.filter(follower=request.user).values_list('following_id', flat=True))
                 tech_score = profile.tech_score
                 non_tech_score = profile.non_tech_score
                 
                 def calculate_rank(post):
                     score = 0
                     
-                    # 1. Followed Categories (highest priority)
+                    # 1a. Followed Authors/Creators (highest priority)
+                    if post.user_id in followed_user_ids:
+                        score += 150
+                        
+                    # 1b. Followed Categories
                     if post.category_id in followed_cat_ids:
                         score += 100
                         
@@ -687,19 +693,14 @@ class PostSearchView(views.APIView):
             # Take top 10 most recent posts as fallback
             posts_list = list(fallback_qs.order_by('-created_at')[:10])
 
-        # Get requesting user metadata
-        user = request.user
-        is_auth = user.is_authenticated
-        user_dept = ''
-        followed_cat_ids = set()
-        tech_score = 0
-        non_tech_score = 0
-
+        followed_user_ids = set()
         if is_auth:
             try:
                 profile = user.profile
                 user_dept = profile.department.lower() if profile.department else ''
                 followed_cat_ids = set(CategoryFollow.objects.filter(user=user).values_list('category_id', flat=True))
+                from accounts.models import Follower
+                followed_user_ids = set(Follower.objects.filter(follower=user).values_list('following_id', flat=True))
                 tech_score = profile.tech_score
                 non_tech_score = profile.non_tech_score
             except Exception:
@@ -732,6 +733,9 @@ class PostSearchView(views.APIView):
                 score += 80
 
             if is_auth:
+                # Followed author -> +100
+                if post.user_id in followed_user_ids:
+                    score += 100
                 # Followed category -> +40
                 if post.category_id in followed_cat_ids:
                     score += 40
