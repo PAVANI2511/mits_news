@@ -537,8 +537,8 @@ class PostInterestView(views.APIView):
                         profile.non_tech_score += 2
                     profile.save()
             
-            # Send immediate confirmation email if status set to interested
-            if status_val == 'interested':
+            # Send immediate confirmation email if status set to interested and post has event or registration dates
+            if status_val == 'interested' and (post_obj.event_date or post_obj.last_date):
                 import sys
                 is_testing = 'test' in sys.argv
                 

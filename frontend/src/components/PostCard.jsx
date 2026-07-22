@@ -228,10 +228,23 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
     const prevStatus = currentInterest;
 
     setCurrentInterest(newStatus || null);
+    setErrorMessage('');
+    setSuccessMessage('');
 
     try {
       const res = await postsAPI.setInterest(post.id, newStatus);
       setCurrentInterest(res.data.interest_status);
+      if (res.data.interest_status === 'interested') {
+        if (post.event_date || post.last_date) {
+          setSuccessMessage("Interest registered! A confirmation email with event details has been sent.");
+        } else {
+          setSuccessMessage("Interest registered successfully!");
+        }
+      } else if (res.data.interest_status === 'not_interested') {
+        setSuccessMessage("Status updated to Not Interested.");
+      } else {
+        setSuccessMessage("Interest cleared.");
+      }
     } catch (err) {
       console.error(err);
       setCurrentInterest(prevStatus);
@@ -248,6 +261,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentsCount, setCommentsCount] = useState(post.comments_count || 0);
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [shareSuccess, setShareSuccess] = useState(false);
 
   const [showReportModal, setShowReportModal] = useState(false);
@@ -717,78 +731,83 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
       )}
 
       {/* Event Schedule Info Panel */}
-      {(post.event_date || post.last_date) && (
-        <div className={`mx-4 mt-3 p-4 rounded-2xl bg-bg/50 border border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 ${isExpired ? 'opacity-75' : ''}`}>
-          <div className="space-y-1.5 flex-1 min-w-0">
-            <div className={`text-[10px] font-black uppercase tracking-wider ${
-              isEventCompleted 
-                ? 'text-gray-500' 
-                : isRegistrationClosed 
-                  ? 'text-orange-500' 
-                  : 'text-primary'
-            }`}>
-              {isEventCompleted 
-                ? 'Event Completed' 
-                : isRegistrationClosed 
-                  ? 'Registration Closed' 
-                  : 'MITS Campus Activity'}
+      <div className={`mx-4 mt-3 p-4 rounded-2xl bg-bg/50 border border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 ${isExpired ? 'opacity-75' : ''}`}>
+        <div className="space-y-1.5 flex-1 min-w-0">
+          <div className={`text-[10px] font-black uppercase tracking-wider ${
+            isEventCompleted 
+              ? 'text-gray-500' 
+              : isRegistrationClosed 
+                ? 'text-orange-500' 
+                : 'text-primary'
+          }`}>
+            {isEventCompleted 
+              ? 'Event Completed' 
+              : isRegistrationClosed 
+                ? 'Registration Closed' 
+                : 'MITS Campus Activity'}
+          </div>
+          {post.event_date && (
+            <div className="text-xs text-text flex items-center gap-1.5">
+              <span className="font-bold text-gray-500">Event Date:</span>
+              <span className="font-semibold text-text">{new Date(post.event_date).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
             </div>
-            {post.event_date && (
-              <div className="text-xs text-text flex items-center gap-1.5">
-                <span className="font-bold text-gray-500">Event Date:</span>
-                <span className="font-semibold text-text">{new Date(post.event_date).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-              </div>
-            )}
-            {post.last_date && (
-              <div className="text-xs text-text flex items-center gap-1.5">
-                <span className="font-bold text-gray-500">Reg. Closes:</span>
-                <span className={isRegistrationClosed ? 'text-gray-500 font-semibold' : 'text-red-500 font-bold'}>
-                  {new Date(post.last_date).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-2 w-full sm:w-auto shrink-0">
-            <button
-              onClick={() => !isExpired && handleInterestSelection('interested')}
-              disabled={isExpired}
-              className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm ${
-                isExpired
-                  ? currentInterest === 'interested'
-                    ? 'bg-green-500/50 text-white cursor-not-allowed'
-                    : 'bg-card border border-border text-gray-400 cursor-not-allowed'
-                  : currentInterest === 'interested'
-                    ? 'bg-green-500 text-white shadow-green-500/10'
-                    : 'bg-card border border-border text-gray-500 hover:text-green-500 hover:bg-green-500/5'
-              }`}
-            >
-              👍 Interested
-            </button>
-            <button
-              onClick={() => !isExpired && handleInterestSelection('not_interested')}
-              disabled={isExpired}
-              className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm ${
-                isExpired
-                  ? currentInterest === 'not_interested'
-                    ? 'bg-gray-500/50 text-white cursor-not-allowed'
-                    : 'bg-card border border-border text-gray-400 cursor-not-allowed'
-                  : currentInterest === 'not_interested'
-                    ? 'bg-gray-500 text-white shadow-sm'
-                    : 'bg-card border border-border text-gray-500 hover:text-red-500 hover:bg-red-500/5'
-              }`}
-            >
-              👎 Not Interested
-            </button>
-          </div>
+          )}
+          {post.last_date && (
+            <div className="text-xs text-text flex items-center gap-1.5">
+              <span className="font-bold text-gray-500">Reg. Closes:</span>
+              <span className={isRegistrationClosed ? 'text-gray-500 font-semibold' : 'text-red-500 font-bold'}>
+                {new Date(post.last_date).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          )}
         </div>
-      )}
+
+        <div className="flex gap-2 w-full sm:w-auto shrink-0">
+          <button
+            onClick={() => !isExpired && handleInterestSelection('interested')}
+            disabled={isExpired}
+            className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm ${
+              isExpired
+                ? currentInterest === 'interested'
+                  ? 'bg-green-500/50 text-white cursor-not-allowed'
+                  : 'bg-card border border-border text-gray-400 cursor-not-allowed'
+                : currentInterest === 'interested'
+                  ? 'bg-green-500 text-white shadow-green-500/10'
+                  : 'bg-card border border-border text-gray-500 hover:text-green-500 hover:bg-green-500/5'
+            }`}
+          >
+            👍 Interested
+          </button>
+          <button
+            onClick={() => !isExpired && handleInterestSelection('not_interested')}
+            disabled={isExpired}
+            className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm ${
+              isExpired
+                ? currentInterest === 'not_interested'
+                  ? 'bg-gray-500/50 text-white cursor-not-allowed'
+                  : 'bg-card border border-border text-gray-400 cursor-not-allowed'
+                : currentInterest === 'not_interested'
+                  ? 'bg-gray-500 text-white shadow-sm'
+                  : 'bg-card border border-border text-gray-500 hover:text-red-500 hover:bg-red-500/5'
+            }`}
+          >
+            👎 Not Interested
+          </button>
+        </div>
+      </div>
 
       {/* Alerts / Error messages */}
       {errorMessage && (
         <div className="mx-4 mt-3 bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2 rounded-lg flex items-center justify-between">
           <span>{errorMessage}</span>
           <button onClick={() => setErrorMessage('')} className="font-bold ml-2">×</button>
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="mx-4 mt-3 bg-green-50 border border-green-200 text-green-700 text-xs px-3 py-2 rounded-lg flex items-center justify-between animate-fadeIn">
+          <span>{successMessage}</span>
+          <button onClick={() => setSuccessMessage('')} className="font-bold ml-2">×</button>
         </div>
       )}
 

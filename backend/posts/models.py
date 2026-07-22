@@ -69,6 +69,10 @@ class Post(models.Model):
         return f"Post by {self.user.username} at {self.created_at}"
 
     def save(self, *args, **kwargs):
+        if not self.department and self.user:
+            profile = getattr(self.user, 'profile', None)
+            if profile and profile.department:
+                self.department = profile.department
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
