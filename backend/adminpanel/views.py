@@ -842,8 +842,7 @@ class AdminAnalyticsView(views.APIView):
             current_start = start_dt
             while current_start < end_dt:
                 current_end = min(current_start + timedelta(days=6, hours=23, minutes=59, seconds=59), end_dt)
-                week_num = current_start.isocalendar()[1]
-                label = f"Week {week_num}"
+                label = f"{current_start.strftime('%b %d')} - {current_end.strftime('%b %d')}"
                 intervals.append((current_start, current_end, label))
                 current_start += timedelta(days=7)
         elif period == 'monthly':
