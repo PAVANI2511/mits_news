@@ -18,7 +18,7 @@ def post_created_signal(sender, instance, created, **kwargs):
     author = instance.user
     category = instance.category
     
-    from .models import Category, CategoryFollow
+    from .models import Category, CategoryFollow, UserInterest
     from django.utils import timezone
     
     # Calculate notification priority
