@@ -14,9 +14,13 @@ export default {
         text: 'var(--color-text)',
         card: 'var(--color-card)',
         border: 'var(--color-border)',
+        mitsRed: '#800000',
+        mitsDarkRed: '#660000',
       },
       fontFamily: {
         sans: ['Outfit', 'Inter', 'sans-serif'],
+        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+        cinzel: ['Cinzel', 'serif'],
       },
     },
   },

@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar';
 import PostCard from '../components/PostCard';
 import { PostSkeleton } from '../components/LoadingSkeleton';
 import { postsAPI, adminAPI } from '../services/api';
-import { FiVolume2, FiInfo, FiRefreshCw } from 'react-icons/fi';
+import { FiVolume2, FiInfo, FiRefreshCw, FiAward } from 'react-icons/fi';
 
 const HomeFeed = () => {
   const [searchParams] = useSearchParams();
@@ -75,17 +75,33 @@ const HomeFeed = () => {
   return (
     <MainLayout sidebar={<Sidebar />}>
       <div className="space-y-6">
+        {/* Editorial Welcome Banner */}
+        <div className="bg-white rounded-3xl border border-gray-100 p-6 sm:p-8 shadow-xl text-center space-y-2 relative overflow-hidden">
+          <div className="flex justify-center items-center gap-1.5">
+            <FiAward className="text-xl text-[#800000]" />
+            <span className="font-serif text-xs font-bold text-[#800000] uppercase tracking-widest">
+              THE OFFICIAL STUDENT VOICE
+            </span>
+          </div>
+          <h1 className="font-serif text-3xl sm:text-4xl font-normal text-gray-900 tracking-tight">
+            MITS <span className="text-[#800000]">Campus Newspaper</span> Portal
+          </h1>
+          <p className="font-serif text-xs sm:text-sm text-gray-600 max-w-xl mx-auto leading-relaxed">
+            Discover live articles, campus announcements, student projects, and editorial stories from across MITS.
+          </p>
+        </div>
+
         {/* Sticky Announcements Banner */}
         {announcements.length > 0 && (
-          <div className="bg-gradient-to-r from-red-500/10 to-primary/10 border border-primary/20 rounded-2xl p-4 shadow-sm space-y-2">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-              <FiVolume2 className="animate-bounce" />
+          <div className="bg-gradient-to-r from-[#800000]/10 via-[#800000]/5 to-transparent border border-[#800000]/20 rounded-3xl p-5 shadow-lg space-y-2">
+            <div className="flex items-center gap-2 text-[#800000] font-serif font-bold text-xs uppercase tracking-wider">
+              <FiVolume2 className="animate-bounce text-sm" />
               <span>Campus Announcement</span>
             </div>
             {announcements.map((ann) => (
-              <div key={ann.id} className="text-xs text-text border-b border-border/40 pb-2 last:border-0 last:pb-0">
-                <span className="font-bold text-text/90 block mb-0.5">{ann.title}</span>
-                <p className="text-gray-500 leading-relaxed">{ann.content}</p>
+              <div key={ann.id} className="font-serif text-xs text-gray-900 border-b border-gray-200/60 pb-2 last:border-0 last:pb-0">
+                <span className="font-bold text-[#800000] block mb-0.5">{ann.title}</span>
+                <p className="text-gray-600 leading-relaxed">{ann.content}</p>
               </div>
             ))}
           </div>

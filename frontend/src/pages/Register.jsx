@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { authAPI } from '../services/api';
 import { FiMail, FiLock, FiUser, FiArrowRight, FiBookOpen, FiPhone, FiEye, FiEyeOff } from 'react-icons/fi';
+import campusBg from '../assets/mits_campus.png';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -237,442 +239,532 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg px-4 py-12 transition-colors duration-300">
-      <div className="max-w-xl w-full bg-card border border-border p-8 rounded-3xl shadow-lg space-y-6">
-        <div className="text-center">
-          <Link to="/" className="text-xl font-black text-primary font-mono tracking-wider">
-            MITS NEWSPAPER
+    <div className="relative min-h-screen w-full overflow-hidden bg-gray-900 font-sans selection:bg-[#800000] selection:text-white flex flex-col justify-between">
+      {/* Background Campus Photograph */}
+      <motion.div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0"
+        style={{ backgroundImage: `url(${campusBg})` }}
+        initial={{ scale: 1.04, filter: 'brightness(0.9)' }}
+        animate={{ scale: 1.02, filter: 'brightness(0.85)' }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      />
+
+      {/* Dark gradient overlay for optimal readability */}
+      <div className="absolute inset-0 bg-black/35 pointer-events-none z-[1]" />
+
+      {/* Top Navbar */}
+      <header className="relative z-20 max-w-7xl mx-auto w-full px-6 sm:px-12 h-20 sm:h-24 flex items-center justify-between">
+        {/* Brand Logo */}
+        <Link to="/" className="flex items-center gap-2.5 group focus:outline-none cursor-pointer">
+          <div className="bg-[#800000] text-white px-2.5 py-1 rounded-md font-bold text-sm tracking-wider shadow-sm group-hover:bg-[#660000] transition">
+            MITS
+          </div>
+          <span className="font-serif text-2xl font-bold text-[#800000] tracking-tight">
+            Newspaper
+          </span>
+        </Link>
+
+        {/* Right Navigation */}
+        <div className="flex items-center gap-4 sm:gap-6">
+          <Link
+            to="/feed"
+            className="font-serif text-sm sm:text-base font-medium text-[#800000] hover:underline transition"
+          >
+            Explore Feed
           </Link>
-          <h2 className="mt-2 text-2xl font-extrabold text-text">Create Account</h2>
-          <p className="mt-1.5 text-xs text-gray-500">Must register using your official @mits.ac.in college email</p>
+          <Link
+            to="/login"
+            className="px-6 py-2 bg-[#800000] hover:bg-[#660000] text-white rounded-full font-serif text-sm font-medium shadow transition cursor-pointer"
+          >
+            Login
+          </Link>
         </div>
+      </header>
 
-        {errors.general && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-2.5 rounded-xl">
-            {errors.general}
-          </div>
-        )}
+      {/* Main Content Area */}
+      <div className="relative z-10 max-w-7xl mx-auto w-full flex-1 flex items-center justify-center px-4 sm:px-8 py-4">
+        <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 items-center py-2">
+          {/* Left Typography Overlay: MITS NEWS */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="hidden md:flex md:col-span-5 flex-col justify-center items-start pl-4 select-none"
+          >
+            <h2 className="font-serif text-5xl lg:text-6xl xl:text-7xl font-bold text-white tracking-wider leading-[0.95] drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)] uppercase">
+              MITS NEWS
+            </h2>
+            <p className="mt-4 font-serif text-base lg:text-lg text-white/90 drop-shadow-md leading-relaxed">
+              Create your official student or faculty profile to share campus news, write articles, and engage with the community.
+            </p>
+          </motion.div>
 
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 text-xs px-4 py-2.5 rounded-xl">
-            {success}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="sm:col-span-1">
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              Username *
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                name="username"
-                placeholder="e.g. chinni@25"
-                value={formData.username}
-                onChange={handleChange}
-                className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all ${
-                  errors.username ? 'border-red-500 ring-1 ring-red-500' : 'border-border'
-                }`}
-              />
-              <FiUser className="absolute left-3.5 top-3.5 text-gray-400" />
+          {/* Right Floating White Register Card */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+            className="md:col-span-7 w-full max-w-2xl ml-auto bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-100 max-h-[82vh] overflow-y-auto"
+          >
+            <div className="mb-5">
+              <h2 className="font-serif text-3xl sm:text-4xl font-extrabold text-[#800000] tracking-wider uppercase">
+                CREATE PROFILE
+              </h2>
+              <p className="mt-1 font-serif text-xs sm:text-sm text-gray-600">
+                Must register using your official <span className="font-bold text-[#800000]">@mits.ac.in</span> college email.
+              </p>
             </div>
-            {errors.username && (
-              <p className="mt-1 text-[11px] text-red-500 font-bold">{errors.username}</p>
-            )}
-          </div>
 
-          <div className="sm:col-span-1">
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              Full Name *
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                name="name"
-                placeholder="Student / Teacher Name"
-                value={formData.name}
-                onChange={handleChange}
-                className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all ${
-                  errors.name ? 'border-red-500 ring-1 ring-red-500' : 'border-border'
-                }`}
-              />
-              <FiUser className="absolute left-3.5 top-3.5 text-gray-400" />
-            </div>
-            {errors.name && (
-              <p className="mt-1 text-[11px] text-red-500 font-bold">{errors.name}</p>
-            )}
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              College Email (@mits.ac.in) *
-            </label>
-            <div className="relative">
-              <input
-                type="email"
-                name="email"
-                placeholder="yourname@mits.ac.in"
-                value={formData.email}
-                onChange={handleChange}
-                className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all ${
-                  errors.email ? 'border-red-500 ring-1 ring-red-500' : 'border-border'
-                }`}
-              />
-              <FiMail className="absolute left-3.5 top-3.5 text-gray-400" />
-            </div>
-            {errors.email && (
-              <p className="mt-1 text-[11px] text-red-500 font-bold">{errors.email}</p>
-            )}
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              Mobile Number *
-            </label>
-            <div className="relative">
-              <input
-                type="tel"
-                name="mobile_number"
-                placeholder="e.g. 9876543210"
-                value={formData.mobile_number}
-                onChange={handleChange}
-                className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all ${
-                  errors.mobile_number ? 'border-red-500 ring-1 ring-red-500' : 'border-border'
-                }`}
-              />
-              <FiPhone className="absolute left-3.5 top-3.5 text-gray-400" />
-            </div>
-            {errors.mobile_number && (
-              <p className="mt-1 text-[11px] text-red-500 font-bold">{errors.mobile_number}</p>
-            )}
-          </div>
-
-          {/* Student or Teacher Selector */}
-          <div className="sm:col-span-2 border-t border-border pt-4 mt-2">
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-              Select Role *
-            </label>
-            <div className="flex gap-6">
-              <label className="flex items-center gap-2 text-sm font-semibold text-text cursor-pointer">
-                <input
-                  type="radio"
-                  name="role_type"
-                  value="student"
-                  checked={formData.role_type === 'student'}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-primary focus:ring-primary border-border"
-                />
-                Student
-              </label>
-              <label className="flex items-center gap-2 text-sm font-semibold text-text cursor-pointer">
-                <input
-                  type="radio"
-                  name="role_type"
-                  value="teacher"
-                  checked={formData.role_type === 'teacher'}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-primary focus:ring-primary border-border"
-                />
-                Teacher
-              </label>
-            </div>
-          </div>
-
-          {/* Common Department dropdown */}
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              Department *
-            </label>
-            <div className="relative">
-              <select
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 focus:ring-primary text-sm appearance-none transition-all ${
-                  errors.department ? 'border-red-500 ring-1 ring-red-500' : 'border-border'
-                }`}
-              >
-                <option value="">Select Department</option>
-                {Object.keys(departmentGroups).map(groupName => (
-                  <optgroup key={groupName} label={groupName}>
-                    {departmentGroups[groupName].map(dept => (
-                      <option key={dept} value={dept}>{dept}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-              <FiBookOpen className="absolute left-3.5 top-3.5 text-gray-400" />
-            </div>
-            {errors.department && (
-              <p className="mt-1 text-[11px] text-red-500 font-bold">{errors.department}</p>
-            )}
-          </div>
-
-          {/* Custom Department inputs if 'Other' selected */}
-          {formData.department === 'Other' && (
-            <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Custom Course / Branch *
-                </label>
-                <input
-                  type="text"
-                  name="customBranch"
-                  placeholder="e.g. B.Tech"
-                  value={customBranch}
-                  onChange={(e) => setCustomBranch(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all ${
-                    errors.customBranch ? 'border-red-500 ring-1 ring-red-500' : 'border-border'
-                  }`}
-                />
-                {errors.customBranch && (
-                  <p className="mt-1 text-[11px] text-red-500 font-bold">{errors.customBranch}</p>
-                )}
+            {errors.general && (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-2.5 rounded-xl mb-4 font-serif">
+                {errors.general}
               </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Custom Department Name *
-                </label>
-                <input
-                  type="text"
-                  name="customDept"
-                  placeholder="e.g. CSE"
-                  value={customDept}
-                  onChange={(e) => setCustomDept(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all ${
-                    errors.customDept ? 'border-red-500 ring-1 ring-red-500' : 'border-border'
-                  }`}
-                />
-                {errors.customDept && (
-                  <p className="mt-1 text-[11px] text-red-500 font-bold">{errors.customDept}</p>
-                )}
-              </div>
-            </div>
-          )}
+            )}
 
-          {/* Conditional: Student fields */}
-          {formData.role_type === 'student' && (
-            <>
+            {success && (
+              <div className="bg-green-50 border border-green-200 text-green-700 text-xs px-4 py-2.5 rounded-xl mb-4 font-serif">
+                {success}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Username */}
               <div className="sm:col-span-1">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Year of Study *
-                </label>
-                <div className="relative">
-                  <select
-                    name="year"
-                    value={formData.year}
-                    onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 focus:ring-primary text-sm appearance-none transition-all ${
-                      errors.year ? 'border-red-500 ring-1 ring-red-500' : 'border-border'
-                    }`}
-                  >
-                    <option value="">Select Year</option>
-                    {years.map(yr => (
-                      <option key={yr} value={yr}>{yr}</option>
-                    ))}
-                  </select>
-                  <FiUser className="absolute left-3.5 top-3.5 text-gray-400" />
-                </div>
-                {errors.year && (
-                  <p className="mt-1 text-[11px] text-red-500 font-bold">{errors.year}</p>
-                )}
-              </div>
-
-              <div className="sm:col-span-1">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Roll Number *
+                <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                  Username *
                 </label>
                 <div className="relative">
                   <input
                     type="text"
-                    name="roll_number"
-                    placeholder="e.g. 21691A0501"
-                    value={formData.roll_number}
+                    name="username"
+                    placeholder="e.g. chinni@25"
+                    value={formData.username}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all ${
-                      errors.roll_number ? 'border-red-500 ring-1 ring-red-500' : 'border-border'
+                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                      errors.username ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                     }`}
                   />
-                  <FiUser className="absolute left-3.5 top-3.5 text-gray-400" />
+                  <FiUser className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
                 </div>
-                {errors.roll_number && (
-                  <p className="mt-1 text-[11px] text-red-500 font-bold">{errors.roll_number}</p>
+                {errors.username && (
+                  <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.username}</p>
                 )}
               </div>
-            </>
-          )}
 
-          {/* Conditional: Teacher fields */}
-          {formData.role_type === 'teacher' && (
-            <>
+              {/* Full Name */}
               <div className="sm:col-span-1">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Designation *
+                <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                  Full Name *
                 </label>
                 <div className="relative">
                   <input
                     type="text"
-                    name="designation"
-                    placeholder="e.g. Associate Professor"
-                    value={formData.designation}
+                    name="name"
+                    placeholder="Student / Teacher Name"
+                    value={formData.name}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all ${
-                      errors.designation ? 'border-red-500 ring-1 ring-red-500' : 'border-border'
+                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                      errors.name ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                     }`}
                   />
-                  <FiUser className="absolute left-3.5 top-3.5 text-gray-400" />
+                  <FiUser className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
                 </div>
-                {errors.designation && (
-                  <p className="mt-1 text-[11px] text-red-500 font-bold">{errors.designation}</p>
+                {errors.name && (
+                  <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.name}</p>
                 )}
               </div>
 
-              <div className="sm:col-span-1">
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Role in Department *
+              {/* College Email */}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                  College Email (@mits.ac.in) *
                 </label>
                 <div className="relative">
-                  <select
-                    name="teacher_role"
-                    value={formData.teacher_role}
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="yourname@mits.ac.in"
+                    value={formData.email}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 focus:ring-primary text-sm appearance-none transition-all ${
-                      errors.teacher_role ? 'border-red-500 ring-1 ring-red-500' : 'border-border'
+                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                      errors.email ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                     }`}
-                  >
-                    <option value="">Select Role</option>
-                    <option value="HOD">HOD</option>
-                    <option value="Teacher">Teacher</option>
-                    <option value="AO">AO</option>
-                    <option value="Attender">Attender</option>
-                    <option value="Others">Others</option>
-                  </select>
-                  <FiUser className="absolute left-3.5 top-3.5 text-gray-400" />
+                  />
+                  <FiMail className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
                 </div>
-                {errors.teacher_role && (
-                  <p className="mt-1 text-[11px] text-red-500 font-bold">{errors.teacher_role}</p>
+                {errors.email && (
+                  <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.email}</p>
                 )}
               </div>
 
-              {/* Specify Custom Role Name if 'Others' is selected */}
-              {formData.teacher_role === 'Others' && (
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Specify Custom Role Name *
+              {/* Mobile Number */}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                  Mobile Number *
+                </label>
+                <div className="relative">
+                  <input
+                    type="tel"
+                    name="mobile_number"
+                    placeholder="e.g. 9876543210"
+                    value={formData.mobile_number}
+                    onChange={handleChange}
+                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                      errors.mobile_number ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
+                    }`}
+                  />
+                  <FiPhone className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
+                </div>
+                {errors.mobile_number && (
+                  <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.mobile_number}</p>
+                )}
+              </div>
+
+              {/* Student or Teacher Selector */}
+              <div className="sm:col-span-2 border-t border-gray-100 pt-3 mt-1">
+                <label className="block text-xs font-serif font-semibold text-gray-800 uppercase tracking-wider mb-2">
+                  Select Role *
+                </label>
+                <div className="flex gap-6">
+                  <label className="flex items-center gap-2 text-sm font-serif font-medium text-gray-800 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="role_type"
+                      value="student"
+                      checked={formData.role_type === 'student'}
+                      onChange={handleChange}
+                      className="w-4 h-4 text-[#800000] focus:ring-[#800000] border-gray-300 accent-[#800000] cursor-pointer"
+                    />
+                    Student
                   </label>
-                  <div className="relative">
+                  <label className="flex items-center gap-2 text-sm font-serif font-medium text-gray-800 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="role_type"
+                      value="teacher"
+                      checked={formData.role_type === 'teacher'}
+                      onChange={handleChange}
+                      className="w-4 h-4 text-[#800000] focus:ring-[#800000] border-gray-300 accent-[#800000] cursor-pointer"
+                    />
+                    Teacher
+                  </label>
+                </div>
+              </div>
+
+              {/* Department */}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                  Department *
+                </label>
+                <div className="relative">
+                  <select
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all appearance-none cursor-pointer ${
+                      errors.department ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
+                    }`}
+                  >
+                    <option value="">Select Department</option>
+                    {Object.keys(departmentGroups).map(groupName => (
+                      <optgroup key={groupName} label={groupName}>
+                        {departmentGroups[groupName].map(dept => (
+                          <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                  <FiBookOpen className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400 pointer-events-none" />
+                </div>
+                {errors.department && (
+                  <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.department}</p>
+                )}
+              </div>
+
+              {/* Custom Department inputs if 'Other' selected */}
+              {formData.department === 'Other' && (
+                <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                      Custom Course / Branch *
+                    </label>
                     <input
                       type="text"
-                      name="customTeacherRole"
-                      placeholder="e.g. Lab Assistant"
-                      value={customTeacherRole}
-                      onChange={(e) => setCustomTeacherRole(e.target.value)}
-                      className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all ${
-                        errors.customTeacherRole ? 'border-red-500 ring-1 ring-red-500' : 'border-border'
+                      name="customBranch"
+                      placeholder="e.g. B.Tech"
+                      value={customBranch}
+                      onChange={(e) => setCustomBranch(e.target.value)}
+                      className={`w-full px-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                        errors.customBranch ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                       }`}
                     />
-                    <FiUser className="absolute left-3.5 top-3.5 text-gray-400" />
+                    {errors.customBranch && (
+                      <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.customBranch}</p>
+                    )}
                   </div>
-                  {errors.customTeacherRole && (
-                    <p className="mt-1 text-[11px] text-red-500 font-bold">{errors.customTeacherRole}</p>
-                  )}
+                  <div>
+                    <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                      Custom Department Name *
+                    </label>
+                    <input
+                      type="text"
+                      name="customDept"
+                      placeholder="e.g. CSE"
+                      value={customDept}
+                      onChange={(e) => setCustomDept(e.target.value)}
+                      className={`w-full px-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                        errors.customDept ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
+                      }`}
+                    />
+                    {errors.customDept && (
+                      <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.customDept}</p>
+                    )}
+                  </div>
                 </div>
               )}
-            </>
-          )}
 
-          {/* Short Bio (At Last) */}
-          <div className="sm:col-span-2 border-t border-border pt-4 mt-2">
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              Short Bio
-            </label>
-            <textarea
-              name="bio"
-              rows="2"
-              placeholder="Tell us about yourself..."
-              value={formData.bio}
-              onChange={handleChange}
-              className="w-full px-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all"
-            />
-          </div>
+              {/* Student Fields */}
+              {formData.role_type === 'student' && (
+                <>
+                  <div className="sm:col-span-1">
+                    <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                      Year of Study *
+                    </label>
+                    <div className="relative">
+                      <select
+                        name="year"
+                        value={formData.year}
+                        onChange={handleChange}
+                        className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all appearance-none cursor-pointer ${
+                          errors.year ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
+                        }`}
+                      >
+                        <option value="">Select Year</option>
+                        {years.map(yr => (
+                          <option key={yr} value={yr}>{yr}</option>
+                        ))}
+                      </select>
+                      <FiUser className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400 pointer-events-none" />
+                    </div>
+                    {errors.year && (
+                      <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.year}</p>
+                    )}
+                  </div>
 
-          {/* Password (At Last) */}
-          <div className="sm:col-span-1">
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              Password *
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleChange}
-                className={`w-full pl-10 pr-10 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all ${
-                  errors.password ? 'border-red-500 ring-1 ring-red-500' : 'border-border'
-                }`}
-              />
-              <FiLock className="absolute left-3.5 top-3.5 text-gray-400" />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-3.5 text-gray-400 hover:text-text focus:outline-none"
+                  <div className="sm:col-span-1">
+                    <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                      Roll Number *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="roll_number"
+                        placeholder="e.g. 21691A0501"
+                        value={formData.roll_number}
+                        onChange={handleChange}
+                        className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                          errors.roll_number ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
+                        }`}
+                      />
+                      <FiUser className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
+                    </div>
+                    {errors.roll_number && (
+                      <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.roll_number}</p>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Teacher Fields */}
+              {formData.role_type === 'teacher' && (
+                <>
+                  <div className="sm:col-span-1">
+                    <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                      Designation *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="designation"
+                        placeholder="e.g. Associate Professor"
+                        value={formData.designation}
+                        onChange={handleChange}
+                        className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                          errors.designation ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
+                        }`}
+                      />
+                      <FiUser className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
+                    </div>
+                    {errors.designation && (
+                      <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.designation}</p>
+                    )}
+                  </div>
+
+                  <div className="sm:col-span-1">
+                    <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                      Role in Department *
+                    </label>
+                    <div className="relative">
+                      <select
+                        name="teacher_role"
+                        value={formData.teacher_role}
+                        onChange={handleChange}
+                        className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all appearance-none cursor-pointer ${
+                          errors.teacher_role ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
+                        }`}
+                      >
+                        <option value="">Select Role</option>
+                        <option value="HOD">HOD</option>
+                        <option value="Teacher">Teacher</option>
+                        <option value="AO">AO</option>
+                        <option value="Attender">Attender</option>
+                        <option value="Others">Others</option>
+                      </select>
+                      <FiUser className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400 pointer-events-none" />
+                    </div>
+                    {errors.teacher_role && (
+                      <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.teacher_role}</p>
+                    )}
+                  </div>
+
+                  {formData.teacher_role === 'Others' && (
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                        Specify Custom Role Name *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          name="customTeacherRole"
+                          placeholder="e.g. Lab Assistant"
+                          value={customTeacherRole}
+                          onChange={(e) => setCustomTeacherRole(e.target.value)}
+                          className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                            errors.customTeacherRole ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
+                          }`}
+                        />
+                        <FiUser className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
+                      </div>
+                      {errors.customTeacherRole && (
+                        <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.customTeacherRole}</p>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Short Bio */}
+              <div className="sm:col-span-2 border-t border-gray-100 pt-3 mt-1">
+                <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                  Short Bio
+                </label>
+                <textarea
+                  name="bio"
+                  rows="2"
+                  placeholder="Tell us about yourself..."
+                  value={formData.bio}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all"
+                />
+              </div>
+
+              {/* Password */}
+              <div className="sm:col-span-1">
+                <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                  Password *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className={`w-full pl-10 pr-10 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                      errors.password ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
+                    }`}
+                  />
+                  <FiLock className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-3 sm:top-3.5 text-gray-400 hover:text-gray-700 focus:outline-none"
+                  >
+                    {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.password}</p>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div className="sm:col-span-1">
+                <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                  Confirm Password *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirm_password"
+                    placeholder="••••••••"
+                    value={formData.confirm_password}
+                    onChange={handleChange}
+                    className={`w-full pl-10 pr-10 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                      errors.confirm_password ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
+                    }`}
+                  />
+                  <FiLock className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3.5 top-3 sm:top-3.5 text-gray-400 hover:text-gray-700 focus:outline-none"
+                  >
+                    {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                  </button>
+                </div>
+                {errors.confirm_password && (
+                  <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.confirm_password}</p>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                type="submit"
+                disabled={isLoading}
+                className="sm:col-span-2 mt-2 w-full py-3.5 bg-[#800000] hover:bg-[#660000] text-white rounded-xl font-serif font-bold text-base tracking-wider uppercase shadow-md hover:shadow-lg disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="mt-1 text-[11px] text-red-500 font-bold">{errors.password}</p>
-            )}
-          </div>
+                {isLoading ? (
+                  'CREATING ACCOUNT...'
+                ) : (
+                  <>
+                    <span>CREATE PROFILE</span>
+                    <FiArrowRight className="text-lg" />
+                  </>
+                )}
+              </motion.button>
 
-          {/* Confirm Password (At Last) */}
-          <div className="sm:col-span-1">
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              Confirm Password *
-            </label>
-            <div className="relative">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                name="confirm_password"
-                placeholder="••••••••"
-                value={formData.confirm_password}
-                onChange={handleChange}
-                className={`w-full pl-10 pr-10 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all ${
-                  errors.confirm_password ? 'border-red-500 ring-1 ring-red-500' : 'border-border'
-                }`}
-              />
-              <FiLock className="absolute left-3.5 top-3.5 text-gray-400" />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3.5 top-3.5 text-gray-400 hover:text-text focus:outline-none"
-              >
-                {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-              </button>
-            </div>
-            {errors.confirm_password && (
-              <p className="mt-1 text-[11px] text-red-500 font-bold">{errors.confirm_password}</p>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="sm:col-span-2 mt-2 w-full py-3.5 bg-primary text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-primary/95 shadow-lg shadow-primary/25 hover:shadow-primary/35 disabled:opacity-50 transition-all"
-          >
-            {isLoading ? 'Creating Account...' : <><span className="text-sm">Create Account</span> <FiArrowRight /></>}
-          </button>
-        </form>
-
-        <div className="text-center text-xs text-gray-500">
-          Already have an account?{' '}
-          <Link to="/login" className="font-bold text-primary hover:underline">
-            Login here
-          </Link>
+              {/* Sign In Link */}
+              <div className="text-center pt-3 border-t border-gray-100 sm:col-span-2">
+                <span className="font-serif text-xs text-gray-500">
+                  Already have an account?{' '}
+                </span>
+                <Link
+                  to="/login"
+                  className="font-serif text-xs font-semibold text-[#800000] hover:underline"
+                >
+                  Login here
+                </Link>
+              </div>
+            </form>
+          </motion.div>
         </div>
       </div>
+
+      {/* Bottom Spacer */}
+      <footer className="relative z-20 h-6 w-full" />
     </div>
   );
 };

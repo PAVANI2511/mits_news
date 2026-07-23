@@ -1,16 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Outfit:wght@300;400;500;600;700;800&family=Cinzel:wght@500;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --color-primary: #3b82f6;
-  --color-secondary: #1d4ed8;
-  --color-bg: #f9fafb;
-  --color-text: #111827;
+  --color-primary: #800000;
+  --color-secondary: #660000;
+  --color-bg: #f8f6f2;
+  --color-text: #1f2937;
   --color-card: #ffffff;
-  --color-border: #f1f5f9;
+  --color-border: #e5e0d8;
   font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
   scroll-behavior: smooth;
 }
@@ -22,6 +22,14 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+}
+
+.font-serif-title {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.font-cinzel {
+  font-family: 'Cinzel', serif;
 }
 
 /* Custom premium scrollbar styling */

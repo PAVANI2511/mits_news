@@ -3,12 +3,12 @@ import { createSlice } from '@reduxjs/toolkit';
 const presets = {
   light: {
     name: 'light',
-    primary: '#3b82f6',
-    secondary: '#1d4ed8',
-    bg: '#f9fafb',
-    text: '#111827',
+    primary: '#800000',
+    secondary: '#660000',
+    bg: '#f8f6f2',
+    text: '#1f2937',
     card: '#ffffff',
-    border: '#f1f5f9'
+    border: '#e5e0d8'
   },
   dark: {
     name: 'dark',

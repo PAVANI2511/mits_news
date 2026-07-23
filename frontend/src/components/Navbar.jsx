@@ -116,9 +116,13 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/" className="text-xl sm:text-2xl font-extrabold tracking-tight text-primary flex items-center gap-2">
-              <span className="bg-primary text-white px-2 py-0.5 rounded-md font-mono">MITS</span>
-              <span className="hidden sm:inline">Newspaper</span>
+            <Link to="/" className="flex items-center gap-2.5 group focus:outline-none cursor-pointer">
+              <div className="bg-[#800000] text-white px-2.5 py-1 rounded-md font-bold text-sm tracking-wider shadow-sm group-hover:bg-[#660000] transition">
+                MITS
+              </div>
+              <span className="font-serif text-xl sm:text-2xl font-bold text-[#800000] tracking-tight">
+                Newspaper
+              </span>
             </Link>
           </div>
 
@@ -261,10 +265,10 @@ const Navbar = () => {
               </>
             ) : (
               <>
-                <Link to="/login" className="px-4 py-2 text-sm font-medium text-primary hover:text-primary/80 transition">
+                <Link to="/login" className="px-5 py-2 font-serif text-sm font-medium text-[#800000] hover:underline transition">
                   Login
                 </Link>
-                <Link to="/register" className="px-4 py-2 bg-primary text-white rounded-full text-sm font-medium hover:bg-primary/95 shadow-sm transition">
+                <Link to="/register" className="px-6 py-2 bg-[#800000] hover:bg-[#660000] text-white rounded-full font-serif text-sm font-medium shadow transition cursor-pointer">
                   Register
                 </Link>
               </>

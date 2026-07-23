@@ -507,7 +507,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   }) : '';
 
   return (
-    <div ref={containerRef} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden transition-colors duration-300">
+    <div ref={containerRef} className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden transition-all duration-300">
       {/* Header */}
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -520,12 +520,12 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
           </Link>
           <div>
             <div className="flex items-center gap-1.5 flex-wrap">
-              <Link to={`/profile/${post.username}`} className="text-sm font-bold text-text hover:underline">
+              <Link to={`/profile/${post.username}`} className="font-serif text-sm font-bold text-gray-900 hover:text-[#800000] hover:underline">
                 {post.name || post.username}
               </Link>
               {post.category && (
-                <div className="flex items-center gap-1 shrink-0 bg-primary/10 pl-1.5 pr-0.5 py-0.5 rounded">
-                  <span className="text-primary text-[9px] font-black uppercase tracking-wide">
+                <div className="flex items-center gap-1 shrink-0 bg-[#800000]/10 pl-2 pr-1 py-0.5 rounded-full">
+                  <span className="text-[#800000] font-serif text-[9px] font-bold uppercase tracking-wider">
                     {post.category.name}
                   </span>
                   <button
@@ -533,10 +533,10 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
                       e.preventDefault();
                       handleCategoryFollowToggle(post.category.id);
                     }}
-                    className={`text-[8px] font-extrabold px-1 rounded transition-colors uppercase ${
+                    className={`text-[8px] font-serif font-extrabold px-1.5 py-0.5 rounded-full transition-colors uppercase ${
                       categoryFollowed
-                        ? 'bg-border text-gray-500 hover:bg-border/80'
-                        : 'bg-primary text-white hover:bg-primary/95'
+                        ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                        : 'bg-[#800000] text-white hover:bg-[#660000]'
                     }`}
                   >
                     {categoryFollowed ? 'Unfollow' : 'Follow'}
@@ -544,24 +544,24 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
                 </div>
               )}
               {post.location && (
-                <span className="text-xs text-gray-400 flex items-center gap-0.5">
+                <span className="font-serif text-xs text-gray-400 flex items-center gap-0.5">
                   • <FiMapPin className="inline text-[10px]" /> {post.location}
                 </span>
               )}
             </div>
-            <div className="text-[10px] text-gray-500 font-semibold">{post.email}</div>
+            <div className="font-serif text-[10px] text-gray-500 font-semibold">{post.email}</div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400">{formattedDate}</span>
+          <span className="font-serif text-xs text-gray-400">{formattedDate}</span>
           {!isOwner && isAuthenticated && (
             <button
               onClick={handleFollow}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1 ${
+              className={`px-3 py-1 rounded-full font-serif text-xs font-bold transition flex items-center gap-1 ${
                 following 
-                  ? 'bg-border text-gray-500 hover:bg-border/80' 
-                  : 'bg-primary/10 text-primary hover:bg-primary/20'
+                  ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
+                  : 'bg-[#800000]/10 text-[#800000] hover:bg-[#800000]/20'
               }`}
             >
               {following ? <><FiUserCheck /> Following</> : <><FiUserPlus /> Follow</>}
@@ -571,13 +571,13 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
             <div className="flex items-center gap-1">
               <button
                 onClick={() => navigate(`/posts/${post.id}/edit`)}
-                className="text-xs px-2.5 py-1 text-primary hover:bg-primary/10 rounded transition"
+                className="font-serif text-xs px-2.5 py-1 text-[#800000] hover:bg-[#800000]/10 rounded-lg transition font-semibold"
               >
                 Edit
               </button>
               <button
                 onClick={handleDelete}
-                className="text-xs px-2.5 py-1 text-red-500 hover:bg-red-500/10 rounded transition"
+                className="font-serif text-xs px-2.5 py-1 text-red-600 hover:bg-red-50 rounded-lg transition font-semibold"
               >
                 Delete
               </button>
@@ -586,7 +586,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
           {!isOwner && isAuthenticated && (
             <button
               onClick={() => setShowReportModal(true)}
-              className="text-xs px-2.5 py-1 text-red-500 hover:bg-red-500/10 rounded transition font-semibold"
+              className="font-serif text-xs px-2.5 py-1 text-red-600 hover:bg-red-50 rounded-lg transition font-semibold"
             >
               Report Post
             </button>
@@ -596,18 +596,18 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
 
 
       {/* Main Content */}
-      <div className="px-4 pb-3">
+      <div className="px-5 pb-4">
         {post.caption && (
-          <p className="text-sm text-text whitespace-pre-wrap leading-relaxed">
+          <p className="font-serif text-base text-gray-900 whitespace-pre-wrap leading-relaxed">
             {post.caption}
           </p>
         )}
         {post.hashtags && post.hashtags.length > 0 && (
-          <div className="mt-1 flex flex-wrap gap-1.5">
+          <div className="mt-2 flex flex-wrap gap-1.5">
             {post.hashtags.map((tag) => (
               <span 
                 key={tag} 
-                className="text-xs font-semibold text-primary hover:underline cursor-pointer"
+                className="font-serif text-xs font-semibold text-[#800000] hover:underline cursor-pointer"
                 onClick={() => navigate(`/search?hashtag=${tag}`)}
               >
                 #{tag}
