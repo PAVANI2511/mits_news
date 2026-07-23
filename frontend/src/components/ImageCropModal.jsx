@@ -29,7 +29,7 @@ const ImageCropModal = ({ isOpen, imageSrc, onCancel, onSave }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset 0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-card border border-border w-full max-w-md rounded-2xl overflow-hidden shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="p-4 border-b border-border">
