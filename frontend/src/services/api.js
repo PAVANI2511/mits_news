@@ -71,8 +71,9 @@ export const authAPI = {
 };
 
 export const postsAPI = {
-  create: (data) => api.post('/posts/create/', data, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+  create: (data, config = {}) => api.post('/posts/create/', data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    ...config
   }),
   getFeed: (params) => api.get('/posts/feed/', { params }),
   getSaved: () => api.get('/posts/saved/'),

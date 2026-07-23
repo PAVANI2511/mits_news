@@ -39,6 +39,7 @@ const CreatePost = () => {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [success, setSuccess] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -120,7 +121,15 @@ const CreatePost = () => {
       if (files.audio) submitData.append('audio', files.audio);
       if (files.pdf) submitData.append('pdf', files.pdf);
 
-      await postsAPI.create(submitData);
+      setUploadProgress(1);
+      await postsAPI.create(submitData, {
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percentCompleted);
+          }
+        }
+      });
       setSuccess("Your campus article was successfully published!");
       setTimeout(() => navigate('/feed'), 1500);
     } catch (err) {
@@ -149,6 +158,7 @@ const CreatePost = () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -381,10 +391,25 @@ const CreatePost = () => {
             </div>
           </div>
 
+          {loading && uploadProgress > 0 && (
+            <div className="w-full bg-bg/50 border border-border p-4 rounded-2xl flex flex-col gap-2 animate-fadeIn mt-4">
+              <div className="flex justify-between items-center text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <span>Uploading campus media...</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-border rounded-full h-2 overflow-hidden">
+                <div 
+                  className="bg-primary h-full rounded-full transition-all duration-300 ease-out" 
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 bg-primary text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-primary/95 shadow-lg shadow-primary/25 hover:shadow-primary/35 disabled:opacity-50 transition-all"
+            className="w-full py-3.5 bg-primary text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-primary/95 shadow-lg shadow-primary/25 hover:shadow-primary/35 disabled:opacity-50 transition-all mt-4"
           >
             <FiSend /> {loading ? 'Publishing Article...' : 'Publish Campus News'}
           </button>
