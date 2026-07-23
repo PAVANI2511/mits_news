@@ -4,8 +4,10 @@ services:
     name: mits-news-backend
     env: python
     buildCommand: "./build.sh"
-    startCommand: "gunicorn mits_news.wsgi:application"
+    startCommand: "gunicorn mits_news.wsgi:application --workers 2 --threads 2 --worker-class gthread --max-requests 1000 --max-requests-jitter 50"
     envVars:
+      - key: WEB_CONCURRENCY
+        value: "2"
       - key: DEBUG
         value: "False"
       - key: DB_HOST

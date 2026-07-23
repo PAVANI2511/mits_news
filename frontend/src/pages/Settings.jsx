@@ -307,7 +307,7 @@ const Settings = () => {
                     <input
                       type="tel"
                       value={mobileNumber}
-                      onChange={(e) => setMobileNumber(e.target.value)}
+                      onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
                       className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                     <FiPhone className="absolute left-3.5 top-3.5 text-gray-400" />

@@ -4,7 +4,8 @@ import { useSelector } from 'react-redux';
 import { 
   FiHeart, FiMessageSquare, FiBookmark, FiDownload, 
   FiShare2, FiMapPin, FiFileText, FiUserCheck, FiUserPlus,
-  FiLink, FiExternalLink, FiVolume2, FiVolumeX
+  FiLink, FiExternalLink, FiVolume2, FiVolumeX,
+  FiThumbsUp, FiThumbsDown, FiCalendar, FiClock
 } from 'react-icons/fi';
 import { 
   FaWhatsapp, FaFacebook, FaLinkedin, FaTelegram, FaTwitter 
@@ -507,25 +508,25 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   }) : '';
 
   return (
-    <div ref={containerRef} className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden transition-all duration-300">
+    <div ref={containerRef} className="bg-card rounded-3xl border border-border/80 shadow-[0_8px_30px_rgb(0,0,0,0.02)] hover:shadow-[0_15px_40px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 ease-out overflow-hidden">
       {/* Header */}
-      <div className="p-4 flex items-center justify-between">
+      <div className="p-5 sm:p-6 pb-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link to={`/profile/${post.username}`}>
             <img
               src={getMediaUrl(post.profile_pic) || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'}
               alt={post.username}
-              className="h-10 w-10 rounded-full object-cover border border-border"
+              className="h-11 w-11 rounded-full object-cover border border-border/80 shadow-sm ring-2 ring-primary/5 transition-transform duration-300 hover:scale-105"
             />
           </Link>
           <div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <Link to={`/profile/${post.username}`} className="font-serif text-sm font-bold text-gray-900 hover:text-[#800000] hover:underline">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Link to={`/profile/${post.username}`} className="font-serif text-sm font-bold text-text hover:text-primary transition-colors hover:underline">
                 {post.name || post.username}
               </Link>
               {post.category && (
-                <div className="flex items-center gap-1 shrink-0 bg-[#800000]/10 pl-2 pr-1 py-0.5 rounded-full">
-                  <span className="text-[#800000] font-serif text-[9px] font-bold uppercase tracking-wider">
+                <div className="flex items-center gap-1.5 shrink-0 bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
+                  <span className="text-primary font-serif text-[9.5px] font-bold uppercase tracking-wider">
                     {post.category.name}
                   </span>
                   <button
@@ -533,10 +534,10 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
                       e.preventDefault();
                       handleCategoryFollowToggle(post.category.id);
                     }}
-                    className={`text-[8px] font-serif font-extrabold px-1.5 py-0.5 rounded-full transition-colors uppercase ${
+                    className={`text-[8.5px] font-serif font-black px-1.5 py-0.5 rounded-full transition-all duration-200 uppercase active:scale-95 shadow-sm ${
                       categoryFollowed
-                        ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                        : 'bg-[#800000] text-white hover:bg-[#660000]'
+                        ? 'bg-border text-gray-500 hover:bg-border/80'
+                        : 'bg-primary text-white hover:bg-primary/95'
                     }`}
                   >
                     {categoryFollowed ? 'Unfollow' : 'Follow'}
@@ -549,35 +550,35 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
                 </span>
               )}
             </div>
-            <div className="font-serif text-[10px] text-gray-500 font-semibold">{post.email}</div>
+            <div className="font-serif text-[10px] text-gray-400 font-semibold">{post.email}</div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <span className="font-serif text-xs text-gray-400">{formattedDate}</span>
           {!isOwner && isAuthenticated && (
             <button
               onClick={handleFollow}
-              className={`px-3 py-1 rounded-full font-serif text-xs font-bold transition flex items-center gap-1 ${
+              className={`px-3.5 py-1.5 rounded-full font-serif text-xs font-bold transition-all duration-200 flex items-center gap-1 active:scale-95 shadow-sm ${
                 following 
-                  ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
-                  : 'bg-[#800000]/10 text-[#800000] hover:bg-[#800000]/20'
+                  ? 'bg-border text-gray-500 hover:bg-border/80' 
+                  : 'bg-primary text-white hover:bg-primary/90 shadow-sm shadow-primary/10'
               }`}
             >
               {following ? <><FiUserCheck /> Following</> : <><FiUserPlus /> Follow</>}
             </button>
           )}
           {(isOwner || isAdmin) && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => navigate(`/posts/${post.id}/edit`)}
-                className="font-serif text-xs px-2.5 py-1 text-[#800000] hover:bg-[#800000]/10 rounded-lg transition font-semibold"
+                className="font-serif text-xs font-bold px-3 py-1 text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 rounded-lg transition duration-200 active:scale-95"
               >
                 Edit
               </button>
               <button
                 onClick={handleDelete}
-                className="font-serif text-xs px-2.5 py-1 text-red-600 hover:bg-red-50 rounded-lg transition font-semibold"
+                className="font-serif text-xs font-bold px-3 py-1 text-red-500 hover:bg-red-500/5 border border-transparent hover:border-red-500/20 rounded-lg transition duration-200 active:scale-95"
               >
                 Delete
               </button>
@@ -586,7 +587,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
           {!isOwner && isAuthenticated && (
             <button
               onClick={() => setShowReportModal(true)}
-              className="font-serif text-xs px-2.5 py-1 text-red-600 hover:bg-red-50 rounded-lg transition font-semibold"
+              className="font-serif text-xs font-bold px-3 py-1 text-gray-400 hover:text-red-500 hover:bg-red-500/5 border border-transparent hover:border-red-500/10 rounded-lg transition duration-200 active:scale-95"
             >
               Report Post
             </button>
@@ -596,7 +597,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
 
 
       {/* Main Content */}
-      <div className="px-5 pb-4">
+      <div className="px-5 sm:px-6 pb-4 pt-1">
         {post.caption && (
           <p className="font-serif text-base text-gray-900 whitespace-pre-wrap leading-relaxed">
             {post.caption}
@@ -618,8 +619,8 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
       </div>
 
       {post.text && (
-        <div className="px-4 pb-4 pt-1">
-          <div className="bg-bg/40 p-4 rounded-xl border border-border text-sm leading-relaxed text-text font-serif italic whitespace-pre-wrap">
+        <div className="px-5 sm:px-6 pb-4 pt-1">
+          <div className="bg-bg/40 p-4 sm:p-5 rounded-2xl border border-border text-sm leading-relaxed text-text font-serif italic whitespace-pre-wrap shadow-inner">
             "{post.text}"
           </div>
         </div>
@@ -627,23 +628,23 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
 
       {/* Media Attachments */}
       {post.image && (
-        <div className="border-t border-b border-border bg-bg/20 flex justify-center max-h-[500px] overflow-hidden">
+        <div className="border-t border-b border-border/80 bg-bg/25 flex justify-center items-center max-h-[550px] overflow-hidden w-full relative">
           <img
             src={getMediaUrl(post.image)}
             alt="Post content"
-            className="w-full object-contain max-h-[500px]"
+            className="max-h-[550px] w-auto object-contain transition-transform duration-500 hover:scale-[1.015]"
           />
         </div>
       )}
 
       {post.video && (
-        <div className="border-t border-b border-border bg-black flex justify-center max-h-[500px]">
+        <div className="border-t border-b border-border/80 bg-black flex justify-center items-center max-h-[550px] w-full overflow-hidden">
           <video
             ref={videoRef}
             src={getMediaUrl(post.video)}
             controls
             muted={audioMuted}
-            className="w-full max-h-[500px]"
+            className="w-full max-h-[550px]"
           />
         </div>
       )}
@@ -651,19 +652,21 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
 
       {/* Poster Attachment */}
       {post.poster && (
-        <div className="border-t border-b border-border bg-bg/20 p-4 flex flex-col items-center">
-          <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Attached College Poster</div>
-          <img
-            src={getMediaUrl(post.poster)}
-            alt="College Poster"
-            className="rounded-lg max-h-[350px] shadow border border-border object-contain"
-          />
+        <div className="border-t border-b border-border/80 bg-bg/15 px-5 sm:px-6 py-5 flex flex-col items-center gap-3">
+          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Attached College Poster</div>
+          <div className="relative group overflow-hidden rounded-2xl shadow-md border border-border/80 bg-card max-w-full">
+            <img
+              src={getMediaUrl(post.poster)}
+              alt="College Poster"
+              className="rounded-2xl max-h-[400px] object-contain mx-auto transition-transform duration-500 group-hover:scale-[1.02]"
+            />
+          </div>
         </div>
       )}
 
       {/* PDF Attachment */}
       {post.pdf && (
-        <div className="px-4 py-3.5 border-t border-b border-border bg-bg/40 flex items-center justify-between">
+        <div className="px-5 sm:px-6 py-4 border-t border-b border-border/80 bg-bg/20 flex items-center justify-between">
           <div className="flex items-center gap-3 truncate">
             <div className="p-2.5 bg-red-500/10 rounded-xl text-red-500">
               <FiFileText className="text-2xl" />
@@ -677,7 +680,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
           </div>
           <button
             onClick={() => handleDownload('pdf', post.pdf)}
-            className="px-3.5 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/95 flex items-center gap-1 shadow-sm transition"
+            className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90 hover:-translate-y-0.5 active:scale-95 flex items-center gap-1.5 shadow-sm shadow-primary/10 transition-all duration-200"
           >
             <FiDownload /> Download
           </button>
@@ -731,8 +734,8 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
       )}
 
       {/* Event Schedule Info Panel */}
-      <div className={`mx-4 mt-3 p-4 rounded-2xl bg-bg/50 border border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 ${isExpired ? 'opacity-75' : ''}`}>
-        <div className="space-y-1.5 flex-1 min-w-0">
+      <div className={`mx-5 sm:mx-6 mt-4 p-4 rounded-2xl bg-bg/40 border border-border/85 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${isExpired ? 'opacity-75' : ''}`}>
+        <div className="space-y-2 flex-1 min-w-0">
           <div className={`text-[10px] font-black uppercase tracking-wider ${
             isEventCompleted 
               ? 'text-gray-500' 
@@ -747,146 +750,148 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
                 : 'MITS Campus Activity'}
           </div>
           {post.event_date && (
-            <div className="text-xs text-text flex items-center gap-1.5">
-              <span className="font-bold text-gray-500">Event Date:</span>
+            <div className="text-xs text-text/80 flex items-center gap-1.5">
+              <FiCalendar className="text-gray-400 text-xs shrink-0" />
+              <span className="font-semibold text-gray-500">Event Date:</span>
               <span className="font-semibold text-text">{new Date(post.event_date).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
             </div>
           )}
           {post.last_date && (
-            <div className="text-xs text-text flex items-center gap-1.5">
-              <span className="font-bold text-gray-500">Reg. Closes:</span>
-              <span className={isRegistrationClosed ? 'text-gray-500 font-semibold' : 'text-red-500 font-bold'}>
+            <div className="text-xs text-text/80 flex items-center gap-1.5">
+              <FiClock className="text-gray-400 text-xs shrink-0" />
+              <span className="font-semibold text-gray-500">Reg. Closes:</span>
+              <span className={isRegistrationClosed ? 'text-gray-400 font-semibold' : 'text-red-500 font-bold'}>
                 {new Date(post.last_date).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
           )}
         </div>
 
-        <div className="flex gap-2 w-full sm:w-auto shrink-0">
+        <div className="flex gap-2.5 w-full sm:w-auto shrink-0">
           <button
             onClick={() => !isExpired && handleInterestSelection('interested')}
             disabled={isExpired}
-            className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm ${
+            className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-sm ${
               isExpired
                 ? currentInterest === 'interested'
                   ? 'bg-green-500/50 text-white cursor-not-allowed'
                   : 'bg-card border border-border text-gray-400 cursor-not-allowed'
                 : currentInterest === 'interested'
-                  ? 'bg-green-500 text-white shadow-green-500/10'
-                  : 'bg-card border border-border text-gray-500 hover:text-green-500 hover:bg-green-500/5'
+                  ? 'bg-green-600 text-white shadow-md shadow-green-600/10 hover:bg-green-700 hover:-translate-y-0.5'
+                  : 'bg-card border border-border/80 text-gray-600 hover:text-green-600 hover:bg-green-500/5 hover:-translate-y-0.5 hover:border-green-200'
             }`}
           >
-            👍 Interested
+            <FiThumbsUp className="text-sm" /> Interested
           </button>
           <button
             onClick={() => !isExpired && handleInterestSelection('not_interested')}
             disabled={isExpired}
-            className={`flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm ${
+            className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-sm ${
               isExpired
                 ? currentInterest === 'not_interested'
                   ? 'bg-gray-500/50 text-white cursor-not-allowed'
                   : 'bg-card border border-border text-gray-400 cursor-not-allowed'
                 : currentInterest === 'not_interested'
-                  ? 'bg-gray-500 text-white shadow-sm'
-                  : 'bg-card border border-border text-gray-500 hover:text-red-500 hover:bg-red-500/5'
+                  ? 'bg-gray-600 text-white shadow-md hover:bg-gray-700 hover:-translate-y-0.5'
+                  : 'bg-card border border-border/80 text-gray-600 hover:text-red-600 hover:bg-red-500/5 hover:-translate-y-0.5 hover:border-red-200'
             }`}
           >
-            👎 Not Interested
+            <FiThumbsDown className="text-sm" /> Not Interested
           </button>
         </div>
       </div>
 
       {/* Alerts / Error messages */}
       {errorMessage && (
-        <div className="mx-4 mt-3 bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2 rounded-lg flex items-center justify-between">
+        <div className="mx-5 sm:mx-6 mt-3 bg-red-50 border border-red-200 text-red-700 text-xs px-3 py-2 rounded-lg flex items-center justify-between">
           <span>{errorMessage}</span>
           <button onClick={() => setErrorMessage('')} className="font-bold ml-2">×</button>
         </div>
       )}
 
       {successMessage && (
-        <div className="mx-4 mt-3 bg-green-50 border border-green-200 text-green-700 text-xs px-3 py-2 rounded-lg flex items-center justify-between animate-fadeIn">
+        <div className="mx-5 sm:mx-6 mt-3 bg-green-50 border border-green-200 text-green-700 text-xs px-3 py-2 rounded-lg flex items-center justify-between animate-fadeIn">
           <span>{successMessage}</span>
           <button onClick={() => setSuccessMessage('')} className="font-bold ml-2">×</button>
         </div>
       )}
 
       {shareSuccess && (
-        <div className="mx-4 mt-3 bg-green-50 border border-green-200 text-green-700 text-xs px-3 py-2 rounded-lg">
+        <div className="mx-5 sm:mx-6 mt-3 bg-green-50 border border-green-200 text-green-700 text-xs px-3 py-2 rounded-lg">
           Post link copied to clipboard!
         </div>
       )}
 
       {/* Action Footer */}
-      <div className="px-4 py-3 flex items-center justify-between border-t border-border bg-card">
-        <div className="flex items-center gap-4">
+      <div className="px-5 sm:px-6 py-4 flex items-center justify-between border-t border-border/80 bg-card/50">
+        <div className="flex items-center gap-6">
           <button
             onClick={handleLike}
             disabled={isLiking}
-            className={`flex items-center gap-1 text-sm font-bold transition ${
-              liked ? 'text-red-500 scale-105' : 'text-gray-500 hover:text-red-500'
+            className={`flex items-center gap-2 text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95 ${
+              liked ? 'text-red-500' : 'text-gray-500 hover:text-red-500'
             } ${isLiking ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            <FiHeart className={liked ? 'fill-current' : ''} />
+            <FiHeart className={`text-lg ${liked ? 'fill-current' : ''}`} />
             <span>{likesCount}</span>
           </button>
           
           <button
             onClick={() => setShowComments(!showComments)}
-            className="flex items-center gap-1 text-sm font-bold text-gray-500 hover:text-primary transition"
+            className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-primary transition-all duration-200 hover:scale-105 active:scale-95"
           >
-            <FiMessageSquare />
+            <FiMessageSquare className="text-lg" />
             <span>{commentsCount}</span>
           </button>
           
           <button
             onClick={() => setShowShareModal(true)}
-            className="flex items-center gap-1 text-sm font-bold text-gray-500 hover:text-primary transition"
+            className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-primary transition-all duration-200 hover:scale-105 active:scale-95"
             title="Share Post"
           >
-            <FiShare2 />
+            <FiShare2 className="text-lg" />
             <span>{sharesCount}</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {/* Individual downloads for items */}
           {post.image && (
             <button
               onClick={() => handleDownload('image', post.image)}
-              className="text-gray-500 hover:text-primary text-sm font-bold flex items-center gap-1"
+              className="text-gray-500 hover:text-primary text-xs font-bold flex items-center gap-1.5 transition-colors duration-200 hover:scale-105 active:scale-95"
               title="Download Image"
             >
-              <FiDownload /> <span className="hidden sm:inline">Image</span>
+              <FiDownload className="text-sm" /> <span className="hidden sm:inline">Image</span>
             </button>
           )}
           {post.video && (
             <button
               onClick={() => handleDownload('video', post.video)}
-              className="text-gray-500 hover:text-primary text-sm font-bold flex items-center gap-1"
+              className="text-gray-500 hover:text-primary text-xs font-bold flex items-center gap-1.5 transition-colors duration-200 hover:scale-105 active:scale-95"
               title="Download Video"
             >
-              <FiDownload /> <span className="hidden sm:inline">Video</span>
+              <FiDownload className="text-sm" /> <span className="hidden sm:inline">Video</span>
             </button>
           )}
           {post.audio && (
             <button
               onClick={() => handleDownload('audio', post.audio)}
-              className="text-gray-500 hover:text-primary text-sm font-bold flex items-center gap-1"
+              className="text-gray-500 hover:text-primary text-xs font-bold flex items-center gap-1.5 transition-colors duration-200 hover:scale-105 active:scale-95"
               title="Download Audio"
             >
-              <FiDownload /> <span className="hidden sm:inline">Audio</span>
+              <FiDownload className="text-sm" /> <span className="hidden sm:inline">Audio</span>
             </button>
           )}
 
           <button
             onClick={handleSave}
-            className={`flex items-center gap-1 text-sm font-bold transition ${
-              saved ? 'text-yellow-500 scale-105' : 'text-gray-500 hover:text-yellow-500'
+            className={`flex items-center gap-1.5 text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95 ${
+              saved ? 'text-yellow-500' : 'text-gray-500 hover:text-yellow-500'
             }`}
             title={saved ? "Unsave" : "Save"}
           >
-            <FiBookmark className={saved ? 'fill-current' : ''} />
+            <FiBookmark className={`text-lg ${saved ? 'fill-current' : ''}`} />
             <span>{savedCount}</span>
           </button>
         </div>

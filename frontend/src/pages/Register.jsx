@@ -85,9 +85,13 @@ const Register = () => {
   const years = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 
   const handleChange = (e) => {
+    let { name, value } = e.target;
+    if (name === 'mobile_number') {
+      value = value.replace(/\D/g, '').slice(0, 10);
+    }
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: value
     }));
   };
 
