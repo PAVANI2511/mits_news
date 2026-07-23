@@ -277,13 +277,13 @@ const LandingPage = () => {
                 </div>
 
                 {successMessage && (
-                  <div className="bg-green-50 border border-green-200 text-green-700 text-xs px-4 py-2.5 rounded-xl mb-4 font-serif">
+                  <div className="bg-green-50 border border-green-200 text-green-700 text-xs px-4 py-2.5 rounded-xl mb-4">
                     {successMessage}
                   </div>
                 )}
 
                 {(validationError || error) && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-2.5 rounded-xl mb-4 font-serif">
+                  <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-2.5 rounded-xl mb-4">
                     {validationError || error}
                   </div>
                 )}
@@ -291,7 +291,7 @@ const LandingPage = () => {
                 <form onSubmit={handleLoginSubmit} className="space-y-5">
                   {/* Username field */}
                   <div>
-                    <label className="block text-sm font-serif font-medium text-gray-800 mb-1.5">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                       Username
                     </label>
                     <input
@@ -299,13 +299,13 @@ const LandingPage = () => {
                       placeholder="Enter your Username"
                       value={usernameOrEmail}
                       onChange={(e) => setUsernameOrEmail(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all"
+                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all"
                     />
                   </div>
 
                   {/* Password field */}
                   <div>
-                    <label className="block text-sm font-serif font-medium text-gray-800 mb-1.5">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                       Password
                     </label>
                     <div className="relative">
@@ -314,7 +314,7 @@ const LandingPage = () => {
                         placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all"
+                        className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all"
                       />
                       <button
                         type="button"
@@ -335,7 +335,7 @@ const LandingPage = () => {
                         onChange={(e) => setRememberMe(e.target.checked)}
                         className="rounded border-gray-300 text-[#800000] focus:ring-[#800000] h-4 w-4 bg-gray-50 transition cursor-pointer"
                       />
-                      <span className="font-serif text-sm">Remember my login</span>
+                      <span className="text-sm">Remember my login</span>
                     </label>
                   </div>
 
@@ -345,19 +345,19 @@ const LandingPage = () => {
                     whileTap={{ scale: 0.98 }}
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-3.5 bg-[#800000] hover:bg-[#660000] text-white rounded-xl font-serif font-bold text-base tracking-wider uppercase shadow-md hover:shadow-lg disabled:opacity-50 transition-all cursor-pointer"
+                    className="w-full py-3.5 bg-[#800000] hover:bg-[#660000] text-white rounded-xl font-bold text-base tracking-wider uppercase shadow-md hover:shadow-lg disabled:opacity-50 transition-all cursor-pointer"
                   >
                     {isLoading ? 'SIGNING IN...' : 'LOGIN'}
                   </motion.button>
 
                   {/* Forgot Password Link */}
                   <div className="text-center pt-2">
-                    <span className="font-serif text-sm text-gray-600">
+                    <span className="text-sm text-gray-600">
                       Forgot password?{' '}
                     </span>
                     <Link
                       to="/forgot-password"
-                      className="font-serif text-sm font-semibold text-[#800000] hover:underline"
+                      className="text-sm font-semibold text-[#800000] hover:underline cursor-pointer"
                     >
                       Click here
                     </Link>
@@ -365,12 +365,12 @@ const LandingPage = () => {
 
                   {/* Register Link */}
                   <div className="text-center pt-1 border-t border-gray-100">
-                    <span className="font-serif text-xs text-gray-500">
+                    <span className="text-xs text-gray-500">
                       Don't have an account?{' '}
                     </span>
                     <Link
                       to="/register"
-                      className="font-serif text-xs font-semibold text-[#800000] hover:underline"
+                      className="text-xs font-semibold text-[#800000] hover:underline cursor-pointer"
                     >
                       Register here
                     </Link>

@@ -51,27 +51,27 @@ const Sidebar = () => {
           <h2 className="mt-2 font-serif font-bold text-lg text-gray-900 truncate">
             {user.profile?.name || user.username}
           </h2>
-          <p className="font-serif text-xs text-gray-500 truncate">{user.email}</p>
+          <p className="text-xs text-gray-500 truncate">{user.email}</p>
           
-          <div className="mt-1.5 flex justify-center flex-wrap gap-1.5 font-serif text-xs text-[#800000] font-semibold">
+          <div className="mt-1.5 flex justify-center flex-wrap gap-1.5 text-xs text-[#800000] font-semibold">
             {user.profile?.department && <span>{user.profile.department}</span>}
             {user.profile?.year && <span>• {user.profile.year}</span>}
           </div>
-
+ 
           <div className="mt-4 grid grid-cols-2 gap-2 border-t border-gray-100 pt-4">
             <div>
-              <div className="font-serif text-sm font-extrabold text-gray-900">{user.profile?.followers_count || 0}</div>
-              <div className="font-serif text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Followers</div>
+              <div className="text-sm font-extrabold text-gray-900">{user.profile?.followers_count || 0}</div>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Followers</div>
             </div>
             <div>
-              <div className="font-serif text-sm font-extrabold text-gray-900">{user.profile?.following_count || 0}</div>
-              <div className="font-serif text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Following</div>
+              <div className="text-sm font-extrabold text-gray-900">{user.profile?.following_count || 0}</div>
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Following</div>
             </div>
           </div>
-
+ 
           <Link 
             to={`/profile/${user.username}`}
-            className="mt-4 block w-full text-center py-2.5 bg-[#800000] text-white rounded-full font-serif text-xs font-bold uppercase tracking-wider hover:bg-[#660000] shadow-sm transition"
+            className="mt-4 block w-full text-center py-2.5 bg-[#800000] text-white rounded-full text-xs font-bold uppercase tracking-wider hover:bg-[#660000] shadow-sm transition"
           >
             My Profile
           </Link>
@@ -80,20 +80,20 @@ const Sidebar = () => {
         <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-xl text-center space-y-3">
           <FiBookOpen className="mx-auto text-4xl text-[#800000]" />
           <h2 className="font-serif font-bold text-xl text-gray-900">Welcome Viewer!</h2>
-          <p className="font-serif text-xs text-gray-600 leading-relaxed">
+          <p className="text-xs text-gray-600 leading-relaxed">
             Log in with your <span className="font-bold text-[#800000]">@mits.ac.in</span> student email to publish articles, react to news, and interact with the campus community.
           </p>
           <div className="flex flex-col gap-2.5 pt-2">
-            <Link to="/login" className="py-2.5 bg-[#800000] text-white rounded-full font-serif text-xs font-bold uppercase tracking-wider hover:bg-[#660000] shadow transition">
+            <Link to="/login" className="py-2.5 bg-[#800000] text-white rounded-full text-xs font-bold uppercase tracking-wider hover:bg-[#660000] shadow transition">
               Log In
             </Link>
-            <Link to="/register" className="py-2.5 border border-[#800000] text-[#800000] bg-white/70 hover:bg-white rounded-full font-serif text-xs font-bold transition">
+            <Link to="/register" className="py-2.5 border border-[#800000] text-[#800000] bg-white/70 hover:bg-white rounded-full text-xs font-bold transition">
               Create Student Account
             </Link>
           </div>
         </div>
       )}
-
+ 
       {/* Suggested Follows */}
       {isAuthenticated && suggestions.length > 0 && (
         <div className="bg-white rounded-3xl border border-gray-100 p-5 shadow-xl">
@@ -113,13 +113,13 @@ const Sidebar = () => {
                     className="h-8 w-8 rounded-full object-cover border border-gray-100"
                   />
                   <div className="truncate">
-                    <div className="font-serif text-xs font-bold text-gray-900 truncate">{sug.name}</div>
-                    <div className="font-serif text-[10px] text-gray-500 truncate">@{sug.username}</div>
+                    <div className="text-xs font-bold text-gray-900 truncate">{sug.name}</div>
+                    <div className="text-[10px] text-gray-500 truncate">@{sug.username}</div>
                   </div>
                 </div>
                 <button
                   onClick={() => navigate(`/profile/${sug.username}`)}
-                  className="font-serif text-xs font-bold text-[#800000] hover:underline"
+                  className="text-xs font-bold text-[#800000] hover:underline"
                 >
                   View
                 </button>
@@ -128,7 +128,7 @@ const Sidebar = () => {
           </div>
         </div>
       )}
-
+ 
       {/* Trending Hashtags */}
       {trends.length > 0 && (
         <div className="bg-white rounded-3xl border border-gray-100 p-5 shadow-xl">
@@ -143,10 +143,10 @@ const Sidebar = () => {
                 onClick={() => navigate(`/search?hashtag=${item.tag}`)}
               >
                 <div>
-                  <div className="font-serif text-xs font-bold text-gray-900">#{item.tag}</div>
-                  <div className="font-serif text-[10px] text-gray-500">{item.count} articles</div>
+                  <div className="text-xs font-bold text-gray-900">#{item.tag}</div>
+                  <div className="text-[10px] text-gray-500">{item.count} articles</div>
                 </div>
-                <span className="font-serif text-[9px] px-2 py-0.5 rounded-full bg-[#800000]/10 text-[#800000] font-bold uppercase tracking-wider">Trending</span>
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#800000]/10 text-[#800000] font-bold uppercase tracking-wider">Trending</span>
               </div>
             ))}
           </div>

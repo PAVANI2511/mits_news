@@ -125,14 +125,14 @@ const AdminLogin = () => {
             </div>
 
             {(validationError || error) && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-2.5 rounded-xl font-serif">
+              <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-2.5 rounded-xl">
                 {validationError || error}
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-serif font-medium text-gray-800 mb-1.5">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Admin Username
                 </label>
                 <input
@@ -140,12 +140,12 @@ const AdminLogin = () => {
                   placeholder="Enter Admin Username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-serif font-medium text-gray-800 mb-1.5">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Security Password
                 </label>
                 <div className="relative">
@@ -154,7 +154,7 @@ const AdminLogin = () => {
                     placeholder="Enter Admin Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all"
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all"
                   />
                   <button
                     type="button"
@@ -171,13 +171,13 @@ const AdminLogin = () => {
                 whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3.5 bg-[#800000] hover:bg-[#660000] text-white rounded-xl font-serif font-bold text-base tracking-wider uppercase shadow-md hover:shadow-lg disabled:opacity-50 transition-all cursor-pointer"
+                className="w-full py-3.5 bg-[#800000] hover:bg-[#660000] text-white rounded-xl font-bold text-base tracking-wider uppercase shadow-md hover:shadow-lg disabled:opacity-50 transition-all cursor-pointer"
               >
                 {isLoading ? 'AUTHENTICATING...' : 'AUTHENTICATE ADMIN'}
               </motion.button>
 
               <div className="text-center pt-2 border-t border-gray-100">
-                <Link to="/" className="font-serif text-xs font-semibold text-[#800000] hover:underline">
+                <Link to="/" className="text-xs font-semibold text-[#800000] hover:underline cursor-pointer">
                   Go back to Student Portal
                 </Link>
               </div>

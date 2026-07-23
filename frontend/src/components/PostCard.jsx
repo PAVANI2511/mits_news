@@ -521,12 +521,12 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
           </Link>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <Link to={`/profile/${post.username}`} className="font-serif text-sm font-bold text-text hover:text-primary transition-colors hover:underline">
+              <Link to={`/profile/${post.username}`} className="text-sm font-bold text-text hover:text-primary transition-colors hover:underline">
                 {post.name || post.username}
               </Link>
               {post.category && (
                 <div className="flex items-center gap-1.5 shrink-0 bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
-                  <span className="text-primary font-serif text-[9.5px] font-bold uppercase tracking-wider">
+                  <span className="text-primary text-[9.5px] font-bold uppercase tracking-wider">
                     {post.category.name}
                   </span>
                   <button
@@ -534,7 +534,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
                       e.preventDefault();
                       handleCategoryFollowToggle(post.category.id);
                     }}
-                    className={`text-[8.5px] font-serif font-black px-1.5 py-0.5 rounded-full transition-all duration-200 uppercase active:scale-95 shadow-sm ${
+                    className={`text-[8.5px] font-black px-1.5 py-0.5 rounded-full transition-all duration-200 uppercase active:scale-95 shadow-sm ${
                       categoryFollowed
                         ? 'bg-border text-gray-500 hover:bg-border/80'
                         : 'bg-primary text-white hover:bg-primary/95'
@@ -545,21 +545,21 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
                 </div>
               )}
               {post.location && (
-                <span className="font-serif text-xs text-gray-400 flex items-center gap-0.5">
+                <span className="text-xs text-gray-400 flex items-center gap-0.5">
                   • <FiMapPin className="inline text-[10px]" /> {post.location}
                 </span>
               )}
             </div>
-            <div className="font-serif text-[10px] text-gray-400 font-semibold">{post.email}</div>
+            <div className="text-[10px] text-gray-400 font-semibold">{post.email}</div>
           </div>
         </div>
 
         <div className="flex items-center gap-2.5">
-          <span className="font-serif text-xs text-gray-400">{formattedDate}</span>
+          <span className="text-xs text-gray-400">{formattedDate}</span>
           {!isOwner && isAuthenticated && (
             <button
               onClick={handleFollow}
-              className={`px-3.5 py-1.5 rounded-full font-serif text-xs font-bold transition-all duration-200 flex items-center gap-1 active:scale-95 shadow-sm ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 flex items-center gap-1 active:scale-95 shadow-sm ${
                 following 
                   ? 'bg-border text-gray-500 hover:bg-border/80' 
                   : 'bg-primary text-white hover:bg-primary/90 shadow-sm shadow-primary/10'
@@ -572,13 +572,13 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => navigate(`/posts/${post.id}/edit`)}
-                className="font-serif text-xs font-bold px-3 py-1 text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 rounded-lg transition duration-200 active:scale-95"
+                className="text-xs font-bold px-3 py-1 text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 rounded-lg transition duration-200 active:scale-95"
               >
                 Edit
               </button>
               <button
                 onClick={handleDelete}
-                className="font-serif text-xs font-bold px-3 py-1 text-red-500 hover:bg-red-500/5 border border-transparent hover:border-red-500/20 rounded-lg transition duration-200 active:scale-95"
+                className="text-xs font-bold px-3 py-1 text-red-500 hover:bg-red-500/5 border border-transparent hover:border-red-500/20 rounded-lg transition duration-200 active:scale-95"
               >
                 Delete
               </button>
@@ -587,7 +587,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
           {!isOwner && isAuthenticated && (
             <button
               onClick={() => setShowReportModal(true)}
-              className="font-serif text-xs font-bold px-3 py-1 text-gray-400 hover:text-red-500 hover:bg-red-500/5 border border-transparent hover:border-red-500/10 rounded-lg transition duration-200 active:scale-95"
+              className="text-xs font-bold px-3 py-1 text-gray-400 hover:text-red-500 hover:bg-red-500/5 border border-transparent hover:border-red-500/10 rounded-lg transition duration-200 active:scale-95"
             >
               Report Post
             </button>
@@ -608,7 +608,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
             {post.hashtags.map((tag) => (
               <span 
                 key={tag} 
-                className="font-serif text-xs font-semibold text-[#800000] hover:underline cursor-pointer"
+                className="text-xs font-semibold text-[#800000] hover:underline cursor-pointer"
                 onClick={() => navigate(`/search?hashtag=${tag}`)}
               >
                 #{tag}

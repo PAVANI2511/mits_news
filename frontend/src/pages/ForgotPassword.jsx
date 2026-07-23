@@ -165,13 +165,13 @@ const ForgotPassword = () => {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-2.5 rounded-xl font-serif">
+              <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-2.5 rounded-xl">
                 {error}
               </div>
             )}
 
             {message && (
-              <div className="bg-green-50 border border-green-200 text-green-700 text-xs px-4 py-2.5 rounded-xl font-serif">
+              <div className="bg-green-50 border border-green-200 text-green-700 text-xs px-4 py-2.5 rounded-xl">
                 {message}
               </div>
             )}
@@ -179,7 +179,7 @@ const ForgotPassword = () => {
             {step === 'email' && (
               <form onSubmit={handleSendOtp} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-serif font-medium text-gray-800 mb-1.5">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                     Registered Email Address
                   </label>
                   <div className="relative">
@@ -188,7 +188,7 @@ const ForgotPassword = () => {
                       placeholder="yourname@mits.ac.in"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all"
                     />
                     <FiMail className="absolute left-3.5 top-3.5 text-gray-400 text-base" />
                   </div>
@@ -199,7 +199,7 @@ const ForgotPassword = () => {
                   whileTap={{ scale: 0.98 }}
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3.5 bg-[#800000] hover:bg-[#660000] text-white rounded-xl font-serif font-bold text-base tracking-wider uppercase shadow-md hover:shadow-lg disabled:opacity-50 transition-all cursor-pointer"
+                  className="w-full py-3.5 bg-[#800000] hover:bg-[#660000] text-white rounded-xl font-bold text-base tracking-wider uppercase shadow-md hover:shadow-lg disabled:opacity-50 transition-all cursor-pointer"
                 >
                   {isLoading ? 'PROCESSING...' : 'SEND OTP CODE'}
                 </motion.button>
@@ -209,7 +209,7 @@ const ForgotPassword = () => {
             {step === 'otp' && (
               <form onSubmit={handleVerifyOtp} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-serif font-medium text-gray-800 mb-1.5">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                     Verification Code (6-Digit OTP)
                   </label>
                   <div className="relative">
@@ -219,7 +219,7 @@ const ForgotPassword = () => {
                       placeholder="Enter 6-digit code"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm tracking-widest text-center font-mono font-bold transition-all"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm tracking-widest text-center font-mono font-bold transition-all"
                     />
                     <FiLock className="absolute left-3.5 top-3.5 text-gray-400 text-base" />
                   </div>
@@ -230,7 +230,7 @@ const ForgotPassword = () => {
                   whileTap={{ scale: 0.98 }}
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3.5 bg-[#800000] hover:bg-[#660000] text-white rounded-xl font-serif font-bold text-base tracking-wider uppercase shadow-md hover:shadow-lg disabled:opacity-50 transition-all cursor-pointer"
+                  className="w-full py-3.5 bg-[#800000] hover:bg-[#660000] text-white rounded-xl font-bold text-base tracking-wider uppercase shadow-md hover:shadow-lg disabled:opacity-50 transition-all cursor-pointer"
                 >
                   {isLoading ? 'VERIFYING...' : 'VERIFY OTP'}
                 </motion.button>
@@ -240,7 +240,7 @@ const ForgotPassword = () => {
                     type="button"
                     onClick={handleSendOtp}
                     disabled={isLoading}
-                    className="font-serif text-xs font-semibold text-[#800000] hover:underline cursor-pointer"
+                    className="text-xs font-semibold text-[#800000] hover:underline cursor-pointer"
                   >
                     Resend Verification Code
                   </button>
@@ -251,7 +251,7 @@ const ForgotPassword = () => {
             {step === 'reset' && (
               <form onSubmit={handleResetPassword} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-serif font-medium text-gray-800 mb-1.5">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                     New Password
                   </label>
                   <div className="relative">
@@ -260,7 +260,7 @@ const ForgotPassword = () => {
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-10 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all"
+                      className="w-full pl-10 pr-10 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all"
                     />
                     <FiLock className="absolute left-3.5 top-3.5 text-gray-400 text-base" />
                     <button
@@ -274,7 +274,7 @@ const ForgotPassword = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-serif font-medium text-gray-800 mb-1.5">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                     Confirm New Password
                   </label>
                   <div className="relative">
@@ -283,7 +283,7 @@ const ForgotPassword = () => {
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full pl-10 pr-10 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all"
+                      className="w-full pl-10 pr-10 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all"
                     />
                     <FiLock className="absolute left-3.5 top-3.5 text-gray-400 text-base" />
                     <button
@@ -301,7 +301,7 @@ const ForgotPassword = () => {
                   whileTap={{ scale: 0.98 }}
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3.5 bg-[#800000] hover:bg-[#660000] text-white rounded-xl font-serif font-bold text-base tracking-wider uppercase shadow-md hover:shadow-lg disabled:opacity-50 transition-all cursor-pointer"
+                  className="w-full py-3.5 bg-[#800000] hover:bg-[#660000] text-white rounded-xl font-bold text-base tracking-wider uppercase shadow-md hover:shadow-lg disabled:opacity-50 transition-all cursor-pointer"
                 >
                   {isLoading ? 'RESETTING...' : 'SAVE NEW PASSWORD'}
                 </motion.button>
@@ -309,7 +309,7 @@ const ForgotPassword = () => {
             )}
 
             <div className="text-center pt-2 border-t border-gray-100">
-              <Link to="/login" className="inline-flex items-center gap-1.5 font-serif text-sm font-semibold text-[#800000] hover:underline">
+              <Link to="/login" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#800000] hover:underline cursor-pointer">
                 <FiArrowLeft /> Back to Login
               </Link>
             </div>

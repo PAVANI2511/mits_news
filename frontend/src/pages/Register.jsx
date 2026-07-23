@@ -320,13 +320,13 @@ const Register = () => {
             </div>
 
             {errors.general && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-2.5 rounded-xl mb-4 font-serif">
+              <div className="bg-red-50 border border-red-200 text-red-700 text-xs px-4 py-2.5 rounded-xl mb-4">
                 {errors.general}
               </div>
             )}
 
             {success && (
-              <div className="bg-green-50 border border-green-200 text-green-700 text-xs px-4 py-2.5 rounded-xl mb-4 font-serif">
+              <div className="bg-green-50 border border-green-200 text-green-700 text-xs px-4 py-2.5 rounded-xl mb-4">
                 {success}
               </div>
             )}
@@ -334,7 +334,7 @@ const Register = () => {
             <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Username */}
               <div className="sm:col-span-1">
-                <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Username *
                 </label>
                 <div className="relative">
@@ -344,20 +344,20 @@ const Register = () => {
                     placeholder="e.g. chinni@25"
                     value={formData.username}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all ${
                       errors.username ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                     }`}
                   />
                   <FiUser className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
                 </div>
                 {errors.username && (
-                  <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.username}</p>
+                  <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.username}</p>
                 )}
               </div>
 
               {/* Full Name */}
               <div className="sm:col-span-1">
-                <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Full Name *
                 </label>
                 <div className="relative">
@@ -367,20 +367,20 @@ const Register = () => {
                     placeholder="Student / Teacher Name"
                     value={formData.name}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all ${
                       errors.name ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                     }`}
                   />
                   <FiUser className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
                 </div>
                 {errors.name && (
-                  <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.name}</p>
+                  <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.name}</p>
                 )}
               </div>
 
               {/* College Email */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   College Email (@mits.ac.in) *
                 </label>
                 <div className="relative">
@@ -390,20 +390,20 @@ const Register = () => {
                     placeholder="yourname@mits.ac.in"
                     value={formData.email}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all ${
                       errors.email ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                     }`}
                   />
                   <FiMail className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
                 </div>
                 {errors.email && (
-                  <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.email}</p>
+                  <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.email}</p>
                 )}
               </div>
 
               {/* Mobile Number */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Mobile Number *
                 </label>
                 <div className="relative">
@@ -413,24 +413,24 @@ const Register = () => {
                     placeholder="e.g. 9876543210"
                     value={formData.mobile_number}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all ${
                       errors.mobile_number ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                     }`}
                   />
                   <FiPhone className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
                 </div>
                 {errors.mobile_number && (
-                  <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.mobile_number}</p>
+                  <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.mobile_number}</p>
                 )}
               </div>
 
               {/* Student or Teacher Selector */}
               <div className="sm:col-span-2 border-t border-gray-100 pt-3 mt-1">
-                <label className="block text-xs font-serif font-semibold text-gray-800 uppercase tracking-wider mb-2">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                   Select Role *
                 </label>
                 <div className="flex gap-6">
-                  <label className="flex items-center gap-2 text-sm font-serif font-medium text-gray-800 cursor-pointer">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-800 cursor-pointer">
                     <input
                       type="radio"
                       name="role_type"
@@ -441,7 +441,7 @@ const Register = () => {
                     />
                     Student
                   </label>
-                  <label className="flex items-center gap-2 text-sm font-serif font-medium text-gray-800 cursor-pointer">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-800 cursor-pointer">
                     <input
                       type="radio"
                       name="role_type"
@@ -457,7 +457,7 @@ const Register = () => {
 
               {/* Department */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Department *
                 </label>
                 <div className="relative">
@@ -465,7 +465,7 @@ const Register = () => {
                     name="department"
                     value={formData.department}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all appearance-none cursor-pointer ${
+                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all appearance-none cursor-pointer ${
                       errors.department ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                     }`}
                   >
@@ -481,7 +481,7 @@ const Register = () => {
                   <FiBookOpen className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400 pointer-events-none" />
                 </div>
                 {errors.department && (
-                  <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.department}</p>
+                  <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.department}</p>
                 )}
               </div>
 
@@ -489,7 +489,7 @@ const Register = () => {
               {formData.department === 'Other' && (
                 <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                       Custom Course / Branch *
                     </label>
                     <input
@@ -498,16 +498,16 @@ const Register = () => {
                       placeholder="e.g. B.Tech"
                       value={customBranch}
                       onChange={(e) => setCustomBranch(e.target.value)}
-                      className={`w-full px-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                      className={`w-full px-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all ${
                         errors.customBranch ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                       }`}
                     />
                     {errors.customBranch && (
-                      <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.customBranch}</p>
+                      <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.customBranch}</p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                       Custom Department Name *
                     </label>
                     <input
@@ -516,12 +516,12 @@ const Register = () => {
                       placeholder="e.g. CSE"
                       value={customDept}
                       onChange={(e) => setCustomDept(e.target.value)}
-                      className={`w-full px-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                      className={`w-full px-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all ${
                         errors.customDept ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                       }`}
                     />
                     {errors.customDept && (
-                      <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.customDept}</p>
+                      <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.customDept}</p>
                     )}
                   </div>
                 </div>
@@ -531,7 +531,7 @@ const Register = () => {
               {formData.role_type === 'student' && (
                 <>
                   <div className="sm:col-span-1">
-                    <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                       Year of Study *
                     </label>
                     <div className="relative">
@@ -539,7 +539,7 @@ const Register = () => {
                         name="year"
                         value={formData.year}
                         onChange={handleChange}
-                        className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all appearance-none cursor-pointer ${
+                        className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all appearance-none cursor-pointer ${
                           errors.year ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                         }`}
                       >
@@ -551,12 +551,12 @@ const Register = () => {
                       <FiUser className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400 pointer-events-none" />
                     </div>
                     {errors.year && (
-                      <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.year}</p>
+                      <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.year}</p>
                     )}
                   </div>
 
                   <div className="sm:col-span-1">
-                    <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                       Roll Number *
                     </label>
                     <div className="relative">
@@ -566,14 +566,14 @@ const Register = () => {
                         placeholder="e.g. 21691A0501"
                         value={formData.roll_number}
                         onChange={handleChange}
-                        className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                        className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all ${
                           errors.roll_number ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                         }`}
                       />
                       <FiUser className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
                     </div>
                     {errors.roll_number && (
-                      <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.roll_number}</p>
+                      <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.roll_number}</p>
                     )}
                   </div>
                 </>
@@ -583,7 +583,7 @@ const Register = () => {
               {formData.role_type === 'teacher' && (
                 <>
                   <div className="sm:col-span-1">
-                    <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                       Designation *
                     </label>
                     <div className="relative">
@@ -593,19 +593,19 @@ const Register = () => {
                         placeholder="e.g. Associate Professor"
                         value={formData.designation}
                         onChange={handleChange}
-                        className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                        className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all ${
                           errors.designation ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                         }`}
                       />
                       <FiUser className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
                     </div>
                     {errors.designation && (
-                      <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.designation}</p>
+                      <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.designation}</p>
                     )}
                   </div>
 
                   <div className="sm:col-span-1">
-                    <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                       Role in Department *
                     </label>
                     <div className="relative">
@@ -613,7 +613,7 @@ const Register = () => {
                         name="teacher_role"
                         value={formData.teacher_role}
                         onChange={handleChange}
-                        className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all appearance-none cursor-pointer ${
+                        className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all appearance-none cursor-pointer ${
                           errors.teacher_role ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                         }`}
                       >
@@ -627,13 +627,13 @@ const Register = () => {
                       <FiUser className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400 pointer-events-none" />
                     </div>
                     {errors.teacher_role && (
-                      <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.teacher_role}</p>
+                      <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.teacher_role}</p>
                     )}
                   </div>
 
                   {formData.teacher_role === 'Others' && (
                     <div className="sm:col-span-2">
-                      <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                         Specify Custom Role Name *
                       </label>
                       <div className="relative">
@@ -643,14 +643,14 @@ const Register = () => {
                           placeholder="e.g. Lab Assistant"
                           value={customTeacherRole}
                           onChange={(e) => setCustomTeacherRole(e.target.value)}
-                          className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                          className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all ${
                             errors.customTeacherRole ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                           }`}
                         />
                         <FiUser className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
                       </div>
                       {errors.customTeacherRole && (
-                        <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.customTeacherRole}</p>
+                        <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.customTeacherRole}</p>
                       )}
                     </div>
                   )}
@@ -659,7 +659,7 @@ const Register = () => {
 
               {/* Short Bio */}
               <div className="sm:col-span-2 border-t border-gray-100 pt-3 mt-1">
-                <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Short Bio
                 </label>
                 <textarea
@@ -668,13 +668,13 @@ const Register = () => {
                   placeholder="Tell us about yourself..."
                   value={formData.bio}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all"
+                  className="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all"
                 />
               </div>
 
               {/* Password */}
               <div className="sm:col-span-1">
-                <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Password *
                 </label>
                 <div className="relative">
@@ -684,7 +684,7 @@ const Register = () => {
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-10 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                    className={`w-full pl-10 pr-10 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all ${
                       errors.password ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                     }`}
                   />
@@ -698,13 +698,13 @@ const Register = () => {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.password}</p>
+                  <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.password}</p>
                 )}
               </div>
 
               {/* Confirm Password */}
               <div className="sm:col-span-1">
-                <label className="block text-xs font-serif font-medium text-gray-800 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Confirm Password *
                 </label>
                 <div className="relative">
@@ -714,7 +714,7 @@ const Register = () => {
                     placeholder="••••••••"
                     value={formData.confirm_password}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-10 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white font-serif text-sm transition-all ${
+                    className={`w-full pl-10 pr-10 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all ${
                       errors.confirm_password ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                     }`}
                   />
@@ -728,7 +728,7 @@ const Register = () => {
                   </button>
                 </div>
                 {errors.confirm_password && (
-                  <p className="mt-1 text-[11px] font-serif text-red-600 font-bold">{errors.confirm_password}</p>
+                  <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.confirm_password}</p>
                 )}
               </div>
 
@@ -738,7 +738,7 @@ const Register = () => {
                 whileTap={{ scale: 0.99 }}
                 type="submit"
                 disabled={isLoading}
-                className="sm:col-span-2 mt-2 w-full py-3.5 bg-[#800000] hover:bg-[#660000] text-white rounded-xl font-serif font-bold text-base tracking-wider uppercase shadow-md hover:shadow-lg disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="sm:col-span-2 mt-2 w-full py-3.5 bg-[#800000] hover:bg-[#660000] text-white rounded-xl font-bold text-base tracking-wider uppercase shadow-md hover:shadow-lg disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isLoading ? (
                   'CREATING ACCOUNT...'
@@ -752,12 +752,12 @@ const Register = () => {
 
               {/* Sign In Link */}
               <div className="text-center pt-3 border-t border-gray-100 sm:col-span-2">
-                <span className="font-serif text-xs text-gray-500">
+                <span className="text-xs text-gray-500">
                   Already have an account?{' '}
                 </span>
                 <Link
                   to="/login"
-                  className="font-serif text-xs font-semibold text-[#800000] hover:underline"
+                  className="text-xs font-semibold text-[#800000] hover:underline cursor-pointer"
                 >
                   Login here
                 </Link>
