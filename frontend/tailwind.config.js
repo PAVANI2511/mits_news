@@ -18,7 +18,7 @@ export default {
         mitsDarkRed: '#660000',
       },
       fontFamily: {
-        sans: ['AppFont', 'Outfit', 'Inter', 'sans-serif'],
+        sans: ['NumericFont', 'Outfit', 'Inter', 'sans-serif'],
         serif: ['"Playfair Display"', 'Georgia', 'serif'],
         cinzel: ['Cinzel', 'serif'],
       },

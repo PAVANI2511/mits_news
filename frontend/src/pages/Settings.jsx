@@ -3,10 +3,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import Sidebar from '../components/Sidebar';
-import { authAPI, themesAPI } from '../services/api';
+import { authAPI, themesAPI, getMediaUrl } from '../services/api';
 import { updateProfile, setThemePreference, logout } from '../redux/authSlice';
 import { changeTheme, setCustomTheme } from '../redux/themeSlice';
 import { FiUser, FiCheck, FiPlus, FiGrid, FiPhone } from 'react-icons/fi';
+import ImageCropModal from '../components/ImageCropModal';
 
 const avatarPresets = [
   { name: 'Default Silhouette', url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>' },
@@ -39,6 +40,39 @@ const Settings = () => {
   
   const [profilePic, setProfilePic] = useState(null);
   const [coverPhoto, setCoverPhoto] = useState(null);
+
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState(null);
+  const [croppedPreviewUrl, setCroppedPreviewUrl] = useState(null);
+
+  const handleCropSave = (croppedBlob) => {
+    setCropModalOpen(false);
+    const croppedFile = new File([croppedBlob], 'profile-avatar.jpg', {
+      type: 'image/jpeg',
+      lastModified: Date.now(),
+    });
+    setProfilePic(croppedFile);
+    setSelectedPresetAvatar('');
+    if (croppedPreviewUrl) {
+      URL.revokeObjectURL(croppedPreviewUrl);
+    }
+    setCroppedPreviewUrl(URL.createObjectURL(croppedBlob));
+  };
+
+  const handleCropCancel = () => {
+    setCropModalOpen(false);
+    if (selectedImageSrc) {
+      URL.revokeObjectURL(selectedImageSrc);
+      setSelectedImageSrc(null);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (selectedImageSrc) URL.revokeObjectURL(selectedImageSrc);
+      if (croppedPreviewUrl) URL.revokeObjectURL(croppedPreviewUrl);
+    };
+  }, []);
 
   // Custom theme editor colors
   const [customColors, setCustomColors] = useState({
@@ -494,15 +528,38 @@ const Settings = () => {
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                     Profile Avatar
                   </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      setProfilePic(e.target.files[0]);
-                      setSelectedPresetAvatar('');
-                    }}
-                    className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary file:cursor-pointer hover:file:bg-primary/20 mb-3"
-                  />
+                  
+                  {/* Avatar Preview & File Input Row */}
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="h-16 w-16 rounded-full overflow-hidden border border-border bg-bg flex items-center justify-center flex-shrink-0">
+                      <img 
+                        src={
+                          croppedPreviewUrl || 
+                          selectedPresetAvatar || 
+                          getMediaUrl(user?.profile?.profile_pic) || 
+                          'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23a0aec0"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'
+                        } 
+                        alt="Avatar Preview" 
+                        className="h-full w-full object-cover rounded-full"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files.length > 0) {
+                            const file = e.target.files[0];
+                            const readerSrc = URL.createObjectURL(file);
+                            setSelectedImageSrc(readerSrc);
+                            setCropModalOpen(true);
+                            e.target.value = ''; // Reset input to allow re-selecting same file
+                          }
+                        }}
+                        className="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary file:cursor-pointer hover:file:bg-primary/20"
+                      />
+                    </div>
+                  </div>
                   
                   <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1.5">Or Choose a Preset:</div>
                   <div className="flex gap-2 flex-wrap">
@@ -514,6 +571,10 @@ const Settings = () => {
                           onClick={() => {
                             setSelectedPresetAvatar(preset.url);
                             setProfilePic(null);
+                            if (croppedPreviewUrl) {
+                              URL.revokeObjectURL(croppedPreviewUrl);
+                              setCroppedPreviewUrl(null);
+                            }
                           }}
                           className={`h-9 w-9 rounded-full cursor-pointer overflow-hidden border-2 transition-all p-0.5 bg-card flex items-center justify-center ${
                             isSelected 
@@ -742,6 +803,12 @@ const Settings = () => {
           )}
         </div>
       </div>
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        imageSrc={selectedImageSrc}
+        onCancel={handleCropCancel}
+        onSave={handleCropSave}
+      />
     </MainLayout>
   );
 };
