@@ -232,10 +232,10 @@ const UserProfile = () => {
                     {profile.role_type || 'student'}
                   </span>
                   {profile.department && <span>• {profile.department}</span>}
-                  {profile.role_type === 'teacher' ? (
+                  {profile.role_type === 'faculty' ? (
                     <>
                       {profile.designation && <span>• {profile.designation}</span>}
-                      {profile.teacher_role && <span>• {profile.teacher_role}</span>}
+                      {profile.faculty_role && <span>• {profile.faculty_role}</span>}
                     </>
                   ) : (
                     <>

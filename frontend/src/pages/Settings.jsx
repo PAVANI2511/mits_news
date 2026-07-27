@@ -31,9 +31,9 @@ const Settings = () => {
   const [year, setYear] = useState(user?.profile?.year || '');
   const [rollNumber, setRollNumber] = useState(user?.profile?.roll_number || '');
   const [designation, setDesignation] = useState(user?.profile?.designation || '');
-  const isPresetRole = ['HOD', 'Teacher', 'AO', 'Attender'].includes(user?.profile?.teacher_role);
-  const [teacherRole, setTeacherRole] = useState(user?.profile?.teacher_role ? (isPresetRole ? user.profile.teacher_role : 'Others') : '');
-  const [customTeacherRole, setCustomTeacherRole] = useState(user?.profile?.teacher_role ? (isPresetRole ? '' : user.profile.teacher_role) : '');
+  const isPresetRole = ['HOD', 'Faculty', 'AO', 'Attender'].includes(user?.profile?.faculty_role);
+  const [facultyRole, setFacultyRole] = useState(user?.profile?.faculty_role ? (isPresetRole ? user.profile.faculty_role : 'Others') : '');
+  const [customFacultyRole, setCustomFacultyRole] = useState(user?.profile?.faculty_role ? (isPresetRole ? '' : user.profile.faculty_role) : '');
   const [mobileNumber, setMobileNumber] = useState(user?.profile?.mobile_number || '');
   const [followedNotificationsEnabled, setFollowedNotificationsEnabled] = useState(user?.profile?.followed_notifications_enabled ?? true);
   const [inAppNotificationsEnabled, setInAppNotificationsEnabled] = useState(user?.profile?.in_app_notifications_enabled ?? true);
@@ -172,14 +172,14 @@ const Settings = () => {
       departmentValue = `${customBranch.trim()} - ${customDept.trim()}`;
     }
 
-    let teacherRoleValue = teacherRole;
-    if (roleType === 'teacher' && teacherRoleValue === 'Others') {
-      if (!customTeacherRole.trim()) {
+    let facultyRoleValue = facultyRole;
+    if (roleType === 'faculty' && facultyRoleValue === 'Others') {
+      if (!customFacultyRole.trim()) {
         setError("Please specify your custom role name.");
         setLoading(false);
         return;
       }
-      teacherRoleValue = customTeacherRole.trim();
+      facultyRoleValue = customFacultyRole.trim();
     }
 
     try {
@@ -190,8 +190,8 @@ const Settings = () => {
       submitData.append('department', departmentValue);
       submitData.append('year', roleType === 'student' ? year : '');
       submitData.append('roll_number', roleType === 'student' ? rollNumber : '');
-      submitData.append('designation', roleType === 'teacher' ? designation : '');
-      submitData.append('teacher_role', roleType === 'teacher' ? teacherRoleValue : '');
+      submitData.append('designation', roleType === 'faculty' ? designation : '');
+      submitData.append('faculty_role', roleType === 'faculty' ? facultyRoleValue : '');
       submitData.append('mobile_number', mobileNumber);
 
       submitData.append('followed_notifications_enabled', followedNotificationsEnabled);
@@ -370,12 +370,12 @@ const Settings = () => {
                           <input
                             type="radio"
                             name="role_type"
-                            value="teacher"
-                            checked={roleType === 'teacher'}
+                            value="faculty"
+                            checked={roleType === 'faculty'}
                             onChange={(e) => setRoleType(e.target.value)}
                             className="w-4 h-4 text-primary focus:ring-primary border-border"
                           />
-                          Teacher / Staff
+                          Faculty / Staff
                         </label>
                       </div>
                     </div>
@@ -479,19 +479,19 @@ const Settings = () => {
                             Role in Department
                           </label>
                           <select
-                            value={teacherRole}
-                            onChange={(e) => setTeacherRole(e.target.value)}
+                            value={facultyRole}
+                            onChange={(e) => setFacultyRole(e.target.value)}
                             className="w-full px-3 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none"
                           >
                             <option value="">Select Role</option>
                             <option value="HOD">HOD</option>
-                            <option value="Teacher">Teacher</option>
+                            <option value="Faculty">Faculty</option>
                             <option value="AO">AO</option>
                             <option value="Attender">Attender</option>
                             <option value="Others">Others</option>
                           </select>
                         </div>
-                        {teacherRole === 'Others' && (
+                        {facultyRole === 'Others' && (
                           <div className="sm:col-span-2">
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                               Specify Custom Role Name
@@ -499,8 +499,8 @@ const Settings = () => {
                             <input
                               type="text"
                               placeholder="e.g. Lab Assistant"
-                              value={customTeacherRole}
-                              onChange={(e) => setCustomTeacherRole(e.target.value)}
+                              value={customFacultyRole}
+                              onChange={(e) => setCustomFacultyRole(e.target.value)}
                               className="w-full px-4 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                             />
                           </div>

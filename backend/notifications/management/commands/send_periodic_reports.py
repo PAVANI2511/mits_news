@@ -33,7 +33,7 @@ class Command(BaseCommand):
             return
 
         # Find all HODs
-        hods = StudentProfile.objects.filter(teacher_role='HOD', user__is_active=True)
+        hods = StudentProfile.objects.filter(faculty_role='HOD', user__is_active=True)
         count = 0
         for hod in hods:
             if hod.user.email:

@@ -418,7 +418,7 @@ class SearchUsersView(views.APIView):
                 "role_type": prof.role_type if prof else 'student',
                 "roll_number": prof.roll_number if prof else '',
                 "designation": prof.designation if prof else '',
-                "teacher_role": prof.teacher_role if prof else '',
+                "faculty_role": prof.faculty_role if prof else '',
                 "mobile_number": prof.mobile_number if prof else '',
             })
 
@@ -518,7 +518,7 @@ class SuggestedUsersView(views.APIView):
                 "role_type": prof.role_type if prof else 'student',
                 "roll_number": prof.roll_number if prof else '',
                 "designation": prof.designation if prof else '',
-                "teacher_role": prof.teacher_role if prof else '',
+                "faculty_role": prof.faculty_role if prof else '',
                 "mobile_number": prof.mobile_number if prof else '',
             })
             

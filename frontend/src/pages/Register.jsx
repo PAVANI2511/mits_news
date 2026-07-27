@@ -18,7 +18,7 @@ const Register = () => {
     year: '',
     roll_number: '',
     designation: '',
-    teacher_role: '',
+    faculty_role: '',
     bio: '',
     password: '',
     confirm_password: '',
@@ -31,7 +31,7 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [customBranch, setCustomBranch] = useState('');
   const [customDept, setCustomDept] = useState('');
-  const [customTeacherRole, setCustomTeacherRole] = useState('');
+  const [customFacultyRole, setCustomFacultyRole] = useState('');
 
   useEffect(() => {
     const errorKeys = Object.keys(errors);
@@ -100,7 +100,7 @@ const Register = () => {
     setErrors({});
     setSuccess('');
 
-    const { username, name, email, mobile_number, role_type, department, year, roll_number, designation, teacher_role, password, confirm_password } = formData;
+    const { username, name, email, mobile_number, role_type, department, year, roll_number, designation, faculty_role, password, confirm_password } = formData;
     
     const newErrors = {};
 
@@ -169,7 +169,7 @@ const Register = () => {
       departmentValue = `${customBranch.trim()} - ${customDept.trim()}`;
     }
 
-    let teacherRoleValue = teacher_role;
+    let facultyRoleValue = faculty_role;
     if (role_type === 'student') {
       if (!year) {
         newErrors.year = "Year of study is required.";
@@ -189,17 +189,17 @@ const Register = () => {
           }
         }
       }
-    } else if (role_type === 'teacher') {
+    } else if (role_type === 'faculty') {
       if (!designation) {
         newErrors.designation = "Designation is required.";
       }
-      if (!teacher_role) {
-        newErrors.teacher_role = "Teacher role selection is required.";
-      } else if (teacher_role === 'Others') {
-        if (!customTeacherRole.trim()) {
-          newErrors.customTeacherRole = "Custom role name is required.";
+      if (!faculty_role) {
+        newErrors.faculty_role = "Faculty role selection is required.";
+      } else if (faculty_role === 'Others') {
+        if (!customFacultyRole.trim()) {
+          newErrors.customFacultyRole = "Custom role name is required.";
         }
-        teacherRoleValue = customTeacherRole.trim();
+        facultyRoleValue = customFacultyRole.trim();
       }
     }
 
@@ -221,7 +221,7 @@ const Register = () => {
         bio: formData.bio,
         password,
         confirm_password,
-        ...(role_type === 'student' ? { year, roll_number } : { designation, teacher_role: teacherRoleValue })
+        ...(role_type === 'student' ? { year, roll_number } : { designation, faculty_role: facultyRoleValue })
       };
       await authAPI.register(payload);
       setSuccess("Account created successfully! Redirecting to login page...");
@@ -364,7 +364,7 @@ const Register = () => {
                   <input
                     type="text"
                     name="name"
-                    placeholder="Student / Teacher Name"
+                    placeholder="Student / Faculty Name"
                     value={formData.name}
                     onChange={handleChange}
                     className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all ${
@@ -424,7 +424,7 @@ const Register = () => {
                 )}
               </div>
 
-              {/* Student or Teacher Selector */}
+              {/* Student or Faculty Selector */}
               <div className="sm:col-span-2 border-t border-gray-100 pt-3 mt-1">
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                   Select Role *
@@ -445,12 +445,12 @@ const Register = () => {
                     <input
                       type="radio"
                       name="role_type"
-                      value="teacher"
-                      checked={formData.role_type === 'teacher'}
+                      value="faculty"
+                      checked={formData.role_type === 'faculty'}
                       onChange={handleChange}
                       className="w-4 h-4 text-[#800000] focus:ring-[#800000] border-gray-300 accent-[#800000] cursor-pointer"
                     />
-                    Teacher
+                    Faculty
                   </label>
                 </div>
               </div>
@@ -579,8 +579,8 @@ const Register = () => {
                 </>
               )}
 
-              {/* Teacher Fields */}
-              {formData.role_type === 'teacher' && (
+              {/* Faculty Fields */}
+              {formData.role_type === 'faculty' && (
                 <>
                   <div className="sm:col-span-1">
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
@@ -610,28 +610,28 @@ const Register = () => {
                     </label>
                     <div className="relative">
                       <select
-                        name="teacher_role"
-                        value={formData.teacher_role}
+                        name="faculty_role"
+                        value={formData.faculty_role}
                         onChange={handleChange}
                         className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all appearance-none cursor-pointer ${
-                          errors.teacher_role ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
+                          errors.faculty_role ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                         }`}
                       >
                         <option value="">Select Role</option>
                         <option value="HOD">HOD</option>
-                        <option value="Teacher">Teacher</option>
+                        <option value="Faculty">Faculty</option>
                         <option value="AO">AO</option>
                         <option value="Attender">Attender</option>
                         <option value="Others">Others</option>
                       </select>
                       <FiUser className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400 pointer-events-none" />
                     </div>
-                    {errors.teacher_role && (
-                      <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.teacher_role}</p>
+                    {errors.faculty_role && (
+                      <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.faculty_role}</p>
                     )}
                   </div>
 
-                  {formData.teacher_role === 'Others' && (
+                  {formData.faculty_role === 'Others' && (
                     <div className="sm:col-span-2">
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                         Specify Custom Role Name *
@@ -639,18 +639,18 @@ const Register = () => {
                       <div className="relative">
                         <input
                           type="text"
-                          name="customTeacherRole"
+                          name="customFacultyRole"
                           placeholder="e.g. Lab Assistant"
-                          value={customTeacherRole}
-                          onChange={(e) => setCustomTeacherRole(e.target.value)}
+                          value={customFacultyRole}
+                          onChange={(e) => setCustomFacultyRole(e.target.value)}
                           className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all ${
-                            errors.customTeacherRole ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
+                            errors.customFacultyRole ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                           }`}
                         />
                         <FiUser className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400" />
                       </div>
-                      {errors.customTeacherRole && (
-                        <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.customTeacherRole}</p>
+                      {errors.customFacultyRole && (
+                        <p className="mt-1 text-[11px] text-red-600 font-bold">{errors.customFacultyRole}</p>
                       )}
                     </div>
                   )}

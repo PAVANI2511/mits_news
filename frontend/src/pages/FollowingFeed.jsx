@@ -90,7 +90,7 @@ const FollowingFeed = () => {
             <div className="bg-card rounded-2xl border border-border p-12 text-center text-gray-500 flex flex-col items-center justify-center">
               <FiInfo className="text-4xl text-gray-400 mb-2" />
               <h3 className="font-bold text-text text-sm">No updates from followed users</h3>
-              <p className="text-xs text-gray-500 mt-1">Start following other students and teachers to personalize your feed!</p>
+              <p className="text-xs text-gray-500 mt-1">Start following other students and faculty to personalize your feed!</p>
             </div>
           )}
 

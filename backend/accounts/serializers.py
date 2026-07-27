@@ -10,7 +10,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentProfile
-        fields = ['id', 'username', 'email', 'name', 'department', 'year', 'bio', 'profile_pic', 'cover_photo', 'theme_preference', 'is_blocked', 'followers_count', 'following_count', 'email_notifications_enabled', 'in_app_notifications_enabled', 'followed_notifications_enabled', 'role_type', 'roll_number', 'designation', 'teacher_role', 'mobile_number']
+        fields = ['id', 'username', 'email', 'name', 'department', 'year', 'bio', 'profile_pic', 'cover_photo', 'theme_preference', 'is_blocked', 'followers_count', 'following_count', 'email_notifications_enabled', 'in_app_notifications_enabled', 'followed_notifications_enabled', 'role_type', 'roll_number', 'designation', 'faculty_role', 'mobile_number']
         read_only_fields = ['is_blocked', 'followers_count', 'following_count']
 
     def get_name(self, obj):
@@ -88,13 +88,13 @@ class RegisterSerializer(serializers.ModelSerializer):
     year = serializers.CharField(write_only=True, required=False, allow_blank=True)
     roll_number = serializers.CharField(write_only=True, required=False, allow_blank=True)
     designation = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    teacher_role = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    faculty_role = serializers.CharField(write_only=True, required=False, allow_blank=True)
     mobile_number = serializers.CharField(write_only=True, required=True)
     bio = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'confirm_password', 'name', 'role_type', 'department', 'year', 'roll_number', 'designation', 'teacher_role', 'mobile_number', 'bio']
+        fields = ['username', 'email', 'password', 'confirm_password', 'name', 'role_type', 'department', 'year', 'roll_number', 'designation', 'faculty_role', 'mobile_number', 'bio']
 
     def validate(self, attrs):
         if attrs['password'] != attrs['confirm_password']:
@@ -143,7 +143,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         # Conditional validation
         role_type = attrs.get('role_type', 'student')
-        if role_type not in ['student', 'teacher']:
+        if role_type not in ['student', 'faculty']:
             raise serializers.ValidationError({"role_type": "Invalid role selected."})
 
         if not attrs.get('department'):
@@ -166,11 +166,11 @@ class RegisterSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     "email": f"For students, the email prefix must match the roll number (e.g. {roll_number}@mits.ac.in)."
                 })
-        elif role_type == 'teacher':
+        elif role_type == 'faculty':
             if not attrs.get('designation'):
-                raise serializers.ValidationError({"designation": "Designation is required for teachers."})
-            if not attrs.get('teacher_role'):
-                raise serializers.ValidationError({"teacher_role": "Teacher role is required."})
+                raise serializers.ValidationError({"designation": "Designation is required for faculty."})
+            if not attrs.get('faculty_role'):
+                raise serializers.ValidationError({"faculty_role": "Faculty role is required."})
 
         return attrs
 
@@ -182,7 +182,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         year = validated_data.pop('year', '')
         roll_number = validated_data.pop('roll_number', '')
         designation = validated_data.pop('designation', '')
-        teacher_role = validated_data.pop('teacher_role', '')
+        faculty_role = validated_data.pop('faculty_role', '')
         mobile_number = validated_data.pop('mobile_number', '')
         bio = validated_data.pop('bio', '')
         validated_data.pop('confirm_password')
@@ -211,12 +211,12 @@ class RegisterSerializer(serializers.ModelSerializer):
             profile.year = year
             profile.roll_number = roll_number
             profile.designation = ''
-            profile.teacher_role = ''
+            profile.faculty_role = ''
         else:
             profile.year = ''
             profile.roll_number = ''
             profile.designation = designation
-            profile.teacher_role = teacher_role
+            profile.faculty_role = faculty_role
             
         profile.save()
 

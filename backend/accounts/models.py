@@ -10,7 +10,7 @@ class StudentProfile(models.Model):
     year = models.CharField(max_length=50, blank=True, default='')
     roll_number = models.CharField(max_length=50, blank=True, default='')
     designation = models.CharField(max_length=100, blank=True, default='')
-    teacher_role = models.CharField(max_length=50, blank=True, default='')
+    faculty_role = models.CharField(max_length=50, blank=True, default='')
     mobile_number = models.CharField(max_length=15, blank=True, default='')
     bio = models.TextField(blank=True, default='')
     profile_pic = models.FileField(upload_to='profiles/', blank=True, null=True)

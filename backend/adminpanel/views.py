@@ -218,8 +218,8 @@ class AdminUsersListView(views.APIView):
             queryset = queryset.filter(Q(is_staff=True) | Q(is_superuser=True))
         elif role_filter == 'student':
             queryset = queryset.filter(profile__role_type='student')
-        elif role_filter == 'teacher':
-            queryset = queryset.filter(profile__role_type='teacher')
+        elif role_filter == 'faculty':
+            queryset = queryset.filter(profile__role_type='faculty')
 
         # Filter by Department
         department_query = request.query_params.get('department', '').strip()
@@ -259,7 +259,7 @@ class AdminUsersListView(views.APIView):
                 "department": profile.department if profile else '',
                 "year": profile.year if profile else '',
                 "role_type": profile.role_type if profile else 'student',
-                "teacher_role": profile.teacher_role if profile else '',
+                "faculty_role": profile.faculty_role if profile else '',
                 "designation": profile.designation if profile else '',
                 "roll_number": profile.roll_number if profile else '',
                 "bio": profile.bio if profile else '',

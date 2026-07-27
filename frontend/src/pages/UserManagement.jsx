@@ -166,10 +166,10 @@ const UserManagement = () => {
       u.name,
       u.email,
       u.date_joined ? new Date(u.date_joined).toLocaleDateString() : '',
-      u.is_staff ? 'Admin' : (u.role_type === 'teacher' ? 'Teacher' : 'Student'),
+      u.is_staff ? 'Admin' : (u.role_type === 'faculty' ? 'Faculty' : 'Student'),
       u.is_blocked ? 'Blocked' : 'Active',
       u.department || '',
-      u.role_type === 'teacher' ? (u.teacher_role || 'Teacher') : (u.year || '')
+      u.role_type === 'faculty' ? (u.faculty_role || 'Faculty') : (u.year || '')
     ]);
     
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -222,7 +222,7 @@ const UserManagement = () => {
                   <td>${u.name}</td>
                   <td>${u.email}</td>
                   <td>${u.department || 'N/A'}</td>
-                  <td>${u.role_type === 'teacher' ? (u.teacher_role || 'Teacher') : (u.year || 'N/A')}</td>
+                  <td>${u.role_type === 'faculty' ? (u.faculty_role || 'Faculty') : (u.year || 'N/A')}</td>
                   <td>
                     <span class="badge badge-${u.is_blocked ? 'blocked' : 'active'}">
                       ${u.is_blocked ? 'blocked' : 'active'}
@@ -313,7 +313,7 @@ const UserManagement = () => {
               >
                 <option value="">All Roles</option>
                 <option value="student">Student Profile</option>
-                <option value="teacher">Teacher Profile</option>
+                <option value="faculty">Faculty Profile</option>
                 <option value="admin">Administrator Profile</option>
               </select>
             </div>
@@ -445,13 +445,13 @@ const UserManagement = () => {
                           <div className="flex flex-col">
                             <span className="block leading-tight text-xs font-semibold">{u.department}</span>
                             <span className="block text-[10px] text-gray-400 font-bold tracking-wide uppercase mt-1">
-                              {u.role_type === 'teacher' ? (u.teacher_role || 'Teacher') : u.year}
+                              {u.role_type === 'faculty' ? (u.faculty_role || 'Faculty') : u.year}
                             </span>
                           </div>
                         ) : 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap font-bold text-gray-500 uppercase tracking-wide text-[10px]">
-                        {u.is_staff ? 'Admin' : (u.role_type === 'teacher' ? 'Teacher' : 'Student')}
+                        {u.is_staff ? 'Admin' : (u.role_type === 'faculty' ? 'Faculty' : 'Student')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {u.is_blocked ? (
