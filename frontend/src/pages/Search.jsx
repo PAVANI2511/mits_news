@@ -14,7 +14,20 @@ const Search = () => {
 
   const [query, setQuery] = useState(queryParam ? queryParam : (hashtagParam ? `#${hashtagParam}` : ''));
   const [department, setDepartment] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState('');
+  const [selectedDept, setSelectedDept] = useState('');
   const [year, setYear] = useState('');
+
+  const handleBranchChange = (branch) => {
+    setSelectedBranch(branch);
+    setSelectedDept('');
+    setDepartment('');
+  };
+
+  const handleDeptChange = (dept) => {
+    setSelectedDept(dept);
+    setDepartment(dept);
+  };
   
   const [postResults, setPostResults] = useState([]);
   const [userResults, setUserResults] = useState([]);
@@ -22,7 +35,7 @@ const Search = () => {
   const [error, setError] = useState('');
 
   const departmentGroups = {
-    'B.Tech Programs': [
+    'B.Tech': [
       'B.Tech - Computer Science & Engineering (CSE)',
       'B.Tech - Computer Science & Technology (CST)',
       'B.Tech - Cyber Security (CS)',
@@ -33,23 +46,33 @@ const Search = () => {
       'B.Tech - Artificial Intelligence (AI)',
       'B.Tech - Artificial Intelligence & Machine Learning (AI&ML)',
       'B.Tech - Computer Networks (CN)',
-      'B.Tech - Data Science (DS)'
+      'B.Tech - Data Science (DS)',
+      'B.Tech - Bioinformatics',
+      'B.Tech - CSE (AI & Robotics)',
+      'B.Tech - CSE (AI & DS)',
+      'Other'
     ],
-    'M.Tech Programs': [
-      'M.Tech - Computer Science & Engineering (CSE)',
-      'M.Tech - VLSI Design',
-      'M.Tech - Electrical Power Systems (EPS)',
-      'M.Tech - Machine Design',
-      'M.Tech - Structural Engineering'
+    'M.Tech': [
+      'M.Tech - Automation and Robotics',
+      'M.Tech - Civil Engineering',
+      'M.Tech - Computer Science & Engineering',
+      'M.Tech - CSE (AI & ML)',
+      'M.Tech - Electric Vehicle Technology',
+      'M.Tech - VLSI Design & Embedded Systems',
+      'Other'
     ],
-    'MBA': [
-      'Master of Business Administration (MBA)'
+    'Degree': [
+      'Degree - BBA',
+      'Degree - BCA',
+      'Other'
     ],
     'MCA': [
-      'Master of Computer Applications (MCA)'
+      'MCA',
+      'Other'
     ],
-    'Bio Informatics': [
-      'Bio Informatics'
+    'MBA': [
+      'MBA',
+      'Other'
     ],
     'Other': [
       'Other'
@@ -125,24 +148,42 @@ const Search = () => {
           </form>
 
           {/* Advanced filters */}
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-border pt-4">
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-border pt-4">
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                <FiFilter /> Filter Branch
+              </label>
+              <select
+                value={selectedBranch}
+                onChange={(e) => handleBranchChange(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl bg-bg border border-border text-xs focus:outline-none"
+              >
+                <option value="">All Branches</option>
+                {Object.keys(departmentGroups).map(branch => (
+                  <option key={branch} value={branch}>{branch}</option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-1">
                 <FiFilter /> Filter Department
               </label>
               <select
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-bg border border-border text-xs focus:outline-none"
+                value={selectedDept}
+                onChange={(e) => handleDeptChange(e.target.value)}
+                disabled={!selectedBranch}
+                className="w-full px-3 py-2 rounded-xl bg-bg border border-border text-xs focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">All Departments</option>
-                {Object.keys(departmentGroups).map(groupName => (
-                  <optgroup key={groupName} label={groupName}>
-                    {departmentGroups[groupName].map(d => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </optgroup>
-                ))}
+                {selectedBranch && departmentGroups[selectedBranch]?.map(dept => {
+                  const displayLabel = dept.startsWith(selectedBranch + ' - ')
+                    ? dept.substring((selectedBranch + ' - ').length)
+                    : dept;
+                  return (
+                    <option key={dept} value={dept}>{displayLabel}</option>
+                  );
+                })}
               </select>
             </div>
 

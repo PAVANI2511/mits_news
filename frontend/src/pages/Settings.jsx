@@ -17,6 +17,71 @@ const avatarPresets = [
   { name: 'Developer Orange', url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23f97316"/><circle cx="50" cy="38" r="18" fill="%23ffd3b6"/><path d="M25 85c0-12 10-20 25-20s25 8 25 20z" fill="%237c2d12"/><path d="M30 38c0-5 2-8 2-8" stroke="%23111827" stroke-width="4" fill="none"/><path d="M68 38c0-5-2-8-2-8" stroke="%23111827" stroke-width="4" fill="none"/><rect x="26" y="32" width="6" height="12" rx="3" fill="%23111827"/><rect x="68" y="32" width="6" height="12" rx="3" fill="%23111827"/><path d="M30 32 A20 20 0 0 1 70 32" fill="none" stroke="%23111827" stroke-width="3"/></svg>' }
 ];
 
+const departmentGroups = {
+  'B.Tech': [
+    'B.Tech - Computer Science & Engineering (CSE)',
+    'B.Tech - Computer Science & Technology (CST)',
+    'B.Tech - Cyber Security (CS)',
+    'B.Tech - Electronics & Communication Engineering (ECE)',
+    'B.Tech - Electrical & Electronics Engineering (EEE)',
+    'B.Tech - Mechanical Engineering (ME)',
+    'B.Tech - Civil Engineering (CE)',
+    'B.Tech - Artificial Intelligence (AI)',
+    'B.Tech - Artificial Intelligence & Machine Learning (AI&ML)',
+    'B.Tech - Computer Networks (CN)',
+    'B.Tech - Data Science (DS)',
+    'B.Tech - Bioinformatics',
+    'B.Tech - CSE (AI & Robotics)',
+    'B.Tech - CSE (AI & DS)',
+    'Other'
+  ],
+  'M.Tech': [
+    'M.Tech - Automation and Robotics',
+    'M.Tech - Civil Engineering',
+    'M.Tech - Computer Science & Engineering',
+    'M.Tech - CSE (AI & ML)',
+    'M.Tech - Electric Vehicle Technology',
+    'M.Tech - VLSI Design & Embedded Systems',
+    'Other'
+  ],
+  'Degree': [
+    'Degree - BBA',
+    'Degree - BCA',
+    'Other'
+  ],
+  'MCA': [
+    'MCA',
+    'Other'
+  ],
+  'MBA': [
+    'MBA',
+    'Other'
+  ],
+  'Other': [
+    'Other'
+  ]
+};
+
+const parseDepartment = (deptString) => {
+  if (!deptString) return { branch: '', subDept: '', customBranch: '', customDept: '' };
+  if (deptString.includes(' - ')) {
+    const parts = deptString.split(' - ');
+    const possibleBranch = parts[0].trim();
+    const possibleSubDept = parts[1].trim();
+    if (departmentGroups[possibleBranch]) {
+      const matched = departmentGroups[possibleBranch].find(d => d === deptString);
+      if (matched) {
+        return { branch: possibleBranch, subDept: deptString, customBranch: '', customDept: '' };
+      }
+    }
+    return { branch: 'Other', subDept: 'Other', customBranch: possibleBranch, customDept: possibleSubDept };
+  } else if (departmentGroups[deptString]) {
+    return { branch: deptString, subDept: deptString, customBranch: '', customDept: '' };
+  } else {
+    return { branch: 'Other', subDept: 'Other', customBranch: deptString, customDept: '' };
+  }
+};
+
 const Settings = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -103,44 +168,28 @@ const Settings = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [customBranch, setCustomBranch] = useState('');
-  const [customDept, setCustomDept] = useState('');
   const [selectedPresetAvatar, setSelectedPresetAvatar] = useState('');
   const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(user?.profile?.email_notifications_enabled ?? true);
 
-  const departmentGroups = {
-    'B.Tech Programs': [
-      'B.Tech - Computer Science & Engineering (CSE)',
-      'B.Tech - Computer Science & Technology (CST)',
-      'B.Tech - Cyber Security (CS)',
-      'B.Tech - Electronics & Communication Engineering (ECE)',
-      'B.Tech - Electrical & Electronics Engineering (EEE)',
-      'B.Tech - Mechanical Engineering (ME)',
-      'B.Tech - Civil Engineering (CE)',
-      'B.Tech - Artificial Intelligence (AI)',
-      'B.Tech - Artificial Intelligence & Machine Learning (AI&ML)',
-      'B.Tech - Computer Networks (CN)',
-      'B.Tech - Data Science (DS)'
-    ],
-    'M.Tech Programs': [
-      'M.Tech - Computer Science & Engineering (CSE)',
-      'M.Tech - VLSI Design',
-      'M.Tech - Electrical Power Systems (EPS)',
-      'M.Tech - Machine Design',
-      'M.Tech - Structural Engineering'
-    ],
-    'MBA': [
-      'Master of Business Administration (MBA)'
-    ],
-    'MCA': [
-      'Master of Computer Applications (MCA)'
-    ],
-    'Bio Informatics': [
-      'Bio Informatics'
-    ],
-    'Other': [
-      'Other'
-    ]
+  const parsed = parseDepartment(user?.profile?.department || '');
+  const [selectedBranch, setSelectedBranch] = useState(parsed.branch);
+  const [selectedDept, setSelectedDept] = useState(parsed.subDept);
+  const [customBranch, setCustomBranch] = useState(parsed.customBranch);
+  const [customDept, setCustomDept] = useState(parsed.customDept);
+
+  const handleBranchChange = (e) => {
+    const branch = e.target.value;
+    setSelectedBranch(branch);
+    setSelectedDept('');
+    setDepartment('');
+    setCustomBranch('');
+    setCustomDept('');
+  };
+
+  const handleDeptChange = (e) => {
+    const deptVal = e.target.value;
+    setSelectedDept(deptVal);
+    setDepartment(deptVal);
   };
 
   const years = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
@@ -163,13 +212,17 @@ const Settings = () => {
     }
 
     let departmentValue = department;
-    if (departmentValue === 'Other') {
+    if (selectedDept === 'Other' || selectedBranch === 'Other') {
       if (!customBranch.trim() || !customDept.trim()) {
         setError("Please enter your custom course/branch and department.");
         setLoading(false);
         return;
       }
       departmentValue = `${customBranch.trim()} - ${customDept.trim()}`;
+    } else if (!selectedBranch || !selectedDept) {
+      setError("Please select your branch and department.");
+      setLoading(false);
+      return;
     }
 
     let facultyRoleValue = facultyRole;
@@ -380,27 +433,45 @@ const Settings = () => {
                       </div>
                     </div>
 
-                    <div className="sm:col-span-2">
+                    <div className="sm:col-span-1">
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                        Department
+                        Branch / Program
                       </label>
                       <select
-                        value={department}
-                        onChange={(e) => setDepartment(e.target.value)}
+                        value={selectedBranch}
+                        onChange={handleBranchChange}
                         className="w-full px-3 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none"
                       >
-                        <option value="">Select Department</option>
-                        {Object.keys(departmentGroups).map(groupName => (
-                          <optgroup key={groupName} label={groupName}>
-                            {departmentGroups[groupName].map(d => (
-                              <option key={d} value={d}>{d}</option>
-                        ))}
-                          </optgroup>
+                        <option value="">Select Branch</option>
+                        {Object.keys(departmentGroups).map(branch => (
+                          <option key={branch} value={branch}>{branch}</option>
                         ))}
                       </select>
                     </div>
 
-                    {department === 'Other' && (
+                    <div className="sm:col-span-1">
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                        Department
+                      </label>
+                      <select
+                        value={selectedDept}
+                        onChange={handleDeptChange}
+                        disabled={!selectedBranch}
+                        className="w-full px-3 py-2.5 rounded-xl bg-bg border border-border text-sm focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <option value="">Select Department</option>
+                        {selectedBranch && departmentGroups[selectedBranch]?.map(dept => {
+                          const displayLabel = dept.startsWith(selectedBranch + ' - ')
+                            ? dept.substring((selectedBranch + ' - ').length)
+                            : dept;
+                          return (
+                            <option key={dept} value={dept}>{displayLabel}</option>
+                          );
+                        })}
+                      </select>
+                    </div>
+
+                    {(selectedDept === 'Other' || selectedBranch === 'Other') && (
                       <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">

@@ -29,7 +29,7 @@ const UserManagement = () => {
   const [selectedDept, setSelectedDept] = useState('');
 
   const departmentGroups = {
-    'B.Tech Programs': [
+    'B.Tech': [
       'All B.Tech courses',
       'B.Tech - Computer Science & Engineering (CSE)',
       'B.Tech - Computer Science & Technology (CST)',
@@ -41,24 +41,34 @@ const UserManagement = () => {
       'B.Tech - Artificial Intelligence (AI)',
       'B.Tech - Artificial Intelligence & Machine Learning (AI&ML)',
       'B.Tech - Computer Networks (CN)',
-      'B.Tech - Data Science (DS)'
+      'B.Tech - Data Science (DS)',
+      'B.Tech - Bioinformatics',
+      'B.Tech - CSE (AI & Robotics)',
+      'B.Tech - CSE (AI & DS)',
+      'Other'
     ],
-    'M.Tech Programs': [
+    'M.Tech': [
       'All M.Tech courses',
-      'M.Tech - Computer Science & Engineering (CSE)',
-      'M.Tech - VLSI Design',
-      'M.Tech - Electrical Power Systems (EPS)',
-      'M.Tech - Machine Design',
-      'M.Tech - Structural Engineering'
+      'M.Tech - Automation and Robotics',
+      'M.Tech - Civil Engineering',
+      'M.Tech - Computer Science & Engineering',
+      'M.Tech - CSE (AI & ML)',
+      'M.Tech - Electric Vehicle Technology',
+      'M.Tech - VLSI Design & Embedded Systems',
+      'Other'
     ],
-    'MBA': [
-      'Master of Business Administration (MBA)'
+    'Degree': [
+      'Degree - BBA',
+      'Degree - BCA',
+      'Other'
     ],
     'MCA': [
-      'Master of Computer Applications (MCA)'
+      'MCA',
+      'Other'
     ],
-    'Bio Informatics': [
-      'Bio Informatics'
+    'MBA': [
+      'MBA',
+      'Other'
     ],
     'Other': [
       'Other'
@@ -72,10 +82,10 @@ const UserManagement = () => {
     if (!prog) {
       setSelectedCourse('');
       setSelectedDept('');
-    } else if (prog === 'B.Tech Programs') {
+    } else if (prog === 'B.Tech') {
       setSelectedCourse('All B.Tech courses');
       setSelectedDept('All B.Tech courses');
-    } else if (prog === 'M.Tech Programs') {
+    } else if (prog === 'M.Tech') {
       setSelectedCourse('All M.Tech courses');
       setSelectedDept('All M.Tech courses');
     } else {

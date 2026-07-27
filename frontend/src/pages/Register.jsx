@@ -32,6 +32,29 @@ const Register = () => {
   const [customBranch, setCustomBranch] = useState('');
   const [customDept, setCustomDept] = useState('');
   const [customFacultyRole, setCustomFacultyRole] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState('');
+  const [selectedDept, setSelectedDept] = useState('');
+
+  const handleBranchChange = (e) => {
+    const branch = e.target.value;
+    setSelectedBranch(branch);
+    setSelectedDept('');
+    setFormData(prev => ({
+      ...prev,
+      department: ''
+    }));
+    setCustomBranch('');
+    setCustomDept('');
+  };
+
+  const handleDeptChange = (e) => {
+    const deptVal = e.target.value;
+    setSelectedDept(deptVal);
+    setFormData(prev => ({
+      ...prev,
+      department: deptVal
+    }));
+  };
 
   useEffect(() => {
     const errorKeys = Object.keys(errors);
@@ -48,7 +71,7 @@ const Register = () => {
   }, [errors]);
 
   const departmentGroups = {
-    'B.Tech Programs': [
+    'B.Tech': [
       'B.Tech - Computer Science & Engineering (CSE)',
       'B.Tech - Computer Science & Technology (CST)',
       'B.Tech - Cyber Security (CS)',
@@ -59,23 +82,33 @@ const Register = () => {
       'B.Tech - Artificial Intelligence (AI)',
       'B.Tech - Artificial Intelligence & Machine Learning (AI&ML)',
       'B.Tech - Computer Networks (CN)',
-      'B.Tech - Data Science (DS)'
+      'B.Tech - Data Science (DS)',
+      'B.Tech - Bioinformatics',
+      'B.Tech - CSE (AI & Robotics)',
+      'B.Tech - CSE (AI & DS)',
+      'Other'
     ],
-    'M.Tech Programs': [
-      'M.Tech - Computer Science & Engineering (CSE)',
-      'M.Tech - VLSI Design',
-      'M.Tech - Electrical Power Systems (EPS)',
-      'M.Tech - Machine Design',
-      'M.Tech - Structural Engineering'
+    'M.Tech': [
+      'M.Tech - Automation and Robotics',
+      'M.Tech - Civil Engineering',
+      'M.Tech - Computer Science & Engineering',
+      'M.Tech - CSE (AI & ML)',
+      'M.Tech - Electric Vehicle Technology',
+      'M.Tech - VLSI Design & Embedded Systems',
+      'Other'
     ],
-    'MBA': [
-      'Master of Business Administration (MBA)'
+    'Degree': [
+      'Degree - BBA',
+      'Degree - BCA',
+      'Other'
     ],
     'MCA': [
-      'Master of Computer Applications (MCA)'
+      'MCA',
+      'Other'
     ],
-    'Bio Informatics': [
-      'Bio Informatics'
+    'MBA': [
+      'MBA',
+      'Other'
     ],
     'Other': [
       'Other'
@@ -158,8 +191,8 @@ const Register = () => {
       newErrors.email = "Registration is restricted to MITS. Must use @mits.ac.in email.";
     }
 
-    let departmentValue = department;
-    if (department === 'Other') {
+    let departmentValue = formData.department;
+    if (selectedDept === 'Other' || selectedBranch === 'Other') {
       if (!customBranch.trim()) {
         newErrors.customBranch = "Custom course/branch is required.";
       }
@@ -167,6 +200,8 @@ const Register = () => {
         newErrors.customDept = "Custom department name is required.";
       }
       departmentValue = `${customBranch.trim()} - ${customDept.trim()}`;
+    } else if (!selectedBranch || !selectedDept) {
+      newErrors.department = "Department selection is required.";
     }
 
     let facultyRoleValue = faculty_role;
@@ -455,28 +490,53 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Department */}
-              <div className="sm:col-span-2">
+              {/* Branch Selection */}
+              <div className="sm:col-span-1">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Branch / Program *
+                </label>
+                <div className="relative">
+                  <select
+                    name="branch"
+                    value={selectedBranch}
+                    onChange={handleBranchChange}
+                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all appearance-none cursor-pointer ${
+                      errors.department ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
+                    }`}
+                  >
+                    <option value="">Select Branch</option>
+                    {Object.keys(departmentGroups).map(branch => (
+                      <option key={branch} value={branch}>{branch}</option>
+                    ))}
+                  </select>
+                  <FiBookOpen className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Department Selection */}
+              <div className="sm:col-span-1">
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                   Department *
                 </label>
                 <div className="relative">
                   <select
                     name="department"
-                    value={formData.department}
-                    onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all appearance-none cursor-pointer ${
+                    value={selectedDept}
+                    onChange={handleDeptChange}
+                    disabled={!selectedBranch}
+                    className={`w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-gray-50 border text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white text-sm transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                       errors.department ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-200'
                     }`}
                   >
                     <option value="">Select Department</option>
-                    {Object.keys(departmentGroups).map(groupName => (
-                      <optgroup key={groupName} label={groupName}>
-                        {departmentGroups[groupName].map(dept => (
-                          <option key={dept} value={dept}>{dept}</option>
-                        ))}
-                      </optgroup>
-                    ))}
+                    {selectedBranch && departmentGroups[selectedBranch]?.map(dept => {
+                      const displayLabel = dept.startsWith(selectedBranch + ' - ')
+                        ? dept.substring((selectedBranch + ' - ').length)
+                        : dept;
+                      return (
+                        <option key={dept} value={dept}>{displayLabel}</option>
+                      );
+                    })}
                   </select>
                   <FiBookOpen className="absolute left-3.5 top-3 sm:top-3.5 text-gray-400 pointer-events-none" />
                 </div>
@@ -486,7 +546,7 @@ const Register = () => {
               </div>
 
               {/* Custom Department inputs if 'Other' selected */}
-              {formData.department === 'Other' && (
+              {(selectedDept === 'Other' || selectedBranch === 'Other') && (
                 <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
