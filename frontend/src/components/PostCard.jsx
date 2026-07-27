@@ -17,9 +17,21 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useSelector((state) => state.auth);
 
+  const mediaFiles = post.media_files || [];
+  const images = mediaFiles.filter(m => m.media_type === 'image');
+  const videos = mediaFiles.filter(m => m.media_type === 'video');
+  const pdfs = mediaFiles.filter(m => m.media_type === 'pdf');
+  const audios = mediaFiles.filter(m => m.media_type === 'audio');
+  const posters = mediaFiles.filter(m => m.media_type === 'poster');
+  const hasAudio = audios.length > 0;
+  const hasVideo = videos.length > 0;
+
   const [audioMuted, setAudioMuted] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [_isPlaying, setIsPlaying] = useState(false);
+
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const containerRef = useRef(null);
   const videoRef = useRef(null);
@@ -33,7 +45,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   // Play / Pause helper functions
   const playMedia = useCallback(() => {
     const isMuted = audioMutedRef.current;
-    if (post.video && videoRef.current) {
+    if (hasVideo && videoRef.current) {
       videoRef.current.currentTime = 0; // Play from starting
       videoRef.current.muted = isMuted;
       videoRef.current.play().catch((err) => {
@@ -41,7 +53,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
       });
       setIsPlaying(true);
     }
-    if (post.audio && audioRef.current) {
+    if (hasAudio && audioRef.current) {
       audioRef.current.currentTime = 0; // Play from starting
       audioRef.current.muted = isMuted;
       if (!isMuted) {
@@ -54,7 +66,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
         setIsPlaying(false);
       }
     }
-  }, [post.video, post.audio]);
+  }, [hasVideo, hasAudio]);
 
   const pauseMedia = useCallback(() => {
     if (videoRef.current) {
@@ -86,7 +98,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
       videoRef.current.muted = newMuted;
     }
     
-    if (post.audio && audioRef.current) {
+    if (hasAudio && audioRef.current) {
       audioRef.current.muted = newMuted;
       if (!newMuted && isActive) {
         audioRef.current.play().catch(err => console.log("Play failed:", err));
@@ -625,88 +637,178 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
           </div>
         </div>
       )}
-
-      {/* Media Attachments */}
-      {post.image && (
-        <div className="border-t border-b border-border/80 bg-bg/25 flex justify-center items-center max-h-[550px] overflow-hidden w-full relative">
-          <img
-            src={getMediaUrl(post.image)}
-            alt="Post content"
-            className="max-h-[550px] w-auto object-contain transition-transform duration-500 hover:scale-[1.015]"
-          />
+      {/* Mixed Media Attachments Gallery */}
+      
+      {/* 1. Images Gallery Grid / Lightbox Trigger */}
+      {images.length > 0 && (
+        <div className="media-block overflow-hidden border border-border bg-bg/25 p-4 w-full">
+          <div className={`grid gap-3 ${
+            images.length === 1 ? 'grid-cols-1' :
+            images.length === 2 ? 'grid-cols-2' :
+            images.length === 3 ? 'grid-cols-2 sm:grid-cols-3' :
+            'grid-cols-2 sm:grid-cols-4'
+          }`}>
+            {images.slice(0, 4).map((img, index) => {
+              const isLastAndMore = index === 3 && images.length > 4;
+              return (
+                <div 
+                  key={img.id} 
+                  className="relative aspect-video sm:aspect-square rounded-2xl overflow-hidden border border-border bg-card group cursor-pointer"
+                  onClick={() => handleOpenLightbox(index)}
+                >
+                  <img
+                    src={getMediaUrl(img.file_url)}
+                    alt={`Campus Attachment ${index + 1}`}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  {isLastAndMore && (
+                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white font-extrabold text-lg select-none">
+                      +{images.length - 3}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {post.video && (
-        <div className="border-t border-b border-border/80 bg-black flex justify-center items-center max-h-[550px] w-full overflow-hidden">
+      {/* 2. Video Attachments */}
+      {videos.map((vid, idx) => (
+        <div key={vid.id} className="media-block overflow-hidden border border-border bg-black flex justify-center items-center max-h-[550px] w-full">
           <video
-            ref={videoRef}
-            src={getMediaUrl(post.video)}
+            ref={idx === 0 ? videoRef : null}
+            src={getMediaUrl(vid.file_url)}
             controls
+            preload="metadata"
             muted={audioMuted}
             className="w-full max-h-[550px]"
           />
         </div>
-      )}
-
+      ))}
 
       {/* Poster Attachment */}
-      {post.poster && (
-        <div className="border-t border-b border-border/80 bg-bg/15 px-5 sm:px-6 py-5 flex flex-col items-center gap-3">
+      {posters.map((posterDoc) => (
+        <div key={posterDoc.id} className="media-block overflow-hidden border border-border bg-bg/15 px-5 sm:px-6 py-5 flex flex-col items-center gap-3">
           <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Attached College Poster</div>
           <div className="relative group overflow-hidden rounded-2xl shadow-md border border-border/80 bg-card max-w-full">
             <img
-              src={getMediaUrl(post.poster)}
+              src={getMediaUrl(posterDoc.file_url)}
               alt="College Poster"
               className="rounded-2xl max-h-[400px] object-contain mx-auto transition-transform duration-500 group-hover:scale-[1.02]"
+              loading="lazy"
             />
           </div>
         </div>
-      )}
+      ))}
 
-      {/* PDF Attachment */}
-      {post.pdf && (
-        <div className="px-5 sm:px-6 py-4 border-t border-b border-border/80 bg-bg/20 flex items-center justify-between">
-          <div className="flex items-center gap-3 truncate">
-            <div className="p-2.5 bg-red-500/10 rounded-xl text-red-500">
-              <FiFileText className="text-2xl" />
-            </div>
-            <div className="truncate">
-              <div className="text-xs font-bold text-text truncate">
-                {post.pdf ? decodeURIComponent(post.pdf.split('/').pop().split('?')[0]) : 'College Document (PDF)'}
+      {/* 3. PDF Inline Previews */}
+      {pdfs.map((pdfDoc) => {
+        const fileName = decodeURIComponent(pdfDoc.file_url.split('/').pop().split('?')[0]);
+        return (
+          <div key={pdfDoc.id} className="media-block overflow-hidden border border-border bg-bg/15 px-5 sm:px-6 py-5 flex flex-col gap-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                <FiFileText className="text-red-500 text-lg" /> Attached Doc: {fileName}
               </div>
-              <div className="text-[10px] text-gray-500 truncate">Click download to read full document</div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={getMediaUrl(pdfDoc.file_url)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border border-border rounded-lg text-[10px] font-bold hover:bg-gray-200 dark:hover:bg-zinc-700 flex items-center gap-1 shadow-sm transition active:scale-95"
+                >
+                  <FiExternalLink /> Open in new tab
+                </a>
+                <button
+                  onClick={() => handleDownload('pdf', pdfDoc.file_url)}
+                  className="px-3 py-1 bg-primary text-white rounded-lg text-[10px] font-bold hover:bg-primary/90 flex items-center gap-1 shadow-sm transition active:scale-95"
+                >
+                  <FiDownload /> Download PDF
+                </button>
+              </div>
+            </div>
+            {/* Inline scrollable PDF container */}
+            <div className="w-full h-[500px] rounded-2xl border border-border overflow-hidden shadow-sm bg-card">
+              <iframe
+                src={`${getMediaUrl(pdfDoc.file_url)}#toolbar=0&navpanes=0&scrollbar=1`}
+                className="w-full h-full"
+                title={`PDF Preview: ${fileName}`}
+              />
             </div>
           </div>
-          <button
-            onClick={() => handleDownload('pdf', post.pdf)}
-            className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90 hover:-translate-y-0.5 active:scale-95 flex items-center gap-1.5 shadow-sm shadow-primary/10 transition-all duration-200"
-          >
-            <FiDownload /> Download
-          </button>
-        </div>
-      )}
+        );
+      })}
 
-      {/* Background Music Banner (Playing uploaded Audio file) */}
-      {post.audio && (
-        <div className="px-4 py-1.5 bg-gradient-to-r from-primary/5 to-secondary/5 border-b border-border flex justify-end items-center">
+      {/* 4. Single Audio Banner */}
+      {audios.slice(0, 1).map((aud) => (
+        <div key={aud.id} className="media-block overflow-hidden border border-border px-4 py-1.5 bg-gradient-to-r from-primary/5 to-secondary/5 flex justify-end items-center">
           <audio
             ref={audioRef}
-            src={getMediaUrl(post.audio)}
+            src={getMediaUrl(aud.file_url)}
             loop
             muted={audioMuted}
           />
           <button
             onClick={toggleMute}
-            className="p-1.5 rounded-lg hover:bg-black/5 text-gray-500 hover:text-text transition-all focus:outline-none flex items-center justify-center border border-border bg-card shadow-sm"
-            title={audioMuted ? "Unmute Music" : "Mute Music"}
+            className="text-xs text-primary font-bold flex items-center gap-1.5 bg-card hover:bg-bg/50 px-3 py-1 rounded-full border border-border shadow-sm transition active:scale-95"
           >
             {audioMuted ? (
-              <FiVolumeX className="text-base text-red-500" />
+              <><FiVolumeX className="text-red-500 animate-pulse" /> Unmute Post Music</>
             ) : (
-              <FiVolume2 className="text-base text-green-500 animate-pulse" />
+              <><FiVolume2 className="animate-bounce" /> Mute Post Music</>
             )}
           </button>
+        </div>
+      ))}
+
+      {/* Lightbox Modal */}
+      {lightboxOpen && images.length > 0 && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-between bg-black/95 p-4 sm:p-6 animate-fadeIn">
+          {/* Top Actions */}
+          <div className="flex justify-between items-center text-white">
+            <span className="text-sm font-bold tracking-wider">
+              {lightboxIndex + 1} / {images.length}
+            </span>
+            <button
+              onClick={() => setLightboxOpen(false)}
+              className="p-2 hover:bg-white/10 rounded-full transition"
+            >
+              <FiX className="text-2xl" />
+            </button>
+          </div>
+
+          {/* Large Image View */}
+          <div className="flex-1 flex items-center justify-center relative">
+            {/* Prev Button */}
+            {images.length > 1 && (
+              <button
+                onClick={() => setLightboxIndex(prev => (prev === 0 ? images.length - 1 : prev - 1))}
+                className="absolute left-2 sm:left-4 p-3 bg-white/5 hover:bg-white/15 text-white rounded-full transition z-10 font-bold"
+              >
+                &larr;
+              </button>
+            )}
+
+            <img
+              src={getMediaUrl(images[lightboxIndex].file_url)}
+              alt={`Slide ${lightboxIndex + 1}`}
+              className="max-h-[80vh] max-w-full object-contain rounded-lg select-none shadow-2xl"
+            />
+
+            {/* Next Button */}
+            {images.length > 1 && (
+              <button
+                onClick={() => setLightboxIndex(prev => (prev === images.length - 1 ? 0 : prev + 1))}
+                className="absolute right-2 sm:right-4 p-3 bg-white/5 hover:bg-white/15 text-white rounded-full transition z-10 font-bold"
+              >
+                &rarr;
+              </button>
+            )}
+          </div>
+
+          <div className="h-8" />
         </div>
       )}
 
@@ -855,34 +957,19 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Individual downloads for items */}
-          {post.image && (
-            <button
-              onClick={() => handleDownload('image', post.image)}
-              className="text-gray-500 hover:text-primary text-xs font-bold flex items-center gap-1.5 transition-colors duration-200 hover:scale-105 active:scale-95"
-              title="Download Image"
-            >
-              <FiDownload className="text-sm" /> <span className="hidden sm:inline">Image</span>
-            </button>
-          )}
-          {post.video && (
-            <button
-              onClick={() => handleDownload('video', post.video)}
-              className="text-gray-500 hover:text-primary text-xs font-bold flex items-center gap-1.5 transition-colors duration-200 hover:scale-105 active:scale-95"
-              title="Download Video"
-            >
-              <FiDownload className="text-sm" /> <span className="hidden sm:inline">Video</span>
-            </button>
-          )}
-          {post.audio && (
-            <button
-              onClick={() => handleDownload('audio', post.audio)}
-              className="text-gray-500 hover:text-primary text-xs font-bold flex items-center gap-1.5 transition-colors duration-200 hover:scale-105 active:scale-95"
-              title="Download Audio"
-            >
-              <FiDownload className="text-sm" /> <span className="hidden sm:inline">Audio</span>
-            </button>
-          )}
+          {mediaFiles.map((m, idx) => {
+            const label = m.media_type.charAt(0).toUpperCase() + m.media_type.slice(1);
+            return (
+              <button
+                key={m.id || idx}
+                onClick={() => handleDownload(m.media_type, m.file_url)}
+                className="text-gray-500 hover:text-primary text-xs font-bold flex items-center gap-1.5 transition-colors duration-200 hover:scale-105 active:scale-95"
+                title={`Download ${label}`}
+              >
+                <FiDownload className="text-sm" /> <span className="hidden sm:inline">{label} {mediaFiles.filter(item => item.media_type === m.media_type).length > 1 ? `#${idx + 1}` : ''}</span>
+              </button>
+            );
+          })}
 
           <button
             onClick={handleSave}

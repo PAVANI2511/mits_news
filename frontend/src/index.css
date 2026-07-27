@@ -204,3 +204,9 @@ input::-ms-clear {
   display: none;
 }
 
+/* Spacing and border-radius rules for post media attachments */
+.media-block {
+  margin-top: 12px;
+  border-radius: 10px;
+}
+

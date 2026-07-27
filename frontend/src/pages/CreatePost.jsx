@@ -27,15 +27,35 @@ const CreatePost = () => {
   const [categories, setCategories] = useState([]);
 
   const [files, setFiles] = useState({
-    image: null,
-    video: null,
+    images: [],
+    videos: [],
     audio: null,
-    pdf: null,
+    pdfs: [],
   });
 
-  const [previews, setPreviews] = useState({
-    image: '',
-  });
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [videoPreviews, setVideoPreviews] = useState([]);
+  const [pdfPreviews, setPdfPreviews] = useState([]);
+
+  useEffect(() => {
+    const urls = files.images.map(f => URL.createObjectURL(f));
+    setImagePreviews(urls);
+    return () => urls.forEach(url => URL.revokeObjectURL(url));
+  }, [files.images]);
+
+  useEffect(() => {
+    const urls = files.videos.map(f => URL.createObjectURL(f));
+    setVideoPreviews(urls);
+    return () => urls.forEach(url => URL.revokeObjectURL(url));
+  }, [files.videos]);
+
+  useEffect(() => {
+    const urls = files.pdfs.map(f => {
+      return { name: f.name, url: URL.createObjectURL(f) };
+    });
+    setPdfPreviews(urls);
+    return () => urls.forEach(item => URL.revokeObjectURL(item.url));
+  }, [files.pdfs]);
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -68,27 +88,64 @@ const CreatePost = () => {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    const type = e.target.name; // image, video, etc.
-    if (!file) return;
+    const inputFiles = Array.from(e.target.files);
+    const type = e.target.name; // images, videos, audio, pdfs
+    if (!inputFiles.length) return;
 
-    // Set file state
-    setFiles(prev => ({ ...prev, [type]: file }));
+    setError('');
 
-    // Handle image/poster previews
-    if (type === 'image') {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviews(prev => ({ ...prev, [type]: reader.result }));
-      };
-      reader.readAsDataURL(file);
+    const maxSizes = {
+      images: 10 * 1024 * 1024,
+      videos: 50 * 1024 * 1024,
+      pdfs: 20 * 1024 * 1024,
+      audio: 20 * 1024 * 1024,
+    };
+
+    const allowedExtensions = {
+      images: ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
+      videos: ['.mp4', '.webm', '.ogg'],
+      pdfs: ['.pdf'],
+      audio: ['.mp3', '.wav', '.m4a', '.ogg', '.mpeg'],
+    };
+
+    const newValidFiles = [];
+
+    for (const file of inputFiles) {
+      const ext = '.' + file.name.split('.').pop().toLowerCase();
+      if (!allowedExtensions[type].includes(ext)) {
+        setError(`Invalid format: ${file.name}. Allowed formats for ${type} are ${allowedExtensions[type].join(', ')}.`);
+        return;
+      }
+      if (file.size > maxSizes[type]) {
+        const sizeLimitMB = maxSizes[type] / (1024 * 1024);
+        setError(`File ${file.name} exceeds the size limit of ${sizeLimitMB}MB.`);
+        return;
+      }
+      newValidFiles.push(file);
+    }
+
+    if (type === 'audio') {
+      if (newValidFiles.length > 1) {
+        setError("Only one audio file per post is allowed.");
+        return;
+      }
+      setFiles(prev => ({ ...prev, audio: newValidFiles[0] }));
+    } else {
+      setFiles(prev => ({
+        ...prev,
+        [type]: [...prev[type], ...newValidFiles]
+      }));
     }
   };
 
-  const removeFile = (type) => {
-    setFiles(prev => ({ ...prev, [type]: null }));
-    if (type === 'image') {
-      setPreviews(prev => ({ ...prev, [type]: '' }));
+  const removeFile = (type, index) => {
+    if (type === 'audio') {
+      setFiles(prev => ({ ...prev, audio: null }));
+    } else {
+      setFiles(prev => ({
+        ...prev,
+        [type]: prev[type].filter((_, i) => i !== index)
+      }));
     }
   };
 
@@ -116,10 +173,18 @@ const CreatePost = () => {
       if (formData.event_date) submitData.append('event_date', formData.event_date);
       if (formData.last_date) submitData.append('last_date', formData.last_date);
 
-      if (files.image) submitData.append('image', files.image);
-      if (files.video) submitData.append('video', files.video);
-      if (files.audio) submitData.append('audio', files.audio);
-      if (files.pdf) submitData.append('pdf', files.pdf);
+      if (files.images && files.images.length > 0) {
+        files.images.forEach(f => submitData.append('images', f));
+      }
+      if (files.videos && files.videos.length > 0) {
+        files.videos.forEach(f => submitData.append('videos', f));
+      }
+      if (files.pdfs && files.pdfs.length > 0) {
+        files.pdfs.forEach(f => submitData.append('pdfs', f));
+      }
+      if (files.audio) {
+        submitData.append('audio', files.audio);
+      }
 
       setUploadProgress(1);
       await postsAPI.create(submitData, {
@@ -331,23 +396,23 @@ const CreatePost = () => {
               <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                 <FiImage className="text-xl text-gray-400 mb-1" />
                 <span className="text-[10px] font-semibold text-text">Image / Poster</span>
-                <span className="text-[8px] text-gray-400 mt-0.5">(PNG, JPG, JPEG, GIF, WEBP)</span>
-                <input type="file" name="image" accept="image/*, .png, .jpg, .jpeg, .gif, .webp" onChange={handleFileChange} className="hidden" />
+                <span className="text-[8px] text-gray-400 mt-0.5">(PNG, JPG, JPEG, GIF, WEBP - Max 10MB)</span>
+                <input type="file" name="images" multiple accept="image/*, .png, .jpg, .jpeg, .gif, .webp" onChange={handleFileChange} className="hidden" />
               </label>
 
               {/* Video Input */}
               <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                 <FiVideo className="text-xl text-gray-400 mb-1" />
                 <span className="text-[10px] font-semibold text-text">Video</span>
-                <span className="text-[8px] text-gray-400 mt-0.5">(MP4, WEBM, OGG)</span>
-                <input type="file" name="video" accept="video/*, .mp4, .webm, .ogg" onChange={handleFileChange} className="hidden" />
+                <span className="text-[8px] text-gray-400 mt-0.5">(MP4, WEBM, OGG - Max 50MB)</span>
+                <input type="file" name="videos" multiple accept="video/*, .mp4, .webm, .ogg" onChange={handleFileChange} className="hidden" />
               </label>
 
               {/* Audio Input */}
               <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                 <FiMusic className="text-xl text-gray-400 mb-1" />
                 <span className="text-[10px] font-semibold text-text">Audio</span>
-                <span className="text-[8px] text-gray-400 mt-0.5">(MP3, WAV, M4A, OGG, MPEG)</span>
+                <span className="text-[8px] text-gray-400 mt-0.5">(MP3, WAV, M4A, OGG, MPEG - Max 20MB, Max 1 file)</span>
                 <input type="file" name="audio" accept="audio/*, .mp3, .wav, .m4a, .ogg, .mpeg" onChange={handleFileChange} className="hidden" />
               </label>
 
@@ -355,37 +420,115 @@ const CreatePost = () => {
               <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                 <FiFileText className="text-xl text-gray-400 mb-1" />
                 <span className="text-[10px] font-semibold text-text">PDF Doc</span>
-                <span className="text-[8px] text-gray-400 mt-0.5">(PDF Only)</span>
-                <input type="file" name="pdf" accept="application/pdf, .pdf" onChange={handleFileChange} className="hidden" />
+                <span className="text-[8px] text-gray-400 mt-0.5">(PDF Only - Max 20MB)</span>
+                <input type="file" name="pdfs" multiple accept="application/pdf, .pdf" onChange={handleFileChange} className="hidden" />
               </label>
             </div>
 
             {/* List Attached files */}
             <div className="space-y-2">
-              {Object.keys(files).map((type) => {
-                const file = files[type];
-                if (!file) return null;
-                return (
-                  <div key={type} className="flex items-center justify-between bg-card px-3 py-2 rounded-xl border border-border">
-                    <span className="text-xs text-text flex items-center gap-1.5 capitalize font-semibold">
-                      <FiPaperclip className="text-gray-400" /> {type}: {file.name}
-                    </span>
-                    <button type="button" onClick={() => removeFile(type)} className="text-gray-400 hover:text-red-500">
-                      <FiX />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Render Image Previews */}
-            <div className="flex gap-4">
-              {previews.image && (
-                <div className="relative h-20 w-20 rounded-lg overflow-hidden border border-border">
-                  <img src={previews.image} alt="Upload preview" className="h-full w-full object-cover" />
-                  <button type="button" onClick={() => removeFile('image')} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs">
+              {/* Images */}
+              {files.images.map((file, idx) => (
+                <div key={`img-${idx}`} className="flex items-center justify-between bg-card px-3 py-2 rounded-xl border border-border">
+                  <span className="text-xs text-text flex items-center gap-1.5 font-semibold">
+                    <FiPaperclip className="text-gray-400" /> image {idx + 1}: {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                  </span>
+                  <button type="button" onClick={() => removeFile('images', idx)} className="text-gray-400 hover:text-red-500">
                     <FiX />
                   </button>
+                </div>
+              ))}
+              {/* Videos */}
+              {files.videos.map((file, idx) => (
+                <div key={`vid-${idx}`} className="flex items-center justify-between bg-card px-3 py-2 rounded-xl border border-border">
+                  <span className="text-xs text-text flex items-center gap-1.5 font-semibold">
+                    <FiPaperclip className="text-gray-400" /> video {idx + 1}: {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                  </span>
+                  <button type="button" onClick={() => removeFile('videos', idx)} className="text-gray-400 hover:text-red-500">
+                    <FiX />
+                  </button>
+                </div>
+              ))}
+              {/* Audio */}
+              {files.audio && (
+                <div className="flex items-center justify-between bg-card px-3 py-2 rounded-xl border border-border">
+                  <span className="text-xs text-text flex items-center gap-1.5 font-semibold">
+                    <FiPaperclip className="text-gray-400" /> audio: {files.audio.name} ({(files.audio.size / (1024 * 1024)).toFixed(2)} MB)
+                  </span>
+                  <button type="button" onClick={() => removeFile('audio')} className="text-gray-400 hover:text-red-500">
+                    <FiX />
+                  </button>
+                </div>
+              )}
+              {/* PDFs */}
+              {files.pdfs.map((file, idx) => (
+                <div key={`pdf-${idx}`} className="flex items-center justify-between bg-card px-3 py-2 rounded-xl border border-border">
+                  <span className="text-xs text-text flex items-center gap-1.5 font-semibold">
+                    <FiPaperclip className="text-gray-400" /> pdf {idx + 1}: {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                  </span>
+                  <button type="button" onClick={() => removeFile('pdfs', idx)} className="text-gray-400 hover:text-red-500">
+                    <FiX />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Previews Panel */}
+            <div className="space-y-4">
+              {/* Image Previews */}
+              {imagePreviews.length > 0 && (
+                <div>
+                  <span className="block text-[10px] font-bold text-gray-400 uppercase mb-2">Image Previews</span>
+                  <div className="flex flex-wrap gap-3">
+                    {imagePreviews.map((url, idx) => (
+                      <div key={idx} className="relative h-20 w-20 rounded-lg overflow-hidden border border-border bg-card">
+                        <img src={url} alt={`Upload preview ${idx}`} className="h-full w-full object-cover" />
+                        <button type="button" onClick={() => removeFile('images', idx)} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs">
+                          <FiX />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Video Previews */}
+              {videoPreviews.length > 0 && (
+                <div>
+                  <span className="block text-[10px] font-bold text-gray-400 uppercase mb-2">Video Previews</span>
+                  <div className="flex flex-wrap gap-3">
+                    {videoPreviews.map((url, idx) => (
+                      <div key={idx} className="relative h-28 w-44 rounded-lg overflow-hidden border border-border bg-black">
+                        <video src={url} controls className="h-full w-full object-contain" />
+                        <button type="button" onClick={() => removeFile('videos', idx)} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs z-10">
+                          <FiX />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* PDF Previews */}
+              {pdfPreviews.length > 0 && (
+                <div>
+                  <span className="block text-[10px] font-bold text-gray-400 uppercase mb-2">PDF Document Previews</span>
+                  <div className="space-y-3">
+                    {pdfPreviews.map((item, idx) => (
+                      <div key={idx} className="relative border border-border rounded-xl p-3 bg-card flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-text truncate max-w-xs">{item.name}</span>
+                          <button type="button" onClick={() => removeFile('pdfs', idx)} className="text-gray-400 hover:text-red-500 text-sm">
+                            <FiX />
+                          </button>
+                        </div>
+                        {/* Inline scrollable PDF preview using iframe */}
+                        <div className="w-full h-80 rounded-lg overflow-hidden border border-border">
+                          <iframe src={`${item.url}#toolbar=0&navpanes=0`} className="w-full h-full" title={`PDF Preview ${idx}`} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

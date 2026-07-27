@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Post, Like, SavedPost, Category, CategoryFollow, UserInterest
+from .models import Post, Like, SavedPost, Category, CategoryFollow, UserInterest, PostMedia
 from comments.models import Comment
 from accounts.models import Follower
 
@@ -15,6 +15,22 @@ class CategorySerializer(serializers.ModelSerializer):
         if request and request.user and request.user.is_authenticated:
             return CategoryFollow.objects.filter(user=request.user, category=obj).exists()
         return False
+
+class PostMediaSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PostMedia
+        fields = ['id', 'media_type', 'file_url']
+
+    def get_file_url(self, obj):
+        file_obj = obj.file
+        if not file_obj:
+            return ''
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(file_obj.url)
+        return file_obj.url
 
 class PostSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
@@ -37,6 +53,7 @@ class PostSerializer(serializers.ModelSerializer):
     )
     interest_status = serializers.SerializerMethodField()
     interested_count = serializers.SerializerMethodField()
+    media_files = PostMediaSerializer(many=True, read_only=True)
 
     class Meta:
         model = Post
@@ -47,7 +64,7 @@ class PostSerializer(serializers.ModelSerializer):
             'share_count', 'likes_count', 'comments_count', 'saved_count', 
             'is_liked', 'is_saved', 'is_following', 'category', 'category_id',
             'event_date', 'last_date', 'interest_status', 'interested_count',
-            'event_type', 'department', 'relevance_score', 'priority'
+            'event_type', 'department', 'relevance_score', 'priority', 'media_files'
         ]
         read_only_fields = ['is_blocked', 'created_at', 'share_count']
 
@@ -107,3 +124,60 @@ class PostSerializer(serializers.ModelSerializer):
 
     def get_interested_count(self, obj):
         return UserInterest.objects.filter(post=obj, status='interested').count()
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        media_list = []
+        request = self.context.get('request')
+
+        def get_absolute_url(file_field):
+            if not file_field:
+                return None
+            if request:
+                return request.build_absolute_uri(file_field.url)
+            return file_field.url
+
+        # Add legacy fields
+        if instance.image:
+            media_list.append({
+                'id': 'legacy-image',
+                'media_type': 'image',
+                'file_url': get_absolute_url(instance.image)
+            })
+        if instance.video:
+            media_list.append({
+                'id': 'legacy-video',
+                'media_type': 'video',
+                'file_url': get_absolute_url(instance.video)
+            })
+        if instance.audio:
+            media_list.append({
+                'id': 'legacy-audio',
+                'media_type': 'audio',
+                'file_url': get_absolute_url(instance.audio)
+            })
+        if instance.pdf:
+            media_list.append({
+                'id': 'legacy-pdf',
+                'media_type': 'pdf',
+                'file_url': get_absolute_url(instance.pdf)
+            })
+        if instance.poster:
+            media_list.append({
+                'id': 'legacy-poster',
+                'media_type': 'poster',
+                'file_url': get_absolute_url(instance.poster)
+            })
+
+        # Add records from PostMedia model
+        for pm in instance.media_files.all():
+            file_obj = pm.file
+            if file_obj:
+                media_list.append({
+                    'id': pm.id,
+                    'media_type': pm.media_type,
+                    'file_url': get_absolute_url(file_obj)
+                })
+
+        ret['media_files'] = media_list
+        return ret

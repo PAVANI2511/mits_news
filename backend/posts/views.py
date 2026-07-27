@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 import os
 
-from .models import Post, Like, SavedPost, Category, CategoryFollow, UserInterest
+from .models import Post, Like, SavedPost, Category, CategoryFollow, UserInterest, PostMedia
 from .serializers import PostSerializer, CategorySerializer
 from notifications.models import Notification
 
@@ -53,6 +53,208 @@ def send_new_post_notifications(post, author):
 
 
 
+def validate_media_file(file_obj, media_type):
+    # Allowed extensions
+    allowed_exts = {
+        'image': ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
+        'video': ['.mp4', '.mkv', '.mov', '.avi', '.webm'],
+        'pdf': ['.pdf'],
+        'audio': ['.mp3', '.wav', '.m4a', '.ogg', '.mpeg']
+    }
+    # Max sizes in bytes (configurable: Image: 10MB, Video: 50MB, PDF: 20MB, Audio: 20MB)
+    max_sizes = {
+        'image': 10 * 1024 * 1024,
+        'video': 50 * 1024 * 1024,
+        'pdf': 20 * 1024 * 1024,
+        'audio': 20 * 1024 * 1024
+    }
+    
+    ext = os.path.splitext(file_obj.name)[1].lower()
+    if media_type not in allowed_exts:
+        from rest_framework.exceptions import ValidationError
+        raise ValidationError(f"Unsupported media type: {media_type}")
+        
+    if ext not in allowed_exts[media_type]:
+        from rest_framework.exceptions import ValidationError
+        raise ValidationError(f"Invalid file extension {ext} for {media_type}.")
+        
+    if file_obj.size > max_sizes[media_type]:
+        from rest_framework.exceptions import ValidationError
+        limit_mb = max_sizes[media_type] // (1024 * 1024)
+        raise ValidationError(f"File size exceeds the limit of {limit_mb}MB for {media_type}.")
+
+    # Secure Magic Number Checks
+    try:
+        file_obj.seek(0)
+        header = file_obj.read(262)
+        file_obj.seek(0)  # Reset pointer for Django's save
+        
+        # Prevent executable / script uploads
+        if header.startswith(b'MZ') or header.startswith(b'\x7fELF') or header.startswith(b'#!'):
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("Executable or binary script files are strictly prohibited.")
+            
+        if media_type == 'image':
+            is_png = header.startswith(b'\x89PNG\r\n\x1a\n')
+            is_jpg = header.startswith(b'\xff\xd8')
+            is_gif = header.startswith(b'GIF87a') or header.startswith(b'GIF89a')
+            is_webp = header.startswith(b'RIFF') and b'WEBP' in header[8:16]
+            if not (is_png or is_jpg or is_gif or is_webp):
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError("Invalid or corrupted image file signature.")
+                
+        elif media_type == 'pdf':
+            if not header.startswith(b'%PDF'):
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError("Invalid or corrupted PDF document signature.")
+                
+        elif media_type == 'video':
+            # Basic validation of common video structures
+            is_mp4 = b'ftyp' in header[4:16] or header.startswith(b'\x00\x00\x00')
+            is_webm = header.startswith(b'\x1a\x45\xdf\xa3')
+            if not (is_mp4 or is_webm or header.startswith(b'RIFF')):
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError("Invalid or corrupted video file signature.")
+                
+        elif media_type == 'audio':
+            is_mp3 = header.startswith(b'ID3') or header.startswith(b'\xff\xfb') or header.startswith(b'\xff\xf3') or header.startswith(b'\xff\xf2')
+            is_wav = header.startswith(b'RIFF') and b'WAVE' in header[8:16]
+            if not (is_mp3 or is_wav):
+                from rest_framework.exceptions import ValidationError
+                raise ValidationError("Invalid or corrupted audio file signature.")
+    except Exception as e:
+        if "ValidationError" in str(type(e)):
+            raise e
+        # Catch other read errors, just pass to allow native handling
+        pass
+
+def save_post_media(post, request):
+    images = request.FILES.getlist('images')
+    videos = request.FILES.getlist('videos')
+    pdfs = request.FILES.getlist('pdfs')
+    audios = request.FILES.getlist('audio')
+    
+    # Also support single-value fields if sent that way
+    if not images and 'image' in request.FILES:
+        images = [request.FILES['image']]
+    if not videos and 'video' in request.FILES:
+        videos = [request.FILES['video']]
+    if not pdfs and 'pdf' in request.FILES:
+        pdfs = [request.FILES['pdf']]
+    if not audios and 'audio' in request.FILES:
+        audios = [request.FILES['audio']]
+
+    # Clear legacy fields on the post object if they were newly uploaded in request.FILES
+    # to avoid duplication with PostMedia records and count collisions.
+    has_legacy_cleared = False
+    if images and post.image:
+        post.image = None
+        has_legacy_cleared = True
+    if videos and post.video:
+        post.video = None
+        has_legacy_cleared = True
+    if pdfs and post.pdf:
+        post.pdf = None
+        has_legacy_cleared = True
+    if audios and post.audio:
+        post.audio = None
+        has_legacy_cleared = True
+    if has_legacy_cleared:
+        post.save()
+
+    # 1. Sanitize file names
+    from django.utils.text import get_valid_filename
+    for f in images:
+        f.name = get_valid_filename(os.path.basename(f.name))
+    for f in videos:
+        f.name = get_valid_filename(os.path.basename(f.name))
+    for f in pdfs:
+        f.name = get_valid_filename(os.path.basename(f.name))
+    for f in audios:
+        f.name = get_valid_filename(os.path.basename(f.name))
+
+    # Helper function to prevent duplicate uploads (by name and size)
+    def is_duplicate(file_obj, media_type, seen):
+        key = (file_obj.name, file_obj.size)
+        if key in seen:
+            return True
+        seen.add(key)
+        for pm in post.media_files.filter(media_type=media_type):
+            file_field = pm.file
+            if file_field:
+                existing_name = os.path.basename(file_field.name)
+                if existing_name == file_obj.name and file_field.size == file_obj.size:
+                    return True
+        return False
+
+    # Filter out duplicate uploads
+    seen_files = set()
+    images = [img for img in images if not is_duplicate(img, 'image', seen_files)]
+    videos = [vid for vid in videos if not is_duplicate(vid, 'video', seen_files)]
+    pdfs = [pdf_file for pdf_file in pdfs if not is_duplicate(pdf_file, 'pdf', seen_files)]
+    audios = [aud for aud in audios if not is_duplicate(aud, 'audio', seen_files)]
+
+    # 2. Enforce MAX_FILES constraint (Maximum 10 media files allowed per post)
+    existing_media_count = post.media_files.count()
+    clear_media_ids = request.data.getlist('clear_media_ids')
+    media_ids_to_delete = [m_id for m_id in clear_media_ids if m_id not in ['legacy-image', 'legacy-video', 'legacy-audio', 'legacy-pdf']]
+    deleted_count = post.media_files.filter(id__in=media_ids_to_delete).count()
+    
+    new_media_count = len(images) + len(videos) + len(pdfs) + len(audios)
+    total_files = existing_media_count - deleted_count + new_media_count
+    
+    if total_files > 10:
+        from rest_framework.exceptions import ValidationError
+        raise ValidationError("Maximum 10 media files allowed per post.")
+
+    # Validate audio count (existing + new)
+    existing_audio_count = post.media_files.filter(media_type='audio').count()
+    if post.audio:
+        existing_audio_count += 1
+    
+    if request.data.get('clear_audio') == 'true' or 'legacy-audio' in clear_media_ids:
+        post.audio = None
+        existing_audio_count = 0
+    
+    new_audio_count = len(audios)
+    if existing_audio_count + new_audio_count > 1:
+        from rest_framework.exceptions import ValidationError
+        raise ValidationError({"audio": "Only one audio file per post is allowed."})
+
+    # Validate file formats, magic signatures & sizes
+    for img in images:
+        validate_media_file(img, 'image')
+    for vid in videos:
+        validate_media_file(vid, 'video')
+    for pdf_file in pdfs:
+        validate_media_file(pdf_file, 'pdf')
+    for aud in audios:
+        validate_media_file(aud, 'audio')
+
+    # Handle clearing of general media types
+    if request.data.get('clear_image') == 'true' or 'legacy-image' in clear_media_ids:
+        post.image = None
+    if request.data.get('clear_video') == 'true' or 'legacy-video' in clear_media_ids:
+        post.video = None
+    if request.data.get('clear_pdf') == 'true' or 'legacy-pdf' in clear_media_ids:
+        post.pdf = None
+
+    # Handle specific model deletes (trigger custom delete override to clean up storage)
+    if clear_media_ids:
+        if media_ids_to_delete:
+            for pm in post.media_files.filter(id__in=media_ids_to_delete):
+                pm.delete()
+
+    # Create PostMedia records
+    for img in images:
+        PostMedia.objects.create(post=post, media_type='image', image=img)
+    for vid in videos:
+        PostMedia.objects.create(post=post, media_type='video', video=vid)
+    for pdf_file in pdfs:
+        PostMedia.objects.create(post=post, media_type='pdf', pdf=pdf_file)
+    for aud in audios:
+        PostMedia.objects.create(post=post, media_type='audio', audio=aud)
+
 class PostCreateView(generics.CreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
@@ -63,9 +265,18 @@ class PostCreateView(generics.CreateAPIView):
         serializer.save(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
+        # Initial check for uploaded audio files
+        audio_files = request.FILES.getlist('audio')
+        if len(audio_files) > 1:
+            return Response({"audio": "Only one audio file per post is allowed."}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         post = serializer.save(user=request.user)
+        
+        # Save multiple media files
+        save_post_media(post, request)
+        post.save()
         
         # Dispatch notification emails asynchronously in a background thread
         threading.Thread(target=send_new_post_notifications, args=(post, request.user)).start()
@@ -106,30 +317,14 @@ class PostDetailView(views.APIView):
         post.location = request.data.get('location', post.location)
         post.music_url = request.data.get('music_url', post.music_url)
 
-        # Check explicit clear flags
-        if request.data.get('clear_image') == 'true':
-            post.image = None
-        if request.data.get('clear_video') == 'true':
-            post.video = None
-        if request.data.get('clear_audio') == 'true':
-            post.audio = None
+        # Check clear poster
         if request.data.get('clear_poster') == 'true':
             post.poster = None
-        if request.data.get('clear_pdf') == 'true':
-            post.pdf = None
-
-        # Files updates
-        if 'image' in request.FILES:
-            post.image = request.FILES['image']
-        if 'video' in request.FILES:
-            post.video = request.FILES['video']
-        if 'audio' in request.FILES:
-            post.audio = request.FILES['audio']
         if 'poster' in request.FILES:
             post.poster = request.FILES['poster']
-        if 'pdf' in request.FILES:
-            post.pdf = request.FILES['pdf']
 
+        # Call helper to validate audio count, clear files, and save new media
+        save_post_media(post, request)
         post.save()
 
         # Trigger mention notifications on edit

@@ -22,26 +22,39 @@ const EditPost = () => {
     music_url: '',
   });
 
-  const [clearedFields, setClearedFields] = useState({
-    image: false,
-    video: false,
-    audio: false,
-    pdf: false,
-  });
+  const [existingMedia, setExistingMedia] = useState([]);
+  const [clearMediaIds, setClearMediaIds] = useState([]);
 
   const [files, setFiles] = useState({
-    image: null,
-    video: null,
+    images: [],
+    videos: [],
     audio: null,
-    pdf: null,
+    pdfs: [],
   });
 
-  const [previews, setPreviews] = useState({
-    image: '',
-    video: '',
-    audio: '',
-    pdf: '',
-  });
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [videoPreviews, setVideoPreviews] = useState([]);
+  const [pdfPreviews, setPdfPreviews] = useState([]);
+
+  useEffect(() => {
+    const urls = files.images.map(f => URL.createObjectURL(f));
+    setImagePreviews(urls);
+    return () => urls.forEach(url => URL.revokeObjectURL(url));
+  }, [files.images]);
+
+  useEffect(() => {
+    const urls = files.videos.map(f => URL.createObjectURL(f));
+    setVideoPreviews(urls);
+    return () => urls.forEach(url => URL.revokeObjectURL(url));
+  }, [files.videos]);
+
+  useEffect(() => {
+    const urls = files.pdfs.map(f => {
+      return { name: f.name, url: URL.createObjectURL(f) };
+    });
+    setPdfPreviews(urls);
+    return () => urls.forEach(item => URL.revokeObjectURL(item.url));
+  }, [files.pdfs]);
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -75,12 +88,8 @@ const EditPost = () => {
         music_url: post.music_url || '',
       });
 
-      setPreviews({
-        image: post.image || '',
-        video: post.video || '',
-        audio: post.audio || '',
-        pdf: post.pdf || '',
-      });
+      setExistingMedia(post.media_files || []);
+      setClearMediaIds([]);
     } catch (_err) {
       setError("Failed to fetch post details. It might have been deleted.");
     } finally {
@@ -103,28 +112,69 @@ const EditPost = () => {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    const type = e.target.name;
-    if (!file) return;
+    const inputFiles = Array.from(e.target.files);
+    const type = e.target.name; // images, videos, audio, pdfs
+    if (!inputFiles.length) return;
 
-    setFiles(prev => ({ ...prev, [type]: file }));
-    setClearedFields(prev => ({ ...prev, [type]: false }));
+    setError('');
 
-    if (type === 'image') {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviews(prev => ({ ...prev, [type]: reader.result }));
-      };
-      reader.readAsDataURL(file);
+    const maxSizes = {
+      images: 10 * 1024 * 1024,
+      videos: 50 * 1024 * 1024,
+      pdfs: 20 * 1024 * 1024,
+      audio: 20 * 1024 * 1024,
+    };
+
+    const allowedExtensions = {
+      images: ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
+      videos: ['.mp4', '.webm', '.ogg'],
+      pdfs: ['.pdf'],
+      audio: ['.mp3', '.wav', '.m4a', '.ogg', '.mpeg'],
+    };
+
+    const newValidFiles = [];
+
+    for (const file of inputFiles) {
+      const ext = '.' + file.name.split('.').pop().toLowerCase();
+      if (!allowedExtensions[type].includes(ext)) {
+        setError(`Invalid format: ${file.name}. Allowed formats for ${type} are ${allowedExtensions[type].join(', ')}.`);
+        return;
+      }
+      if (file.size > maxSizes[type]) {
+        const sizeLimitMB = maxSizes[type] / (1024 * 1024);
+        setError(`File ${file.name} exceeds the size limit of ${sizeLimitMB}MB.`);
+        return;
+      }
+      newValidFiles.push(file);
+    }
+
+    if (type === 'audio') {
+      if (newValidFiles.length > 1) {
+        setError("Only one audio file per post is allowed.");
+        return;
+      }
+      setFiles(prev => ({ ...prev, audio: newValidFiles[0] }));
     } else {
-      setPreviews(prev => ({ ...prev, [type]: file.name }));
+      setFiles(prev => ({
+        ...prev,
+        [type]: [...prev[type], ...newValidFiles]
+      }));
     }
   };
 
-  const removeFile = (type) => {
-    setFiles(prev => ({ ...prev, [type]: null }));
-    setPreviews(prev => ({ ...prev, [type]: '' }));
-    setClearedFields(prev => ({ ...prev, [type]: true }));
+  const removeFile = (type, index) => {
+    if (type === 'audio') {
+      setFiles(prev => ({ ...prev, audio: null }));
+    } else {
+      setFiles(prev => ({
+        ...prev,
+        [type]: prev[type].filter((_, i) => i !== index)
+      }));
+    }
+  };
+
+  const removeExistingMedia = (mediaId) => {
+    setClearMediaIds(prev => [...prev, mediaId]);
   };
 
   const handleSubmit = async (e) => {
@@ -147,15 +197,22 @@ const EditPost = () => {
       submitData.append('location', formData.location);
       submitData.append('music_url', formData.music_url);
 
-      if (files.image) submitData.append('image', files.image);
-      if (files.video) submitData.append('video', files.video);
-      if (files.audio) submitData.append('audio', files.audio);
-      if (files.pdf) submitData.append('pdf', files.pdf);
+      if (files.images && files.images.length > 0) {
+        files.images.forEach(f => submitData.append('images', f));
+      }
+      if (files.videos && files.videos.length > 0) {
+        files.videos.forEach(f => submitData.append('videos', f));
+      }
+      if (files.pdfs && files.pdfs.length > 0) {
+        files.pdfs.forEach(f => submitData.append('pdfs', f));
+      }
+      if (files.audio) {
+        submitData.append('audio', files.audio);
+      }
 
-      if (clearedFields.image) submitData.append('clear_image', 'true');
-      if (clearedFields.video) submitData.append('clear_video', 'true');
-      if (clearedFields.audio) submitData.append('clear_audio', 'true');
-      if (clearedFields.pdf) submitData.append('clear_pdf', 'true');
+      if (clearMediaIds.length > 0) {
+        clearMediaIds.forEach(id => submitData.append('clear_media_ids', id));
+      }
 
       await postsAPI.update(id, submitData);
       setSuccess("Your campus article was successfully updated!");
@@ -266,93 +323,160 @@ const EditPost = () => {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                   <FiImage className="text-xl text-gray-400 mb-1" />
-                  <span className="text-[10px] font-semibold text-text">Replace Image / Poster</span>
-                  <span className="text-[8px] text-gray-400 mt-0.5">(PNG, JPG, JPEG, GIF, WEBP)</span>
-                  <input type="file" name="image" accept="image/*, .png, .jpg, .jpeg, .gif, .webp" onChange={handleFileChange} className="hidden" />
+                  <span className="text-[10px] font-semibold text-text">Add Images</span>
+                  <span className="text-[8px] text-gray-400 mt-0.5">(PNG, JPG, JPEG, GIF, WEBP - Max 10MB)</span>
+                  <input type="file" name="images" multiple accept="image/*, .png, .jpg, .jpeg, .gif, .webp" onChange={handleFileChange} className="hidden" />
                 </label>
 
                 <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                   <FiVideo className="text-xl text-gray-400 mb-1" />
-                  <span className="text-[10px] font-semibold text-text">Replace Vid</span>
-                  <span className="text-[8px] text-gray-400 mt-0.5">(MP4, WEBM, OGG)</span>
-                  <input type="file" name="video" accept="video/*, .mp4, .webm, .ogg" onChange={handleFileChange} className="hidden" />
+                  <span className="text-[10px] font-semibold text-text">Add Videos</span>
+                  <span className="text-[8px] text-gray-400 mt-0.5">(MP4, WEBM, OGG - Max 50MB)</span>
+                  <input type="file" name="videos" multiple accept="video/*, .mp4, .webm, .ogg" onChange={handleFileChange} className="hidden" />
                 </label>
 
                 <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                   <FiMusic className="text-xl text-gray-400 mb-1" />
-                  <span className="text-[10px] font-semibold text-text">Replace Audio</span>
-                  <span className="text-[8px] text-gray-400 mt-0.5">(MP3, WAV, M4A, OGG, MPEG)</span>
+                  <span className="text-[10px] font-semibold text-text">Set Audio</span>
+                  <span className="text-[8px] text-gray-400 mt-0.5">(MP3, WAV, M4A, OGG, MPEG - Max 20MB, Max 1 file)</span>
                   <input type="file" name="audio" accept="audio/*, .mp3, .wav, .m4a, .ogg, .mpeg" onChange={handleFileChange} className="hidden" />
                 </label>
 
                 <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                   <FiFileText className="text-xl text-gray-400 mb-1" />
-                  <span className="text-[10px] font-semibold text-text">Replace PDF</span>
-                  <span className="text-[8px] text-gray-400 mt-0.5">(PDF Only)</span>
-                  <input type="file" name="pdf" accept="application/pdf, .pdf" onChange={handleFileChange} className="hidden" />
+                  <span className="text-[10px] font-semibold text-text">Add PDFs</span>
+                  <span className="text-[8px] text-gray-400 mt-0.5">(PDF Only - Max 20MB)</span>
+                  <input type="file" name="pdfs" multiple accept="application/pdf, .pdf" onChange={handleFileChange} className="hidden" />
                 </label>
               </div>
 
-              {/* Attachments overview */}
+              {/* Existing Media List */}
+              {existingMedia.filter(m => !clearMediaIds.includes(m.id)).length > 0 && (
+                <div className="space-y-2">
+                  <span className="block text-[10px] font-bold text-gray-400 uppercase">Currently Uploaded Media</span>
+                  {existingMedia.filter(m => !clearMediaIds.includes(m.id)).map((m) => {
+                    const fileName = m.file_url.split('/').pop().split('?')[0];
+                    return (
+                      <div key={m.id} className="flex items-center justify-between bg-card/60 px-3 py-2 rounded-xl border border-border/80">
+                        <span className="text-xs text-text flex items-center gap-1.5 font-semibold truncate max-w-xs">
+                          {m.media_type === 'image' && <FiImage className="text-blue-500" />}
+                          {m.media_type === 'video' && <FiVideo className="text-primary" />}
+                          {m.media_type === 'audio' && <FiMusic className="text-green-500" />}
+                          {m.media_type === 'pdf' && <FiFileText className="text-red-500" />}
+                          {decodeURIComponent(fileName)}
+                        </span>
+                        <button type="button" onClick={() => removeExistingMedia(m.id)} className="text-gray-400 hover:text-red-500 font-bold text-xs flex items-center gap-1">
+                          <FiX /> Clear
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* New Attachments overview */}
               <div className="space-y-2">
-                {Object.keys(files).map((type) => {
-                  const file = files[type];
-                  if (!file) return null;
-                  return (
-                    <div key={type} className="flex items-center justify-between bg-card px-3 py-2 rounded-xl border border-border">
-                      <span className="text-xs text-text flex items-center gap-1.5 capitalize font-semibold">
-                        <FiPaperclip className="text-gray-400" /> New {type}: {file.name}
-                      </span>
-                      <button type="button" onClick={() => removeFile(type)} className="text-gray-400 hover:text-red-500">
-                        <FiX />
-                      </button>
-                    </div>
-                  );
-                })}
+                {/* Images */}
+                {files.images.map((file, idx) => (
+                  <div key={`img-${idx}`} className="flex items-center justify-between bg-card px-3 py-2 rounded-xl border border-border">
+                    <span className="text-xs text-text flex items-center gap-1.5 font-semibold">
+                      <FiPaperclip className="text-gray-400" /> New image {idx + 1}: {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                    </span>
+                    <button type="button" onClick={() => removeFile('images', idx)} className="text-gray-400 hover:text-red-500">
+                      <FiX />
+                    </button>
+                  </div>
+                ))}
+                {/* Videos */}
+                {files.videos.map((file, idx) => (
+                  <div key={`vid-${idx}`} className="flex items-center justify-between bg-card px-3 py-2 rounded-xl border border-border">
+                    <span className="text-xs text-text flex items-center gap-1.5 font-semibold">
+                      <FiPaperclip className="text-gray-400" /> New video {idx + 1}: {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                    </span>
+                    <button type="button" onClick={() => removeFile('videos', idx)} className="text-gray-400 hover:text-red-500">
+                      <FiX />
+                    </button>
+                  </div>
+                ))}
+                {/* Audio */}
+                {files.audio && (
+                  <div className="flex items-center justify-between bg-card px-3 py-2 rounded-xl border border-border">
+                    <span className="text-xs text-text flex items-center gap-1.5 font-semibold">
+                      <FiPaperclip className="text-gray-400" /> New audio: {files.audio.name} ({(files.audio.size / (1024 * 1024)).toFixed(2)} MB)
+                    </span>
+                    <button type="button" onClick={() => removeFile('audio')} className="text-gray-400 hover:text-red-500">
+                      <FiX />
+                    </button>
+                  </div>
+                )}
+                {/* PDFs */}
+                {files.pdfs.map((file, idx) => (
+                  <div key={`pdf-${idx}`} className="flex items-center justify-between bg-card px-3 py-2 rounded-xl border border-border">
+                    <span className="text-xs text-text flex items-center gap-1.5 font-semibold">
+                      <FiPaperclip className="text-gray-400" /> New pdf {idx + 1}: {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                    </span>
+                    <button type="button" onClick={() => removeFile('pdfs', idx)} className="text-gray-400 hover:text-red-500">
+                      <FiX />
+                    </button>
+                  </div>
+                ))}
               </div>
 
-              {/* Current or New Previews */}
-              <div className="flex flex-wrap gap-4 mt-2">
-                {previews.image && (
-                  <div className="relative h-20 w-20 rounded-lg overflow-hidden border border-border flex items-center justify-center bg-bg">
-                    <img 
-                      src={getMediaUrl(previews.image)} 
-                      alt="Image preview" 
-                      className="h-full w-full object-cover" 
-                    />
-                    <button type="button" onClick={() => removeFile('image')} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs hover:bg-red-500">
-                      <FiX />
-                    </button>
+              {/* Previews Panel */}
+              <div className="space-y-4">
+                {/* Image Previews */}
+                {imagePreviews.length > 0 && (
+                  <div>
+                    <span className="block text-[10px] font-bold text-gray-400 uppercase mb-2">New Image Previews</span>
+                    <div className="flex flex-wrap gap-3">
+                      {imagePreviews.map((url, idx) => (
+                        <div key={idx} className="relative h-20 w-20 rounded-lg overflow-hidden border border-border bg-card">
+                          <img src={url} alt={`Upload preview ${idx}`} className="h-full w-full object-cover" />
+                          <button type="button" onClick={() => removeFile('images', idx)} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs">
+                            <FiX />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
-                {previews.video && (
-                  <div className="relative h-20 w-32 rounded-lg overflow-hidden border border-border flex flex-col items-center justify-center bg-bg p-2 text-center">
-                    <FiVideo className="text-xl text-primary mb-1" />
-                    <span className="text-[8px] text-text truncate w-full">{previews.video.split('/').pop()}</span>
-                    <button type="button" onClick={() => removeFile('video')} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs hover:bg-red-500">
-                      <FiX />
-                    </button>
+                {/* Video Previews */}
+                {videoPreviews.length > 0 && (
+                  <div>
+                    <span className="block text-[10px] font-bold text-gray-400 uppercase mb-2">New Video Previews</span>
+                    <div className="flex flex-wrap gap-3">
+                      {videoPreviews.map((url, idx) => (
+                        <div key={idx} className="relative h-28 w-44 rounded-lg overflow-hidden border border-border bg-black">
+                          <video src={url} controls className="h-full w-full object-contain" />
+                          <button type="button" onClick={() => removeFile('videos', idx)} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs z-10">
+                            <FiX />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
-                {previews.audio && (
-                  <div className="relative h-20 w-24 rounded-lg overflow-hidden border border-border flex flex-col items-center justify-center bg-bg p-2 text-center">
-                    <FiMusic className="text-xl text-green-500 mb-1" />
-                    <span className="text-[8px] text-text truncate w-full">{previews.audio.split('/').pop()}</span>
-                    <button type="button" onClick={() => removeFile('audio')} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs hover:bg-red-500">
-                      <FiX />
-                    </button>
-                  </div>
-                )}
-
-                {previews.pdf && (
-                  <div className="relative h-20 w-24 rounded-lg overflow-hidden border border-border flex flex-col items-center justify-center bg-bg p-2 text-center">
-                    <FiFileText className="text-xl text-red-500 mb-1" />
-                    <span className="text-[8px] text-text truncate w-full">{previews.pdf.split('/').pop()}</span>
-                    <button type="button" onClick={() => removeFile('pdf')} className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full text-xs hover:bg-red-500">
-                      <FiX />
-                    </button>
+                {/* PDF Previews */}
+                {pdfPreviews.length > 0 && (
+                  <div>
+                    <span className="block text-[10px] font-bold text-gray-400 uppercase mb-2">New PDF Document Previews</span>
+                    <div className="space-y-3">
+                      {pdfPreviews.map((item, idx) => (
+                        <div key={idx} className="relative border border-border rounded-xl p-3 bg-card flex flex-col gap-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-text truncate max-w-xs">{item.name}</span>
+                            <button type="button" onClick={() => removeFile('pdfs', idx)} className="text-gray-400 hover:text-red-500 text-sm">
+                              <FiX />
+                            </button>
+                          </div>
+                          <div className="w-full h-80 rounded-lg overflow-hidden border border-border">
+                            <iframe src={`${item.url}#toolbar=0&navpanes=0`} className="w-full h-full" title={`PDF Preview ${idx}`} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

@@ -85,6 +85,48 @@ class Post(models.Model):
 
         super().delete(*args, **kwargs)
 
+class PostMedia(models.Model):
+    MEDIA_TYPES = (
+        ('image', 'Image'),
+        ('video', 'Video'),
+        ('audio', 'Audio'),
+        ('pdf', 'PDF'),
+    )
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='media_files')
+    media_type = models.CharField(max_length=10, choices=MEDIA_TYPES)
+    image = models.FileField(upload_to='posts/media/images/', blank=True, null=True)
+    video = models.FileField(upload_to='posts/media/videos/', storage=video_storage, blank=True, null=True)
+    audio = models.FileField(upload_to='posts/media/audio/', storage=audio_storage, blank=True, null=True)
+    pdf = models.FileField(upload_to='posts/media/pdfs/', storage=pdf_storage, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def file(self):
+        if self.media_type == 'image':
+            return self.image
+        elif self.media_type == 'video':
+            return self.video
+        elif self.media_type == 'audio':
+            return self.audio
+        elif self.media_type == 'pdf':
+            return self.pdf
+        return None
+
+    def __str__(self):
+        return f"{self.media_type} for Post {self.post_id}"
+
+    def delete(self, *args, **kwargs):
+        # Explicitly delete files from storage backend
+        for field_name in ['image', 'video', 'audio', 'pdf']:
+            file_field = getattr(self, field_name)
+            if file_field:
+                try:
+                    file_field.delete(save=False)
+                except Exception as e:
+                    print(f"Error deleting file from storage: {e}")
+        super().delete(*args, **kwargs)
+
+
 
 class Like(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
