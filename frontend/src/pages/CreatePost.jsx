@@ -161,6 +161,18 @@ const CreatePost = () => {
       return;
     }
 
+    if (!formData.category_id) {
+      setError("Category selection is required.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (!formData.hashtags.trim()) {
+      setError("Hashtags are required.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     setLoading(true);
     try {
       const submitData = new FormData();
@@ -271,13 +283,17 @@ const CreatePost = () => {
 
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              Category
+              Category *
             </label>
             <select
               name="category_id"
               value={formData.category_id}
               onChange={handleChange}
-              className="w-full px-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all font-semibold"
+              className={`w-full px-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 text-sm transition-all font-semibold ${
+                isSubmitted && !formData.category_id
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-border focus:ring-primary'
+              }`}
             >
               <option value="">Select a category...</option>
               {categories.map((c) => (
@@ -286,6 +302,9 @@ const CreatePost = () => {
                 </option>
               ))}
             </select>
+            {isSubmitted && !formData.category_id && (
+              <p className="text-red-500 text-xs mt-1 font-medium">Category selection is required.</p>
+            )}
           </div>
 
           <div>
@@ -326,7 +345,7 @@ const CreatePost = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                Hashtags
+                Hashtags *
               </label>
               <input
                 type="text"
@@ -334,8 +353,15 @@ const CreatePost = () => {
                 placeholder="#cse #campusnews #event"
                 value={formData.hashtags}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-2xl bg-bg border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm transition-all"
+                className={`w-full px-4 py-3 rounded-2xl bg-bg border focus:outline-none focus:ring-2 text-sm transition-all ${
+                  isSubmitted && !formData.hashtags.trim()
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-border focus:ring-primary'
+                }`}
               />
+              {isSubmitted && !formData.hashtags.trim() && (
+                <p className="text-red-500 text-xs mt-1 font-medium">Hashtags are required.</p>
+              )}
             </div>
 
             <div>

@@ -4,9 +4,9 @@ import { useSelector } from 'react-redux';
 import MainLayout from '../layouts/MainLayout';
 import Sidebar from '../components/Sidebar';
 import { postsAPI, getMediaUrl } from '../services/api';
-import { 
-  FiFileText, FiImage, FiVideo, FiMusic, 
-  FiMapPin, FiPaperclip, FiX 
+import {
+  FiFileText, FiImage, FiVideo, FiMusic,
+  FiMapPin, FiPaperclip, FiX
 } from 'react-icons/fi';
 
 const EditPost = () => {
@@ -72,7 +72,7 @@ const EditPost = () => {
     try {
       const res = await postsAPI.getDetail(id);
       const post = res.data;
-      
+
       // Verify authority: must be owner or admin
       if (post.username !== user?.username && !user?.is_staff) {
         setError("You are not authorized to edit this post.");
@@ -319,7 +319,7 @@ const EditPost = () => {
 
             <div className="border border-dashed border-border rounded-2xl p-4 bg-bg/20 space-y-4">
               <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Update Campus Media</span>
-              
+
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <label className="flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-card cursor-pointer hover:border-primary/40 transition text-center">
                   <FiImage className="text-xl text-gray-400 mb-1" />
