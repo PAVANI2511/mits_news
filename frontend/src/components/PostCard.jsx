@@ -768,7 +768,8 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
             {post.caption}
           </p>
         )}
-        {post.hashtags && post.hashtags.length > 0 && (
+        {/* Render hashtags under caption only if there is no main article text */}
+        {!post.text && post.hashtags && post.hashtags.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {post.hashtags.map((tag) => (
               <span 
@@ -787,6 +788,21 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
         <div className="px-5 sm:px-6 pb-4 pt-1">
           <div className="bg-bg/40 p-4 sm:p-5 rounded-2xl border border-border text-sm leading-relaxed text-text font-serif italic whitespace-pre-wrap shadow-inner">
             "{post.text}"
+            
+            {/* Render hashtags integrated with the article context block */}
+            {post.hashtags && post.hashtags.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5 not-italic font-sans">
+                {post.hashtags.map((tag) => (
+                  <span 
+                    key={tag} 
+                    className="text-xs font-semibold text-[#800000] hover:underline cursor-pointer"
+                    onClick={() => navigate(`/search?hashtag=${tag}`)}
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}      {/* Mixed Media Attachments Gallery - Unified Instagram-Style Swipeable Viewer */}
