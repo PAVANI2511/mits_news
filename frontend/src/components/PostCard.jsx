@@ -44,12 +44,18 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
 
   const handleCardNext = useCallback(() => {
     if (visualMedia.length <= 1) return;
-    setCardIndex((prev) => (prev === visualMedia.length - 1 ? 0 : prev + 1));
+    setCardIndex((prev) => {
+      if (prev === visualMedia.length - 1) return prev;
+      return prev + 1;
+    });
   }, [visualMedia.length]);
 
   const handleCardPrev = useCallback(() => {
     if (visualMedia.length <= 1) return;
-    setCardIndex((prev) => (prev === 0 ? visualMedia.length - 1 : prev - 1));
+    setCardIndex((prev) => {
+      if (prev === 0) return prev;
+      return prev - 1;
+    });
   }, [visualMedia.length]);
 
   const handleCardTouchStart = (e) => {
@@ -102,12 +108,18 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
 
   const handleModalNext = useCallback(() => {
     if (visualMedia.length <= 1) return;
-    setLightboxIndex((prev) => (prev === visualMedia.length - 1 ? 0 : prev + 1));
+    setLightboxIndex((prev) => {
+      if (prev === visualMedia.length - 1) return prev;
+      return prev + 1;
+    });
   }, [visualMedia.length]);
 
   const handleModalPrev = useCallback(() => {
     if (visualMedia.length <= 1) return;
-    setLightboxIndex((prev) => (prev === 0 ? visualMedia.length - 1 : prev - 1));
+    setLightboxIndex((prev) => {
+      if (prev === 0) return prev;
+      return prev - 1;
+    });
   }, [visualMedia.length]);
 
   const handleModalTouchStart = (e) => {
@@ -827,34 +839,38 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
             {/* Desktop Navigation Arrows (hidden on touch, visible on hover) */}
             {visualMedia.length > 1 && (
               <>
-                <button
-                  type="button"
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onMouseUp={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => e.stopPropagation()}
-                  onTouchEnd={(e) => e.stopPropagation()}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCardPrev();
-                  }}
-                  className="absolute left-3 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition opacity-0 group-hover:opacity-100 focus:opacity-100 z-10"
-                >
-                  <FiChevronLeft className="text-xl" />
-                </button>
-                <button
-                  type="button"
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onMouseUp={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => e.stopPropagation()}
-                  onTouchEnd={(e) => e.stopPropagation()}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCardNext();
-                  }}
-                  className="absolute right-3 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition opacity-0 group-hover:opacity-100 focus:opacity-100 z-10"
-                >
-                  <FiChevronRight className="text-xl" />
-                </button>
+                {cardIndex > 0 && (
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onMouseUp={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCardPrev();
+                    }}
+                    className="absolute left-3 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition opacity-0 group-hover:opacity-100 focus:opacity-100 z-10"
+                  >
+                    <FiChevronLeft className="text-xl" />
+                  </button>
+                )}
+                {cardIndex < visualMedia.length - 1 && (
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onMouseUp={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCardNext();
+                    }}
+                    className="absolute right-3 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition opacity-0 group-hover:opacity-100 focus:opacity-100 z-10"
+                  >
+                    <FiChevronRight className="text-xl" />
+                  </button>
+                )}
               </>
             )}
 
@@ -932,7 +948,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
           {/* Large Media View */}
           <div className="flex-1 flex items-center justify-center relative w-full h-full my-4">
             {/* Prev Button */}
-            {visualMedia.length > 1 && (
+            {visualMedia.length > 1 && lightboxIndex > 0 && (
               <button
                 onMouseDown={(e) => e.stopPropagation()}
                 onMouseUp={(e) => e.stopPropagation()}
@@ -995,7 +1011,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
             </div>
 
             {/* Next Button */}
-            {visualMedia.length > 1 && (
+            {visualMedia.length > 1 && lightboxIndex < visualMedia.length - 1 && (
               <button
                 onMouseDown={(e) => e.stopPropagation()}
                 onMouseUp={(e) => e.stopPropagation()}
