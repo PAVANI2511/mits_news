@@ -35,6 +35,9 @@ class CategoryAndNotificationTests(TestCase):
         self.assertEqual(interest.status, 'interested')
 
     def test_signal_notification_creation(self):
+        # Establish category follow relation so self.user2 receives the notification
+        CategoryFollow.objects.create(user=self.user2, category=self.category)
+
         # Create a post under the category
         post = Post.objects.create(
             user=self.user1, 

@@ -94,27 +94,25 @@ def send_event_reminder_email_sync(user_id, post_id, days_to_event, days_to_last
         countdown_message = ""
         subject = ""
         
-        if days_to_event is not None and days_to_event == 0:
-            subject = f"🎉 TODAY: Event Happening Now - {post.caption[:30]}"
-            countdown_message = "The event you are interested in is being conducted TODAY! Get ready to join."
-        elif days_to_last_date is not None and days_to_last_date in [1, 2, 3]:
+        if days_to_event is not None and days_to_event == 3:
+            subject = f"🔔 Event conduction starts in 3 days - {post.caption[:30]}"
+            countdown_message = f"The interested event '{post.caption[:50]}' is going to be held in 3 days! Make sure you don't miss it."
+        elif days_to_last_date is not None and days_to_last_date in [0, 2, 3]:
             days = days_to_last_date
-            unit = "day" if days == 1 else "days"
-            time_str = "tomorrow" if days == 1 else f"in {days} days"
-            subject = f"🔔 LAST CALL: Registration Closes {time_str} for {post.caption[:30]}"
-            countdown_message = f"Registration for this event closes {time_str} ({days} {unit} left)! Don't forget to register."
-        elif days_to_event is not None and days_to_event == 1:
-            subject = f"🔥 TOMORROW: Event conduction - {post.caption[:30]}"
-            countdown_message = "The event you are interested in is starting TOMORROW! Make sure you don't miss it."
-        elif days_to_event is not None and days_to_event in [2, 3]:
-            days = days_to_event
-            unit = "day" if days == 1 else "days"
-            time_str = f"in {days} days"
-            subject = f"Reminder: Event Starts {time_str} - {post.caption[:30]}"
-            countdown_message = f"The event you are interested in starts {time_str} ({days} {unit} left)."
+            if days == 0:
+                subject = f"🔔 LAST DAY: Registration Closes TODAY for {post.caption[:30]}"
+                countdown_message = f"Registration for this event closes TODAY! This is your last chance to register."
+            else:
+                subject = f"🔔 Registration closes in {days} days for {post.caption[:30]}"
+                countdown_message = f"Registration for this event closes in {days} days! Don't forget to register."
         else:
-            subject = f"Reminder: Upcoming Event - {post.caption[:30]}"
-            countdown_message = "An event you are interested in is coming up soon!"
+            # Fallbacks
+            if days_to_event is not None and days_to_event == 0:
+                subject = f"🎉 TODAY: Event Happening Now - {post.caption[:30]}"
+                countdown_message = "The event you are interested in is being conducted TODAY! Get ready to join."
+            else:
+                subject = f"Reminder: Upcoming Event - {post.caption[:30]}"
+                countdown_message = "An event you are interested in is coming up soon!"
             
         context = {
             'user': user,

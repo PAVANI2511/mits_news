@@ -13,16 +13,15 @@ def send_new_post_email_task(user_id, post_id):
 def send_daily_reminders_task():
     today = timezone.now().date()
     
-    # 1, 2, or 3 days remaining milestones
-    day1 = today + timedelta(days=1)
+    # Milestones (today, 2 days out, 3 days out)
     day2 = today + timedelta(days=2)
     day3 = today + timedelta(days=3)
     
-    # Get all active posts with events or last registration dates matching the milestones
+    # Get all active posts where event is conducting in 3 days, or registration deadline is today, in 2 days, or in 3 days
     posts = Post.objects.filter(is_blocked=False).filter(
-        event_date__date__in=[today, day1, day2, day3]
+        event_date__date=day3
     ) | Post.objects.filter(is_blocked=False).filter(
-        last_date__date__in=[day1, day2, day3]
+        last_date__date__in=[today, day2, day3]
     )
     posts = posts.distinct()
     
@@ -50,21 +49,23 @@ def send_daily_reminders_task():
             send_days_to_event = days_to_event
             send_days_to_last = days_to_last_date
             
-            # Event conduction day reminder (starts today - highest priority)
-            if days_to_event == 0 and not interest.event_day_reminder_sent:
+            # 3 days before event conduction starts
+            if days_to_event == 3 and not interest.event_day_reminder_sent:
                 should_send = True
                 interest.event_day_reminder_sent = True
-                send_days_to_last = None  # Ensure event-day template is selected
-            # 3, 2, 1 days before registration deadline
+                send_days_to_last = None
+            # 3 days before registration deadline
             elif days_to_last_date == 3 and not interest.reminder_sent_3d:
                 should_send = True
                 interest.reminder_sent_3d = True
                 send_days_to_event = None
+            # 2 days before registration deadline
             elif days_to_last_date == 2 and not interest.reminder_sent_2d:
                 should_send = True
                 interest.reminder_sent_2d = True
                 send_days_to_event = None
-            elif days_to_last_date == 1 and not interest.reminder_sent_1d:
+            # Last day of registration (closes today)
+            elif days_to_last_date == 0 and not interest.reminder_sent_1d:
                 should_send = True
                 interest.reminder_sent_1d = True
                 send_days_to_event = None

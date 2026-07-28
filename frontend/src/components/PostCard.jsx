@@ -429,6 +429,27 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [shareSuccess, setShareSuccess] = useState(false);
+  const [relatedPosts, setRelatedPosts] = useState([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
+
+  useEffect(() => {
+    if (currentInterest === 'interested') {
+      const fetchRelated = async () => {
+        setLoadingRelated(true);
+        try {
+          const res = await postsAPI.search('', { related_to: post.id });
+          setRelatedPosts(res.data.results?.slice(0, 3) || []);
+        } catch (err) {
+          console.error("Failed to load related posts:", err);
+        } finally {
+          setLoadingRelated(false);
+        }
+      };
+      fetchRelated();
+    } else {
+      setRelatedPosts([]);
+    }
+  }, [currentInterest, post.id]);
 
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('');
@@ -1143,6 +1164,44 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
           ))}
         </div>
       </div>
+
+      {/* Related Posts Panel */}
+      {currentInterest === 'interested' && (
+        <div className="mx-5 sm:mx-6 mt-4 p-4 rounded-2xl bg-primary/5 border border-primary/10 space-y-3 animate-fadeIn">
+          <div className="text-[10px] font-black uppercase tracking-wider text-primary">
+            Related Campus Events & News
+          </div>
+          {loadingRelated ? (
+            <div className="text-xs text-gray-500 animate-pulse">Loading related posts...</div>
+          ) : relatedPosts.length > 0 ? (
+            <div className="grid grid-cols-1 gap-2.5">
+              {relatedPosts.map((rp) => (
+                <a
+                  key={rp.id}
+                  href={`/posts/${rp.id}`}
+                  className="flex items-center justify-between p-2.5 bg-card hover:bg-bg/40 rounded-xl border border-border/80 transition active:scale-[0.99] group"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-bold text-text truncate group-hover:text-primary transition-colors">
+                      {rp.caption || rp.text?.substring(0, 40) + '...'}
+                    </div>
+                    {rp.category_name && (
+                      <span className="inline-block mt-1 text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                        {rp.category_name}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-gray-400 font-bold shrink-0 ml-3 flex items-center gap-1 group-hover:text-primary transition-colors">
+                    View Post →
+                  </span>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="text-xs text-gray-400">No related posts found.</div>
+          )}
+        </div>
+      )}
 
       {/* Alerts / Error messages */}
       {errorMessage && (

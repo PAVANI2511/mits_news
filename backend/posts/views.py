@@ -831,6 +831,26 @@ class PostSearchView(views.APIView):
 
         queryset = Post.objects.filter(is_blocked=False)
 
+        related_to_id = request.query_params.get('related_to', '').strip()
+        if related_to_id:
+            try:
+                target_post = Post.objects.get(id=int(related_to_id))
+                q_obj = Q()
+                if target_post.category:
+                    q_obj |= Q(category=target_post.category)
+                if target_post.hashtags:
+                    import re
+                    tags = re.split(r'[\s,]+', target_post.hashtags)
+                    for tag in tags:
+                        tag = tag.strip().lstrip('#')
+                        if tag:
+                            q_obj |= Q(hashtags__icontains=tag)
+                if q_obj:
+                    queryset = queryset.filter(q_obj)
+                queryset = queryset.exclude(id=target_post.id)
+            except (ValueError, Post.DoesNotExist):
+                pass
+
         # 1. Date Filtering (exclude expired)
         if not show_expired:
             queryset = queryset.filter(

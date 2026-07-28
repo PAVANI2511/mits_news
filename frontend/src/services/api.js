@@ -108,6 +108,7 @@ export const postsAPI = {
   followCategory: (id) => api.post(`/posts/categories/${id}/follow/`),
   unfollowCategory: (id) => api.post(`/posts/categories/${id}/unfollow/`),
   getFollowedCategories: () => api.get('/posts/categories/followed/'),
+  search: (q, params = {}) => api.get('/posts/search/', { params: { q, ...params } }),
 };
 
 export const commentsAPI = {
