@@ -782,7 +782,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
       {visualMedia.length > 0 && (
         <div className="media-block overflow-hidden border border-border bg-bg/25 w-full">
           <div 
-            className="relative w-full aspect-video sm:aspect-square md:max-h-[500px] bg-black flex items-center justify-center overflow-hidden rounded-2xl border border-border/80 select-none group"
+            className="relative w-full aspect-video sm:aspect-square md:max-h-[500px] bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center overflow-hidden rounded-2xl border border-border/80 select-none group"
             onTouchStart={handleCardTouchStart}
             onTouchEnd={handleCardTouchEnd}
             onMouseDown={handleCardMouseDown}
@@ -794,7 +794,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
               <img
                 src={getMediaUrl(visualMedia[cardIndex].file_url)}
                 alt={`Media preview ${cardIndex + 1}`}
-                className="h-full w-full object-contain pointer-events-none select-none"
+                className="h-full w-full object-cover pointer-events-none select-none"
                 loading="lazy"
               />
             ) : visualMedia[cardIndex].media_type === 'video' ? (
@@ -805,7 +805,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
                 muted={audioMuted}
                 loop
                 playsInline
-                className="h-full w-full object-contain pointer-events-none select-none"
+                className="h-full w-full object-cover pointer-events-none select-none"
               />
             ) : visualMedia[cardIndex].media_type === 'pdf' ? (
               <div className="flex flex-col items-center justify-center p-6 text-center h-full w-full bg-zinc-950 text-white gap-3 select-none">
