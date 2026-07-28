@@ -43,7 +43,7 @@ class PostSerializer(serializers.ModelSerializer):
     is_liked = serializers.SerializerMethodField()
     is_saved = serializers.SerializerMethodField()
     is_following = serializers.SerializerMethodField()
-    hashtags = serializers.SerializerMethodField()
+    hashtags = serializers.CharField(required=False, allow_blank=True, default='')
     relevance_score = serializers.IntegerField(required=False, read_only=True)
     priority = serializers.CharField(required=False, read_only=True)
     
@@ -107,13 +107,6 @@ class PostSerializer(serializers.ModelSerializer):
             return Follower.objects.filter(follower=request.user, following=obj.user).exists()
         return False
 
-    def get_hashtags(self, obj):
-        if not obj.hashtags:
-            return []
-        # Support both a comma-separated or space-separated hashtags string
-        import re
-        tokens = re.split(r'[\s,]+', obj.hashtags)
-        return [t.lstrip("#") for t in tokens if t.strip()]
 
     def get_interest_status(self, obj):
         request = self.context.get('request')
@@ -180,4 +173,14 @@ class PostSerializer(serializers.ModelSerializer):
                 })
 
         ret['media_files'] = media_list
+
+        # Format hashtags string from DB to list format for frontend
+        raw_tags = ret.get('hashtags') or ''
+        if raw_tags:
+            import re
+            tokens = re.split(r'[\s,]+', raw_tags)
+            ret['hashtags'] = [t.lstrip("#") for t in tokens if t.strip()]
+        else:
+            ret['hashtags'] = []
+
         return ret
