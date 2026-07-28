@@ -25,6 +25,8 @@ class AdminDashboardStatsView(views.APIView):
         blocked_users = StudentProfile.objects.filter(is_blocked=True).count()
         total_posts = Post.objects.count()
         blocked_posts = Post.objects.filter(is_blocked=True).count()
+        today_posts = Post.objects.filter(created_at__date=today).count()
+        edited_posts = Post.objects.filter(is_edited=True).count()
         pending_reports = Report.objects.filter(status='pending').count()
         resolved_reports = Report.objects.filter(status='resolved').count()
         rejected_reports = Report.objects.filter(status='rejected').count()
@@ -52,7 +54,9 @@ class AdminDashboardStatsView(views.APIView):
             "posts": {
                 "total": total_posts,
                 "blocked": blocked_posts,
-                "active": total_posts - blocked_posts
+                "active": total_posts - blocked_posts,
+                "today": today_posts,
+                "edited": edited_posts
             },
             "reports": {
                 "total": total_reports,
@@ -334,6 +338,11 @@ class AdminPostsListView(views.APIView):
             queryset = queryset.filter(is_blocked=True)
         elif status_filter == 'active':
             queryset = queryset.filter(is_blocked=False)
+        elif status_filter == 'edited':
+            queryset = queryset.filter(is_edited=True)
+        elif status_filter == 'today':
+            from django.utils import timezone
+            queryset = queryset.filter(created_at__date=timezone.now().date())
 
         # Filter by Department
         department_query = request.query_params.get('department', '').strip()

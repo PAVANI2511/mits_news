@@ -11,6 +11,7 @@ const PostManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [stats, setStats] = useState(null);
 
   // Search, Filters, Sorting, Pagination
   const [searchVal, setSearchVal] = useState('');
@@ -115,6 +116,9 @@ const PostManagement = () => {
       setPosts(res.data.results);
       setTotalCount(res.data.total_count);
       setTotalPages(Math.ceil(res.data.total_count / 15) || 1);
+
+      const statsRes = await adminAPI.getStats();
+      setStats(statsRes.data.posts);
     } catch (_err) {
       setError("Failed to load posts database.");
     } finally {
@@ -141,6 +145,9 @@ const PostManagement = () => {
         prev.map(p => p.id === String(id) ? { ...p, is_blocked: res.data.is_blocked } : p)
       );
       setSuccess(res.data.message);
+      
+      const statsRes = await adminAPI.getStats();
+      setStats(statsRes.data.posts);
     } catch (_err) {
       setError("Failed to toggle block status.");
     }
@@ -254,6 +261,32 @@ const PostManagement = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        {/* Statistics grid */}
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="bg-card border border-border p-4 rounded-xl shadow-sm text-center">
+              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">Total Posts</span>
+              <h3 className="text-lg font-black text-text mt-1">{stats.total}</h3>
+            </div>
+            <div className="bg-card border border-border p-4 rounded-xl shadow-sm text-center">
+              <span className="text-[10px] text-green-500 font-bold uppercase tracking-wider block">Active Posts</span>
+              <h3 className="text-lg font-black text-green-600 mt-1">{stats.active}</h3>
+            </div>
+            <div className="bg-card border border-border p-4 rounded-xl shadow-sm text-center">
+              <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider block">Deleted (Soft)</span>
+              <h3 className="text-lg font-black text-red-600 mt-1">{stats.blocked}</h3>
+            </div>
+            <div className="bg-card border border-border p-4 rounded-xl shadow-sm text-center">
+              <span className="text-[10px] text-blue-500 font-bold uppercase tracking-wider block">Edited Posts</span>
+              <h3 className="text-lg font-black text-blue-600 mt-1">{stats.edited}</h3>
+            </div>
+            <div className="bg-card border border-border p-4 rounded-xl shadow-sm text-center">
+              <span className="text-[10px] text-purple-500 font-bold uppercase tracking-wider block">Today's Posts</span>
+              <h3 className="text-lg font-black text-purple-600 mt-1">{stats.today}</h3>
+            </div>
+          </div>
+        )}
+
         {/* Filters and search box */}
         <div className="bg-card border border-border p-4 rounded-2xl shadow-sm space-y-4">
           <form onSubmit={handleSearchSubmit} className="flex flex-col md:flex-row gap-3">
@@ -304,6 +337,8 @@ const PostManagement = () => {
                 <option value="">All Articles</option>
                 <option value="active">Active/Visible Articles</option>
                 <option value="blocked">Blocked/Hidden Articles</option>
+                <option value="edited">Edited Articles</option>
+                <option value="today">Today's Articles</option>
               </select>
             </div>
 

@@ -316,6 +316,7 @@ class PostDetailView(views.APIView):
         post.hashtags = request.data.get('hashtags', post.hashtags)
         post.location = request.data.get('location', post.location)
         post.music_url = request.data.get('music_url', post.music_url)
+        post.is_edited = True
 
         # Check clear poster
         if request.data.get('clear_poster') == 'true':

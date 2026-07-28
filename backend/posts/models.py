@@ -51,6 +51,7 @@ class Post(models.Model):
     music_url = models.CharField(max_length=255, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     is_blocked = models.BooleanField(default=False)
+    is_edited = models.BooleanField(default=False)
     event_date = models.DateTimeField(null=True, blank=True)
     last_date = models.DateTimeField(null=True, blank=True)
     event_type = models.CharField(max_length=100, blank=True, default='')
