@@ -77,7 +77,6 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   };
 
   const handleCardMouseDown = (e) => {
-    if (visualMedia.length <= 1) return;
     cardMouseStart.current = { x: e.clientX, y: e.clientY };
     cardIsMouseDown.current = true;
   };
@@ -92,7 +91,7 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
     const dist = Math.sqrt(diffX * diffX + diffY * diffY);
     cardMouseStart.current = null;
 
-    if (dist > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+    if (dist > 40 && Math.abs(diffX) > Math.abs(diffY) && visualMedia.length > 1) {
       if (diffX > 0) handleCardNext();
       else handleCardPrev();
     } else if (dist < 8) {
