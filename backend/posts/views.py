@@ -359,7 +359,10 @@ class HomeFeedView(views.APIView):
             queryset = queryset.filter(
                 Q(caption__icontains=query) |
                 Q(text__icontains=query) |
-                Q(location__icontains=query)
+                Q(location__icontains=query) |
+                Q(hashtags__icontains=query) |
+                Q(category__name__icontains=query) |
+                Q(category__slug__icontains=query)
             )
         if hashtag:
             queryset = queryset.filter(hashtags__icontains=hashtag)
@@ -812,6 +815,8 @@ class PostSearchView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
+        user = request.user
+        is_auth = user and user.is_authenticated
         q = request.query_params.get('q', '').strip()
         category_filter = request.query_params.get('category', '').strip().lower()
         event_type_filter = request.query_params.get('event_type', '').strip().lower()
@@ -871,7 +876,9 @@ class PostSearchView(views.APIView):
                 Q(caption__icontains=cleaned_q) |
                 Q(text__icontains=cleaned_q) |
                 Q(event_type__icontains=cleaned_q) |
-                Q(hashtags__icontains=cleaned_q)
+                Q(hashtags__icontains=cleaned_q) |
+                Q(category__name__icontains=cleaned_q) |
+                Q(category__slug__icontains=cleaned_q)
             )
 
         posts_list = list(queryset)
@@ -910,6 +917,8 @@ class PostSearchView(views.APIView):
                 q_lower = cleaned_q.lower()
                 if q_lower in post.caption.lower() or q_lower in post.text.lower():
                     score += 100
+                if post.category and (q_lower in post.category.name.lower() or q_lower in post.category.slug.lower()):
+                    score += 80
             
             # Matching category classification (tech / non-tech) -> +50
             if post.category:
