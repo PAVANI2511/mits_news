@@ -910,27 +910,15 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
         </div>
       )}
 
-      {/* Audio Banner */}
+      {/* Audio Element (Invisible) */}
       {audios.slice(0, 1).map((aud) => (
-        <div key={aud.id} className="media-block overflow-hidden border border-border px-4 py-1.5 bg-gradient-to-r from-primary/5 to-secondary/5 flex justify-end items-center">
-          <audio
-            ref={audioRef}
-            src={getMediaUrl(aud.file_url)}
-            loop
-            muted={audioMuted}
-          />
-          <button
-            onClick={toggleMute}
-            className="p-2 text-primary bg-card hover:bg-bg/50 rounded-full border border-border shadow-sm transition active:scale-95 flex items-center justify-center"
-            title={audioMuted ? "Unmute Post Music" : "Mute Post Music"}
-          >
-            {audioMuted ? (
-              <FiVolumeX className="text-red-500 text-sm animate-pulse" />
-            ) : (
-              <FiVolume2 className="text-sm animate-bounce" />
-            )}
-          </button>
-        </div>
+        <audio
+          key={aud.id}
+          ref={audioRef}
+          src={getMediaUrl(aud.file_url)}
+          loop
+          muted={audioMuted}
+        />
       ))}
 
       {/* Lightbox Modal (Fullscreen Instagram-Style Swipe Viewer) */}
@@ -1108,7 +1096,21 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
           )}
         </div>
 
-        <div className="flex gap-2.5 w-full sm:w-auto shrink-0">
+        <div className="flex gap-2.5 w-full sm:w-auto shrink-0 items-center">
+          {audios.slice(0, 1).map((aud) => (
+            <button
+              key={aud.id}
+              onClick={toggleMute}
+              className="p-2.5 text-primary bg-card hover:bg-bg/50 rounded-xl border border-border shadow-sm transition active:scale-95 flex items-center justify-center h-10 w-10 shrink-0"
+              title={audioMuted ? "Unmute Post Music" : "Mute Post Music"}
+            >
+              {audioMuted ? (
+                <FiVolumeX className="text-red-500 text-sm animate-pulse" />
+              ) : (
+                <FiVolume2 className="text-sm animate-bounce" />
+              )}
+            </button>
+          ))}
           <button
             onClick={() => !isExpired && handleInterestSelection('interested')}
             disabled={isExpired}
