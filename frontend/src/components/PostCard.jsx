@@ -5,7 +5,8 @@ import {
   FiHeart, FiMessageSquare, FiBookmark, FiDownload, 
   FiShare2, FiMapPin, FiFileText, FiUserCheck, FiUserPlus,
   FiLink, FiExternalLink, FiVolume2, FiVolumeX,
-  FiThumbsUp, FiThumbsDown, FiCalendar, FiClock
+  FiThumbsUp, FiThumbsDown, FiCalendar, FiClock,
+  FiChevronLeft, FiChevronRight, FiX
 } from 'react-icons/fi';
 import { 
   FaWhatsapp, FaFacebook, FaLinkedin, FaTelegram, FaTwitter 
@@ -30,8 +31,141 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   const [isActive, setIsActive] = useState(false);
   const [_isPlaying, setIsPlaying] = useState(false);
 
+  const visualMedia = mediaFiles.filter(m => ['image', 'video', 'pdf', 'poster'].includes(m.media_type));
+
+  const [cardIndex, setCardIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const cardTouchStart = useRef(null);
+  const cardMouseStart = useRef(null);
+  const cardIsMouseDown = useRef(false);
+
+  const handleCardNext = useCallback(() => {
+    if (visualMedia.length <= 1) return;
+    setCardIndex((prev) => (prev === visualMedia.length - 1 ? 0 : prev + 1));
+  }, [visualMedia.length]);
+
+  const handleCardPrev = useCallback(() => {
+    if (visualMedia.length <= 1) return;
+    setCardIndex((prev) => (prev === 0 ? visualMedia.length - 1 : prev - 1));
+  }, [visualMedia.length]);
+
+  const handleCardTouchStart = (e) => {
+    if (visualMedia.length <= 1) return;
+    const touch = e.touches[0];
+    cardTouchStart.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleCardTouchEnd = (e) => {
+    if (visualMedia.length <= 1 || !cardTouchStart.current) return;
+    const touch = e.changedTouches[0];
+    const diffX = cardTouchStart.current.x - touch.clientX;
+    const diffY = cardTouchStart.current.y - touch.clientY;
+    cardTouchStart.current = null;
+    if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX > 0) handleCardNext();
+      else handleCardPrev();
+    }
+  };
+
+  const handleCardMouseDown = (e) => {
+    if (visualMedia.length <= 1) return;
+    cardMouseStart.current = { x: e.clientX, y: e.clientY };
+    cardIsMouseDown.current = true;
+  };
+
+  const handleCardMouseUp = (e) => {
+    if (!cardIsMouseDown.current || !cardMouseStart.current) {
+      return;
+    }
+    cardIsMouseDown.current = false;
+    const diffX = cardMouseStart.current.x - e.clientX;
+    const diffY = cardMouseStart.current.y - e.clientY;
+    const dist = Math.sqrt(diffX * diffX + diffY * diffY);
+    cardMouseStart.current = null;
+
+    if (dist > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX > 0) handleCardNext();
+      else handleCardPrev();
+    } else if (dist < 8) {
+      // Clicked, open modal
+      setLightboxIndex(cardIndex);
+      setLightboxOpen(true);
+    }
+  };
+
+  const modalTouchStart = useRef(null);
+  const modalMouseStart = useRef(null);
+  const modalIsMouseDown = useRef(false);
+
+  const handleModalNext = useCallback(() => {
+    if (visualMedia.length <= 1) return;
+    setLightboxIndex((prev) => (prev === visualMedia.length - 1 ? 0 : prev + 1));
+  }, [visualMedia.length]);
+
+  const handleModalPrev = useCallback(() => {
+    if (visualMedia.length <= 1) return;
+    setLightboxIndex((prev) => (prev === 0 ? visualMedia.length - 1 : prev - 1));
+  }, [visualMedia.length]);
+
+  const handleModalTouchStart = (e) => {
+    if (visualMedia.length <= 1) return;
+    const touch = e.touches[0];
+    modalTouchStart.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleModalTouchEnd = (e) => {
+    if (visualMedia.length <= 1 || !modalTouchStart.current) return;
+    const touch = e.changedTouches[0];
+    const diffX = modalTouchStart.current.x - touch.clientX;
+    const diffY = modalTouchStart.current.y - touch.clientY;
+    modalTouchStart.current = null;
+    if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX > 0) handleModalNext();
+      else handleModalPrev();
+    }
+  };
+
+  const handleModalMouseDown = (e) => {
+    if (visualMedia.length <= 1) return;
+    if (e.target.closest('button') || e.target.closest('video') || e.target.closest('iframe')) return;
+    modalMouseStart.current = { x: e.clientX, y: e.clientY };
+    modalIsMouseDown.current = true;
+  };
+
+  const handleModalMouseUp = (e) => {
+    if (!modalIsMouseDown.current || !modalMouseStart.current) return;
+    modalIsMouseDown.current = false;
+    const diffX = modalMouseStart.current.x - e.clientX;
+    const diffY = modalMouseStart.current.y - e.clientY;
+    const dist = Math.sqrt(diffX * diffX + diffY * diffY);
+    modalMouseStart.current = null;
+
+    if (dist > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX > 0) handleModalNext();
+      else handleModalPrev();
+    }
+  };
+
+  // Sync cardIndex when modal closes
+  useEffect(() => {
+    if (!lightboxOpen) {
+      setCardIndex(lightboxIndex);
+    }
+  }, [lightboxOpen, lightboxIndex]);
+
+  // Disable body scroll when modal open
+  useEffect(() => {
+    if (lightboxOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [lightboxOpen]);
 
   const containerRef = useRef(null);
   const videoRef = useRef(null);
@@ -196,6 +330,13 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
       pauseMedia(); // Pause immediately when navigating away / unmounting
     };
   }, [post.id, playMedia, pauseMedia]);
+
+  // Autoplay video/audio when swiped and post is active
+  useEffect(() => {
+    if (isActive) {
+      playMedia();
+    }
+  }, [cardIndex, isActive, playMedia]);
 
 
 
@@ -636,112 +777,95 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
             "{post.text}"
           </div>
         </div>
-      )}
-      {/* Mixed Media Attachments Gallery */}
-      
-      {/* 1. Images Gallery Grid / Lightbox Trigger */}
-      {images.length > 0 && (
-        <div className="media-block overflow-hidden border border-border bg-bg/25 p-4 w-full">
-          <div className={`grid gap-3 ${
-            images.length === 1 ? 'grid-cols-1' :
-            images.length === 2 ? 'grid-cols-2' :
-            images.length === 3 ? 'grid-cols-2 sm:grid-cols-3' :
-            'grid-cols-2 sm:grid-cols-4'
-          }`}>
-            {images.slice(0, 4).map((img, index) => {
-              const isLastAndMore = index === 3 && images.length > 4;
-              return (
-                <div 
-                  key={img.id} 
-                  className="relative aspect-video sm:aspect-square rounded-2xl overflow-hidden border border-border bg-card group cursor-pointer"
-                  onClick={() => handleOpenLightbox(index)}
-                >
-                  <img
-                    src={getMediaUrl(img.file_url)}
-                    alt={`Campus Attachment ${index + 1}`}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  {isLastAndMore && (
-                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white font-extrabold text-lg select-none">
-                      +{images.length - 3}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* 2. Video Attachments */}
-      {videos.map((vid, idx) => (
-        <div key={vid.id} className="media-block overflow-hidden border border-border bg-black flex justify-center items-center max-h-[550px] w-full">
-          <video
-            ref={idx === 0 ? videoRef : null}
-            src={getMediaUrl(vid.file_url)}
-            controls
-            preload="metadata"
-            muted={audioMuted}
-            className="w-full max-h-[550px]"
-          />
-        </div>
-      ))}
-
-      {/* Poster Attachment */}
-      {posters.map((posterDoc) => (
-        <div key={posterDoc.id} className="media-block overflow-hidden border border-border bg-bg/15 px-5 sm:px-6 py-5 flex flex-col items-center gap-3">
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Attached College Poster</div>
-          <div className="relative group overflow-hidden rounded-2xl shadow-md border border-border/80 bg-card max-w-full">
-            <img
-              src={getMediaUrl(posterDoc.file_url)}
-              alt="College Poster"
-              className="rounded-2xl max-h-[400px] object-contain mx-auto transition-transform duration-500 group-hover:scale-[1.02]"
-              loading="lazy"
-            />
-          </div>
-        </div>
-      ))}
-
-      {/* 3. PDF Inline Previews */}
-      {pdfs.map((pdfDoc) => {
-        const fileName = decodeURIComponent(pdfDoc.file_url.split('/').pop().split('?')[0]);
-        return (
-          <div key={pdfDoc.id} className="media-block overflow-hidden border border-border bg-bg/15 px-5 sm:px-6 py-5 flex flex-col gap-3">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
-                <FiFileText className="text-red-500 text-lg" /> Attached Doc: {fileName}
-              </div>
-              <div className="flex items-center gap-2">
-                <a
-                  href={getMediaUrl(pdfDoc.file_url)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border border-border rounded-lg text-[10px] font-bold hover:bg-gray-200 dark:hover:bg-zinc-700 flex items-center gap-1 shadow-sm transition active:scale-95"
-                >
-                  <FiExternalLink /> Open in new tab
-                </a>
-                <button
-                  onClick={() => handleDownload('pdf', pdfDoc.file_url)}
-                  className="px-3 py-1 bg-primary text-white rounded-lg text-[10px] font-bold hover:bg-primary/90 flex items-center gap-1 shadow-sm transition active:scale-95"
-                >
-                  <FiDownload /> Download PDF
-                </button>
-              </div>
-            </div>
-            {/* Inline scrollable PDF container */}
-            <div className="w-full h-[500px] rounded-2xl border border-border overflow-hidden shadow-sm bg-card">
-              <iframe
-                src={`${getMediaUrl(pdfDoc.file_url)}#toolbar=0&navpanes=0&scrollbar=1`}
-                className="w-full h-full"
-                title={`PDF Preview: ${fileName}`}
+      )}      {/* Mixed Media Attachments Gallery - Unified Instagram-Style Swipeable Viewer */}
+      {visualMedia.length > 0 && (
+        <div className="media-block overflow-hidden border border-border bg-bg/25 w-full">
+          <div 
+            className="relative w-full aspect-video sm:aspect-square md:max-h-[500px] bg-black flex items-center justify-center overflow-hidden rounded-2xl border border-border/80 select-none group"
+            onTouchStart={handleCardTouchStart}
+            onTouchEnd={handleCardTouchEnd}
+            onMouseDown={handleCardMouseDown}
+            onMouseUp={handleCardMouseUp}
+            style={{ touchAction: 'pan-y', cursor: visualMedia.length > 1 ? 'grab' : 'default' }}
+          >
+            {/* Active Media Item */}
+            {visualMedia[cardIndex].media_type === 'image' || visualMedia[cardIndex].media_type === 'poster' ? (
+              <img
+                src={getMediaUrl(visualMedia[cardIndex].file_url)}
+                alt={`Media preview ${cardIndex + 1}`}
+                className="h-full w-full object-contain pointer-events-none select-none"
+                loading="lazy"
               />
-            </div>
-          </div>
-        );
-      })}
+            ) : visualMedia[cardIndex].media_type === 'video' ? (
+              <video
+                ref={videoRef}
+                src={getMediaUrl(visualMedia[cardIndex].file_url)}
+                controls
+                preload="metadata"
+                muted={audioMuted}
+                className="h-full w-full object-contain"
+              />
+            ) : visualMedia[cardIndex].media_type === 'pdf' ? (
+              <div className="flex flex-col items-center justify-center p-6 text-center h-full w-full bg-zinc-950 text-white gap-3 select-none">
+                <FiFileText className="text-red-500 text-5xl animate-pulse" />
+                <div className="text-sm font-bold truncate max-w-[80%]">
+                  {decodeURIComponent(visualMedia[cardIndex].file_url.split('/').pop().split('?')[0])}
+                </div>
+                <div className="text-xs text-gray-400">PDF Document • Tap to read fullscreen</div>
+              </div>
+            ) : null}
 
-      {/* 4. Single Audio Banner */}
+            {/* Media Counter Pill */}
+            {visualMedia.length > 1 && (
+              <div className="absolute top-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full pointer-events-none backdrop-blur-sm z-10">
+                {cardIndex + 1} / {visualMedia.length}
+              </div>
+            )}
+
+            {/* Desktop Navigation Arrows (hidden on touch, visible on hover) */}
+            {visualMedia.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCardPrev();
+                  }}
+                  className="absolute left-3 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition opacity-0 group-hover:opacity-100 focus:opacity-100 z-10"
+                >
+                  <FiChevronLeft className="text-xl" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCardNext();
+                  }}
+                  className="absolute right-3 p-2 bg-black/40 hover:bg-black/60 text-white rounded-full transition opacity-0 group-hover:opacity-100 focus:opacity-100 z-10"
+                >
+                  <FiChevronRight className="text-xl" />
+                </button>
+              </>
+            )}
+
+            {/* Bottom Dots Indicator */}
+            {visualMedia.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 pointer-events-none">
+                {visualMedia.map((_, idx) => (
+                  <div
+                    key={idx}
+                    className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
+                      idx === cardIndex ? 'bg-white w-3' : 'bg-white/40'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Audio Banner */}
       {audios.slice(0, 1).map((aud) => (
         <div key={aud.id} className="media-block overflow-hidden border border-border px-4 py-1.5 bg-gradient-to-r from-primary/5 to-secondary/5 flex justify-end items-center">
           <audio
@@ -763,52 +887,114 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
         </div>
       ))}
 
-      {/* Lightbox Modal */}
-      {lightboxOpen && images.length > 0 && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-between bg-black/95 p-4 sm:p-6 animate-fadeIn">
+      {/* Lightbox Modal (Fullscreen Instagram-Style Swipe Viewer) */}
+      {lightboxOpen && visualMedia.length > 0 && (
+        <div 
+          className="fixed inset-0 z-50 flex flex-col justify-between bg-black/95 p-4 sm:p-6 animate-fadeIn"
+          onTouchStart={handleModalTouchStart}
+          onTouchEnd={handleModalTouchEnd}
+          onMouseDown={handleModalMouseDown}
+          onMouseUp={handleModalMouseUp}
+          style={{ touchAction: 'pan-y' }}
+        >
           {/* Top Actions */}
-          <div className="flex justify-between items-center text-white">
-            <span className="text-sm font-bold tracking-wider">
-              {lightboxIndex + 1} / {images.length}
-            </span>
+          <div className="flex justify-between items-center text-white z-20">
+            <div className="flex items-center gap-2">
+              <span className="bg-white/10 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm">
+                {lightboxIndex + 1} / {visualMedia.length}
+              </span>
+              {post.name && (
+                <span className="text-xs text-gray-300 font-semibold hidden sm:inline max-w-xs truncate">
+                  {post.name}
+                </span>
+              )}
+            </div>
             <button
               onClick={() => setLightboxOpen(false)}
-              className="p-2 hover:bg-white/10 rounded-full transition"
+              className="p-2 hover:bg-white/10 rounded-full transition text-white"
             >
               <FiX className="text-2xl" />
             </button>
           </div>
 
-          {/* Large Image View */}
-          <div className="flex-1 flex items-center justify-center relative">
+          {/* Large Media View */}
+          <div className="flex-1 flex items-center justify-center relative w-full h-full my-4">
             {/* Prev Button */}
-            {images.length > 1 && (
+            {visualMedia.length > 1 && (
               <button
-                onClick={() => setLightboxIndex(prev => (prev === 0 ? images.length - 1 : prev - 1))}
-                className="absolute left-2 sm:left-4 p-3 bg-white/5 hover:bg-white/15 text-white rounded-full transition z-10 font-bold"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleModalPrev();
+                }}
+                className="absolute left-2 sm:left-4 p-3 bg-white/5 hover:bg-white/15 text-white rounded-full transition z-10"
               >
-                &larr;
+                <FiChevronLeft className="text-2xl" />
               </button>
             )}
 
-            <img
-              src={getMediaUrl(images[lightboxIndex].file_url)}
-              alt={`Slide ${lightboxIndex + 1}`}
-              className="max-h-[80vh] max-w-full object-contain rounded-lg select-none shadow-2xl"
-            />
+            {/* Render Media */}
+            <div className="max-h-[85vh] max-w-full flex items-center justify-center select-none">
+              {visualMedia[lightboxIndex].media_type === 'image' || visualMedia[lightboxIndex].media_type === 'poster' ? (
+                <img
+                  src={getMediaUrl(visualMedia[lightboxIndex].file_url)}
+                  alt={`Slide ${lightboxIndex + 1}`}
+                  className="max-h-[80vh] max-w-full object-contain rounded-lg shadow-2xl pointer-events-none"
+                />
+              ) : visualMedia[lightboxIndex].media_type === 'video' ? (
+                <video
+                  src={getMediaUrl(visualMedia[lightboxIndex].file_url)}
+                  controls
+                  autoPlay
+                  preload="metadata"
+                  className="max-h-[80vh] max-w-full object-contain rounded-lg shadow-2xl"
+                />
+              ) : visualMedia[lightboxIndex].media_type === 'pdf' ? (
+                <div className="w-[90vw] h-[80vh] bg-card rounded-xl overflow-hidden border border-border shadow-2xl flex flex-col">
+                  <div className="bg-zinc-900 px-4 py-2 flex items-center justify-between text-white shrink-0">
+                    <span className="text-xs font-semibold truncate max-w-[60%]">
+                      {decodeURIComponent(visualMedia[lightboxIndex].file_url.split('/').pop().split('?')[0])}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={getMediaUrl(visualMedia[lightboxIndex].file_url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2.5 py-1 bg-white/10 text-white rounded text-[10px] font-bold hover:bg-white/20 transition flex items-center gap-1"
+                      >
+                        <FiExternalLink /> Open
+                      </a>
+                      <button
+                        onClick={() => handleDownload('pdf', visualMedia[lightboxIndex].file_url)}
+                        className="px-2.5 py-1 bg-primary text-white rounded text-[10px] font-bold hover:bg-primary/95 transition flex items-center gap-1"
+                      >
+                        <FiDownload /> Download
+                      </button>
+                    </div>
+                  </div>
+                  <iframe
+                    src={`${getMediaUrl(visualMedia[lightboxIndex].file_url)}#toolbar=0&navpanes=0&scrollbar=1`}
+                    className="w-full flex-1 border-0"
+                    title={`PDF Full View`}
+                  />
+                </div>
+              ) : null}
+            </div>
 
             {/* Next Button */}
-            {images.length > 1 && (
+            {visualMedia.length > 1 && (
               <button
-                onClick={() => setLightboxIndex(prev => (prev === images.length - 1 ? 0 : prev + 1))}
-                className="absolute right-2 sm:right-4 p-3 bg-white/5 hover:bg-white/15 text-white rounded-full transition z-10 font-bold"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleModalNext();
+                }}
+                className="absolute right-2 sm:right-4 p-3 bg-white/5 hover:bg-white/15 text-white rounded-full transition z-10"
               >
-                &rarr;
+                <FiChevronRight className="text-2xl" />
               </button>
             )}
           </div>
 
-          <div className="h-8" />
+          <div className="h-8 shrink-0" />
         </div>
       )}
 
