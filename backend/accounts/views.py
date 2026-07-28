@@ -17,7 +17,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         user = None
         if '@' in username:
             user = User.objects.filter(email__iexact=username).first()
-        else:
+            
+        if not user:
             user = User.objects.filter(username__iexact=username).first()
             
         if user:
