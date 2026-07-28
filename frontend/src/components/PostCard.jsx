@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { createPortal } from 'react-dom';
 import { 
   FiHeart, FiMessageSquare, FiBookmark, FiDownload, 
   FiShare2, FiMapPin, FiFileText, FiUserCheck, FiUserPlus,
@@ -800,10 +801,11 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
               <video
                 ref={videoRef}
                 src={getMediaUrl(visualMedia[cardIndex].file_url)}
-                controls
                 preload="metadata"
                 muted={audioMuted}
-                className="h-full w-full object-contain"
+                loop
+                playsInline
+                className="h-full w-full object-contain pointer-events-none select-none"
               />
             ) : visualMedia[cardIndex].media_type === 'pdf' ? (
               <div className="flex flex-col items-center justify-center p-6 text-center h-full w-full bg-zinc-950 text-white gap-3 select-none">
@@ -827,6 +829,10 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
               <>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseUp={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCardPrev();
@@ -837,6 +843,10 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseUp={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchEnd={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleCardNext();
@@ -888,9 +898,9 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
       ))}
 
       {/* Lightbox Modal (Fullscreen Instagram-Style Swipe Viewer) */}
-      {lightboxOpen && visualMedia.length > 0 && (
+      {lightboxOpen && visualMedia.length > 0 && createPortal(
         <div 
-          className="fixed inset-0 z-50 flex flex-col justify-between bg-black/95 p-4 sm:p-6 animate-fadeIn"
+          className="fixed inset-0 z-[9999] flex flex-col justify-between bg-black/95 p-4 sm:p-6 animate-fadeIn"
           onTouchStart={handleModalTouchStart}
           onTouchEnd={handleModalTouchEnd}
           onMouseDown={handleModalMouseDown}
@@ -910,6 +920,8 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
               )}
             </div>
             <button
+              onMouseDown={(e) => e.stopPropagation()}
+              onMouseUp={(e) => e.stopPropagation()}
               onClick={() => setLightboxOpen(false)}
               className="p-2 hover:bg-white/10 rounded-full transition text-white"
             >
@@ -922,6 +934,8 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
             {/* Prev Button */}
             {visualMedia.length > 1 && (
               <button
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleModalPrev();
@@ -983,6 +997,8 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
             {/* Next Button */}
             {visualMedia.length > 1 && (
               <button
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleModalNext();
@@ -995,7 +1011,8 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
           </div>
 
           <div className="h-8 shrink-0" />
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* External Action Link URL */}
