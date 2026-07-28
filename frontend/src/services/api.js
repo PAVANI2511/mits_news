@@ -4,14 +4,25 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
 
 export const getMediaUrl = (path) => {
   if (!path) return '';
-  if (path.startsWith('http') || path.startsWith('data:')) return path;
   
-  try {
-    const urlObj = new URL(API_BASE_URL);
-    return `${urlObj.origin}${path}`;
-  } catch (_e) {
-    return `http://127.0.0.1:8000${path}`;
+  let url = path;
+  if (!path.startsWith('http') && !path.startsWith('data:')) {
+    try {
+      const urlObj = new URL(API_BASE_URL);
+      url = `${urlObj.origin}${path}`;
+    } catch (_e) {
+      url = `http://127.0.0.1:8000${path}`;
+    }
   }
+
+  // Self-heal: Upgrade HTTP URLs to HTTPS on secure pages to avoid mixed-content blocking (excluding local development)
+  if (window.location.protocol === 'https:' && url.startsWith('http://')) {
+    if (!url.includes('127.0.0.1') && !url.includes('localhost')) {
+      url = url.replace('http://', 'https://');
+    }
+  }
+
+  return url;
 };
 
 const api = axios.create({
