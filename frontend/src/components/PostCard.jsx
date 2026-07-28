@@ -902,12 +902,13 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
           />
           <button
             onClick={toggleMute}
-            className="text-xs text-primary font-bold flex items-center gap-1.5 bg-card hover:bg-bg/50 px-3 py-1 rounded-full border border-border shadow-sm transition active:scale-95"
+            className="p-2 text-primary bg-card hover:bg-bg/50 rounded-full border border-border shadow-sm transition active:scale-95 flex items-center justify-center"
+            title={audioMuted ? "Unmute Post Music" : "Mute Post Music"}
           >
             {audioMuted ? (
-              <><FiVolumeX className="text-red-500 animate-pulse" /> Unmute Post Music</>
+              <FiVolumeX className="text-red-500 text-sm animate-pulse" />
             ) : (
-              <><FiVolume2 className="animate-bounce" /> Mute Post Music</>
+              <FiVolume2 className="text-sm animate-bounce" />
             )}
           </button>
         </div>
