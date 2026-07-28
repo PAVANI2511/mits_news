@@ -70,7 +70,12 @@ const CreatePost = () => {
       const loadCategories = async () => {
         try {
           const res = await postsAPI.getCategories();
-          setCategories(res.data);
+          const sorted = res.data.slice().sort((a, b) => {
+            if (a.name.toLowerCase() === 'other') return 1;
+            if (b.name.toLowerCase() === 'other') return -1;
+            return a.name.localeCompare(b.name);
+          });
+          setCategories(sorted);
         } catch (err) {
           console.error("Failed to load categories:", err);
         }
