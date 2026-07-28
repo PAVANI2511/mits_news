@@ -820,12 +820,16 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
                 className="h-full w-full object-contain pointer-events-none select-none"
               />
             ) : visualMedia[cardIndex].media_type === 'pdf' ? (
-              <div className="flex flex-col items-center justify-center p-6 text-center h-full w-full bg-zinc-950 text-white gap-3 select-none">
-                <FiFileText className="text-red-500 text-5xl animate-pulse" />
-                <div className="text-sm font-bold truncate max-w-[80%]">
+              <div className="flex flex-col items-center justify-center p-8 text-center h-full w-full bg-bg/30 text-text gap-3 select-none">
+                <div className="p-4 bg-red-500/10 text-red-600 rounded-2xl border border-red-500/20 shadow-sm animate-pulse flex items-center justify-center">
+                  <FiFileText className="text-5xl" />
+                </div>
+                <div className="text-sm font-bold truncate max-w-[80%] text-text">
                   {decodeURIComponent(visualMedia[cardIndex].file_url.split('/').pop().split('?')[0])}
                 </div>
-                <div className="text-xs text-gray-400">PDF Document • Tap to read fullscreen</div>
+                <div className="text-xs text-gray-500 font-semibold tracking-wide uppercase">
+                  PDF Document • Click to view
+                </div>
               </div>
             ) : null}
 
