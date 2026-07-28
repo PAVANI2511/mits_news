@@ -1180,20 +1180,6 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
         </div>
 
         <div className="flex items-center gap-4">
-          {mediaFiles.map((m, idx) => {
-            const label = m.media_type.charAt(0).toUpperCase() + m.media_type.slice(1);
-            return (
-              <button
-                key={m.id || idx}
-                onClick={() => handleDownload(m.media_type, m.file_url)}
-                className="text-gray-500 hover:text-primary text-xs font-bold flex items-center gap-1.5 transition-colors duration-200 hover:scale-105 active:scale-95"
-                title={`Download ${label}`}
-              >
-                <FiDownload className="text-sm" /> <span className="hidden sm:inline">{label} {mediaFiles.filter(item => item.media_type === m.media_type).length > 1 ? `#${idx + 1}` : ''}</span>
-              </button>
-            );
-          })}
-
           <button
             onClick={handleSave}
             className={`flex items-center gap-1.5 text-sm font-semibold transition-all duration-200 hover:scale-105 active:scale-95 ${
