@@ -371,6 +371,9 @@ class HomeFeedView(views.APIView):
             queryset = queryset.filter(user__username=username)
         elif request.user.is_authenticated:
             queryset = queryset.exclude(user=request.user)
+            # Exclude posts marked as not interested
+            not_interested_post_ids = UserInterest.objects.filter(user=request.user, status='not_interested').values_list('post_id', flat=True)
+            queryset = queryset.exclude(id__in=not_interested_post_ids)
 
         # Rank posts dynamically
         posts_list = list(queryset)
@@ -382,7 +385,6 @@ class HomeFeedView(views.APIView):
                 followed_cat_ids = set(CategoryFollow.objects.filter(user=request.user).values_list('category_id', flat=True))
                 from accounts.models import Follower
                 followed_user_ids = set(Follower.objects.filter(follower=request.user).values_list('following_id', flat=True))
-                not_interested_post_ids = set(UserInterest.objects.filter(user=request.user, status='not_interested').values_list('post_id', flat=True))
                 tech_score = profile.tech_score
                 non_tech_score = profile.non_tech_score
                 
@@ -409,10 +411,6 @@ class HomeFeedView(views.APIView):
                         else:
                             score += non_tech_score * 2
                             
-                    # 3b. Specific Post Disinterest
-                    if post.id in not_interested_post_ids:
-                        score -= 1000
-                        
                     # 4. Recency Time-Decay
                     from django.utils import timezone
                     time_diff = timezone.now() - post.created_at
@@ -649,6 +647,9 @@ class ExploreFeedView(views.APIView):
         queryset = Post.objects.filter(is_blocked=False)
         if request.user and request.user.is_authenticated:
             queryset = queryset.exclude(user=request.user)
+            # Exclude posts marked as not interested
+            not_interested_post_ids = UserInterest.objects.filter(user=request.user, status='not_interested').values_list('post_id', flat=True)
+            queryset = queryset.exclude(id__in=not_interested_post_ids)
 
         from django.db.models import Count, F, Q
         queryset = queryset.annotate(

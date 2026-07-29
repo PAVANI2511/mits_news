@@ -172,9 +172,9 @@ class AdvancedFeatureTests(TestCase):
         self.assertEqual(response.status_code, 200)
         results = response.data['results']
 
-        # Now, the Tech post should be penalized and ranked lower than the Non-Tech post
-        first_post_id = results[0]['id']
-        self.assertEqual(first_post_id, post_non_tech.id)
+        # Now, the Tech post should be excluded entirely from the feed
+        post_ids = [p['id'] for p in results]
+        self.assertNotIn(post_tech.id, post_ids)
 
 
 class SearchAndSuggestionsTests(TestCase):
