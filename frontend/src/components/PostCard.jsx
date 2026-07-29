@@ -408,6 +408,10 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
         }
       } else if (res.data.interest_status === 'not_interested') {
         setSuccessMessage("Status updated to Not Interested.");
+        setIsDismissing(true);
+        setTimeout(() => {
+          setIsDismissed(true);
+        }, 300);
       } else {
         setSuccessMessage("Interest cleared.");
       }
@@ -431,6 +435,8 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
   const [shareSuccess, setShareSuccess] = useState(false);
   const [relatedPosts, setRelatedPosts] = useState([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
+  const [isDismissing, setIsDismissing] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
     if (currentInterest === 'interested') {
@@ -693,8 +699,16 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
     year: 'numeric'
   }) : '';
 
+  if (isDismissed) return null;
+
   return (
-    <div ref={containerRef} className="bg-card rounded-3xl border border-border/80 shadow-[0_8px_30px_rgb(0,0,0,0.02)] hover:shadow-[0_15px_40px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 ease-out overflow-hidden">
+    <div 
+      ref={containerRef} 
+      className={`bg-card rounded-3xl border border-border/80 shadow-[0_8px_30px_rgb(0,0,0,0.02)] hover:shadow-[0_15px_40px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 ease-out overflow-hidden ${
+        isDismissing ? 'opacity-0 scale-95 max-h-0 py-0 my-0 border-none pointer-events-none' : ''
+      }`}
+      style={isDismissing ? { transition: 'all 300ms ease-in-out', maxHeight: '0px', padding: '0px', margin: '0px', border: 'none' } : {}}
+    >
       {/* Header */}
       <div className="p-5 sm:p-6 pb-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
