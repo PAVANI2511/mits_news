@@ -369,6 +369,8 @@ class HomeFeedView(views.APIView):
             queryset = queryset.filter(hashtags__icontains=hashtag)
         if username:
             queryset = queryset.filter(user__username=username)
+        elif request.user.is_authenticated:
+            queryset = queryset.exclude(user=request.user)
 
         # Rank posts dynamically
         posts_list = list(queryset)
@@ -644,8 +646,12 @@ class ExploreFeedView(views.APIView):
         page = int(request.query_params.get('page', 1))
         page_size = int(request.query_params.get('page_size', 10))
         
+        queryset = Post.objects.filter(is_blocked=False)
+        if request.user and request.user.is_authenticated:
+            queryset = queryset.exclude(user=request.user)
+
         from django.db.models import Count, F, Q
-        queryset = Post.objects.filter(is_blocked=False).annotate(
+        queryset = queryset.annotate(
             num_likes=Count('likes', distinct=True),
             num_comments=Count('comments_sql', filter=Q(comments_sql__is_deleted=False), distinct=True)
         ).annotate(

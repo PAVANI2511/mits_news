@@ -1118,36 +1118,40 @@ const PostCard = ({ post, onPostDeleted, onPostSaved, onPostUnsaved }) => {
         </div>
 
         <div className="flex gap-2.5 w-full sm:w-auto shrink-0 items-center">
-          <button
-            onClick={() => !isExpired && handleInterestSelection('interested')}
-            disabled={isExpired}
-            className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-sm ${
-              isExpired
-                ? currentInterest === 'interested'
-                  ? 'bg-green-500/50 text-white cursor-not-allowed'
-                  : 'bg-card border border-border text-gray-400 cursor-not-allowed'
-                : currentInterest === 'interested'
-                  ? 'bg-green-600 text-white shadow-md shadow-green-600/10 hover:bg-green-700 hover:-translate-y-0.5'
-                  : 'bg-card border border-border/80 text-gray-600 hover:text-green-600 hover:bg-green-500/5 hover:-translate-y-0.5 hover:border-green-200'
-            }`}
-          >
-            <FiThumbsUp className="text-sm" /> Interested
-          </button>
-          <button
-            onClick={() => !isExpired && handleInterestSelection('not_interested')}
-            disabled={isExpired}
-            className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-sm ${
-              isExpired
-                ? currentInterest === 'not_interested'
-                  ? 'bg-gray-500/50 text-white cursor-not-allowed'
-                  : 'bg-card border border-border text-gray-400 cursor-not-allowed'
-                : currentInterest === 'not_interested'
-                  ? 'bg-gray-600 text-white shadow-md hover:bg-gray-700 hover:-translate-y-0.5'
-                  : 'bg-card border border-border/80 text-gray-600 hover:text-red-600 hover:bg-red-500/5 hover:-translate-y-0.5 hover:border-red-200'
-            }`}
-          >
-            <FiThumbsDown className="text-sm" /> Not Interested
-          </button>
+          {!isOwner && (
+            <>
+              <button
+                onClick={() => !isExpired && handleInterestSelection('interested')}
+                disabled={isExpired}
+                className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-sm ${
+                  isExpired
+                    ? currentInterest === 'interested'
+                      ? 'bg-green-500/50 text-white cursor-not-allowed'
+                      : 'bg-card border border-border text-gray-400 cursor-not-allowed'
+                    : currentInterest === 'interested'
+                      ? 'bg-green-600 text-white shadow-md shadow-green-600/10 hover:bg-green-700 hover:-translate-y-0.5'
+                      : 'bg-card border border-border/80 text-gray-600 hover:text-green-600 hover:bg-green-500/5 hover:-translate-y-0.5 hover:border-green-200'
+                }`}
+              >
+                <FiThumbsUp className="text-sm" /> Interested
+              </button>
+              <button
+                onClick={() => !isExpired && handleInterestSelection('not_interested')}
+                disabled={isExpired}
+                className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-sm ${
+                  isExpired
+                    ? currentInterest === 'not_interested'
+                      ? 'bg-gray-500/50 text-white cursor-not-allowed'
+                      : 'bg-card border border-border text-gray-400 cursor-not-allowed'
+                    : currentInterest === 'not_interested'
+                      ? 'bg-gray-600 text-white shadow-md hover:bg-gray-700 hover:-translate-y-0.5'
+                      : 'bg-card border border-border/80 text-gray-600 hover:text-red-600 hover:bg-red-500/5 hover:-translate-y-0.5 hover:border-red-200'
+                }`}
+              >
+                <FiThumbsDown className="text-sm" /> Not Interested
+              </button>
+            </>
+          )}
           {audios.slice(0, 1).map((aud) => (
             <button
               key={aud.id}

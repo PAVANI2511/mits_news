@@ -381,3 +381,80 @@ class RelatedAndRemindersFunctionalityTests(TestCase):
         self.assertTrue(any('Event conduction starts in 3 days' in s for s in subjects))
         self.assertTrue(any('LAST DAY: Registration Closes TODAY' in s for s in subjects))
 
+
+class FeedExclusionTests(TestCase):
+    def setUp(self):
+        self.user1 = User.objects.create_user(username='user1', email='user1@mits.ac.in', password='pass')
+        self.user2 = User.objects.create_user(username='user2', email='user2@mits.ac.in', password='pass')
+        
+        # User 1 posts
+        self.post_user1 = Post.objects.create(
+            user=self.user1,
+            caption='User1 Post',
+            text='Content'
+        )
+        # User 2 posts
+        self.post_user2 = Post.objects.create(
+            user=self.user2,
+            caption='User2 Post',
+            text='Content'
+        )
+
+    def test_exclude_own_posts_home_feed(self):
+        from rest_framework.test import APIRequestFactory, force_authenticate
+        from posts.views import HomeFeedView
+        
+        factory = APIRequestFactory()
+        request = factory.get('/api/posts/feed/')
+        force_authenticate(request, user=self.user1)
+        
+        view = HomeFeedView.as_view()
+        response = view(request)
+        
+        self.assertEqual(response.status_code, 200)
+        results = response.data['results']
+        
+        # User1 should see User2's post, but NOT their own post
+        post_ids = [p['id'] for p in results]
+        self.assertIn(self.post_user2.id, post_ids)
+        self.assertNotIn(self.post_user1.id, post_ids)
+
+    def test_include_own_posts_profile_feed(self):
+        from rest_framework.test import APIRequestFactory, force_authenticate
+        from posts.views import HomeFeedView
+        
+        factory = APIRequestFactory()
+        # Explicit username parameter
+        request = factory.get('/api/posts/feed/', {'username': 'user1'})
+        force_authenticate(request, user=self.user1)
+        
+        view = HomeFeedView.as_view()
+        response = view(request)
+        
+        self.assertEqual(response.status_code, 200)
+        results = response.data['results']
+        
+        # User1's profile query should include User1's post
+        post_ids = [p['id'] for p in results]
+        self.assertIn(self.post_user1.id, post_ids)
+        self.assertNotIn(self.post_user2.id, post_ids)
+
+    def test_exclude_own_posts_explore_feed(self):
+        from rest_framework.test import APIRequestFactory, force_authenticate
+        from posts.views import ExploreFeedView
+        
+        factory = APIRequestFactory()
+        request = factory.get('/api/posts/explore/')
+        force_authenticate(request, user=self.user1)
+        
+        view = ExploreFeedView.as_view()
+        response = view(request)
+        
+        self.assertEqual(response.status_code, 200)
+        results = response.data['results']
+        
+        post_ids = [p['id'] for p in results]
+        self.assertIn(self.post_user2.id, post_ids)
+        self.assertNotIn(self.post_user1.id, post_ids)
+
+
