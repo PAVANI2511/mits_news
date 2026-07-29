@@ -95,6 +95,33 @@ class AdvancedFeatureTests(TestCase):
         self.assertEqual(self.user2.profile.tech_score, 2)
         self.assertEqual(self.user2.profile.non_tech_score, 0)
 
+    def test_behavioral_scoring_not_interested_selection(self):
+        post = Post.objects.create(
+            user=self.user1,
+            caption='Coding Fest 2026',
+            text='Coding contest details...',
+            category=self.category_tech
+        )
+        # Pre-set scores
+        self.profile2.tech_score = 5
+        self.profile2.save()
+        
+        # Express not interested
+        from rest_framework.test import APIRequestFactory, force_authenticate
+        from posts.views import PostInterestView
+        
+        factory = APIRequestFactory()
+        request = factory.post(f'/api/posts/{post.id}/interest/', {'status': 'not_interested'}, format='json')
+        force_authenticate(request, user=self.user2)
+        
+        view = PostInterestView.as_view()
+        response = view(request, pk=post.id)
+        
+        # Verify status and score decrement
+        self.assertEqual(response.status_code, 200)
+        self.user2.profile.refresh_from_db()
+        self.assertEqual(self.user2.profile.tech_score, 3)
+
     def test_smart_feed_ranking(self):
         # Create two posts with different characteristics
         # 1. Tech post (older)
@@ -133,6 +160,21 @@ class AdvancedFeatureTests(TestCase):
         # even though it was created first
         first_post_id = results[0]['id']
         self.assertEqual(first_post_id, post_tech.id)
+
+        # Now mark the tech post as 'not_interested'
+        from posts.models import UserInterest
+        UserInterest.objects.create(user=self.user2, post=post_tech, status='not_interested')
+
+        # Request feed again
+        request = factory.get('/api/posts/feed/')
+        force_authenticate(request, user=self.user2)
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+        results = response.data['results']
+
+        # Now, the Tech post should be penalized and ranked lower than the Non-Tech post
+        first_post_id = results[0]['id']
+        self.assertEqual(first_post_id, post_non_tech.id)
 
 
 class SearchAndSuggestionsTests(TestCase):
@@ -257,3 +299,85 @@ class SearchAndSuggestionsTests(TestCase):
         # Check that it suggests 'Hackathon' event type
         values = [s['value'] for s in suggestions]
         self.assertIn('Hackathon', values)
+
+
+class RelatedAndRemindersFunctionalityTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='teststudent', email='teststudent@mits.ac.in', password='pass')
+        self.category = Category.objects.create(name='Test Category', slug='test-category')
+        self.post1 = Post.objects.create(
+            user=self.user,
+            caption='Target Event',
+            text='Target details',
+            category=self.category,
+            hashtags='#cse #ai'
+        )
+        self.post2 = Post.objects.create(
+            user=self.user,
+            caption='Related Category Event',
+            text='Category match details',
+            category=self.category
+        )
+        self.post3 = Post.objects.create(
+            user=self.user,
+            caption='Related Hashtag Event',
+            text='Hashtag match details',
+            hashtags='#ai #sports'
+        )
+
+    def test_related_posts_api(self):
+        from rest_framework.test import APIRequestFactory
+        from posts.views import PostSearchView
+        
+        factory = APIRequestFactory()
+        request = factory.get('/api/posts/search/', {'related_to': self.post1.id})
+        view = PostSearchView.as_view()
+        response = view(request)
+        
+        self.assertEqual(response.status_code, 200)
+        results = response.data['results']
+        
+        # Should return post2 (same category) and post3 (common hashtag '#ai')
+        matching_ids = [r['id'] for r in results]
+        self.assertIn(self.post2.id, matching_ids)
+        self.assertIn(self.post3.id, matching_ids)
+        
+        # Target post itself must be excluded
+        self.assertNotIn(self.post1.id, matching_ids)
+
+    def test_daily_reminders_task(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        from notifications.tasks import send_daily_reminders_task
+        from django.core import mail
+        
+        today = timezone.now().date()
+        
+        # 1. Post conducting in 3 days
+        post_event = Post.objects.create(
+            user=self.user,
+            caption='Conduction Event',
+            event_date=timezone.now() + timedelta(days=3)
+        )
+        UserInterest.objects.create(user=self.user, post=post_event, status='interested')
+        
+        # 2. Post registration deadline closes today
+        post_reg_today = Post.objects.create(
+            user=self.user,
+            caption='Reg Closes Today',
+            last_date=timezone.now()
+        )
+        UserInterest.objects.create(user=self.user, post=post_reg_today, status='interested')
+        
+        # Clear outbox
+        mail.outbox = []
+        
+        # Run daily reminders task
+        send_daily_reminders_task()
+        
+        # Check that reminders are successfully triggered and sent
+        self.assertGreater(len(mail.outbox), 0)
+        subjects = [m.subject for m in mail.outbox]
+        self.assertTrue(any('Event conduction starts in 3 days' in s for s in subjects))
+        self.assertTrue(any('LAST DAY: Registration Closes TODAY' in s for s in subjects))
+

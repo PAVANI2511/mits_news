@@ -380,6 +380,7 @@ class HomeFeedView(views.APIView):
                 followed_cat_ids = set(CategoryFollow.objects.filter(user=request.user).values_list('category_id', flat=True))
                 from accounts.models import Follower
                 followed_user_ids = set(Follower.objects.filter(follower=request.user).values_list('following_id', flat=True))
+                not_interested_post_ids = set(UserInterest.objects.filter(user=request.user, status='not_interested').values_list('post_id', flat=True))
                 tech_score = profile.tech_score
                 non_tech_score = profile.non_tech_score
                 
@@ -406,6 +407,10 @@ class HomeFeedView(views.APIView):
                         else:
                             score += non_tech_score * 2
                             
+                    # 3b. Specific Post Disinterest
+                    if post.id in not_interested_post_ids:
+                        score -= 1000
+                        
                     # 4. Recency Time-Decay
                     from django.utils import timezone
                     time_diff = timezone.now() - post.created_at
@@ -740,6 +745,14 @@ class PostInterestView(views.APIView):
                         profile.tech_score += 2
                     else:
                         profile.non_tech_score += 2
+                    profile.save()
+            elif status_val == 'not_interested':
+                profile = getattr(request.user, 'profile', None)
+                if profile and post_obj.category:
+                    if post_obj.category.is_tech:
+                        profile.tech_score = max(0, profile.tech_score - 2)
+                    else:
+                        profile.non_tech_score = max(0, profile.non_tech_score - 2)
                     profile.save()
             
             # Send immediate confirmation email if status set to interested and post has event or registration dates
