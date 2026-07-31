@@ -94,9 +94,10 @@ def send_event_reminder_email_sync(user_id, post_id, days_to_event, days_to_last
         countdown_message = ""
         subject = ""
         
-        if days_to_event is not None and days_to_event == 3:
-            subject = f"🔔 Event conduction starts in 3 days - {post.caption[:30]}"
-            countdown_message = f"The interested event '{post.caption[:50]}' is going to be held in 3 days! Make sure you don't miss it."
+        if days_to_event is not None and days_to_event in [1, 2, 3]:
+            days_str = "1 day" if days_to_event == 1 else f"{days_to_event} days"
+            subject = f"🔔 The event is going to happen in {days_str} - {post.caption[:30]}"
+            countdown_message = f"The event is going to happen in {days_str}."
         elif days_to_last_date is not None and days_to_last_date in [0, 2, 3]:
             days = days_to_last_date
             if days == 0:
