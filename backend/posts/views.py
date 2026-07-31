@@ -620,7 +620,13 @@ class FollowingFeedView(views.APIView):
                 "total_count": 0
             }, status=status.HTTP_200_OK)
             
-        queryset = Post.objects.filter(user__in=followed_users, is_blocked=False).order_by('-created_at')
+        queryset = Post.objects.filter(user__in=followed_users, is_blocked=False)
+        
+        # Exclude posts marked as not interested
+        not_interested_post_ids = UserInterest.objects.filter(user=request.user, status='not_interested').values_list('post_id', flat=True)
+        queryset = queryset.exclude(id__in=not_interested_post_ids)
+        
+        queryset = queryset.order_by('-created_at')
         total_count = queryset.count()
         
         skipped = (page - 1) * page_size
@@ -850,6 +856,9 @@ class PostSearchView(views.APIView):
         today = timezone.now()
 
         queryset = Post.objects.filter(is_blocked=False)
+        if is_auth:
+            not_interested_post_ids = UserInterest.objects.filter(user=user, status='not_interested').values_list('post_id', flat=True)
+            queryset = queryset.exclude(id__in=not_interested_post_ids)
 
         related_to_id = request.query_params.get('related_to', '').strip()
         if related_to_id:
