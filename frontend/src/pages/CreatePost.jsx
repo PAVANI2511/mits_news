@@ -70,7 +70,8 @@ const CreatePost = () => {
       const loadCategories = async () => {
         try {
           const res = await postsAPI.getCategories();
-          const sorted = res.data.slice().sort((a, b) => {
+          const categoryList = Array.isArray(res.data) ? res.data : (res.data?.results || []);
+          const sorted = categoryList.slice().sort((a, b) => {
             if (a.name.toLowerCase() === 'other') return 1;
             if (b.name.toLowerCase() === 'other') return -1;
             return a.name.localeCompare(b.name);
